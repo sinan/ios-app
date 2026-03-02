@@ -286,16 +286,32 @@ NSString *const HAEntityDomainCalendar     = @"calendar";
     NSDate *date = [self inputDatetimeValue];
     if (!date) return self.state;
 
-    NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+    // Cached formatters for the three (hasDate, hasTime) combinations
+    static NSDateFormatter *dateTimeFmt = nil;
+    static NSDateFormatter *dateOnlyFmt = nil;
+    static NSDateFormatter *timeOnlyFmt = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        dateTimeFmt = [[NSDateFormatter alloc] init];
+        dateTimeFmt.dateStyle = NSDateFormatterMediumStyle;
+        dateTimeFmt.timeStyle = NSDateFormatterShortStyle;
+
+        dateOnlyFmt = [[NSDateFormatter alloc] init];
+        dateOnlyFmt.dateStyle = NSDateFormatterMediumStyle;
+        dateOnlyFmt.timeStyle = NSDateFormatterNoStyle;
+
+        timeOnlyFmt = [[NSDateFormatter alloc] init];
+        timeOnlyFmt.dateStyle = NSDateFormatterNoStyle;
+        timeOnlyFmt.timeStyle = NSDateFormatterShortStyle;
+    });
+
+    NSDateFormatter *fmt;
     if (hasDate && hasTime) {
-        fmt.dateStyle = NSDateFormatterMediumStyle;
-        fmt.timeStyle = NSDateFormatterShortStyle;
+        fmt = dateTimeFmt;
     } else if (hasDate) {
-        fmt.dateStyle = NSDateFormatterMediumStyle;
-        fmt.timeStyle = NSDateFormatterNoStyle;
+        fmt = dateOnlyFmt;
     } else {
-        fmt.dateStyle = NSDateFormatterNoStyle;
-        fmt.timeStyle = NSDateFormatterShortStyle;
+        fmt = timeOnlyFmt;
     }
     return [fmt stringFromDate:date];
 }
@@ -339,6 +355,7 @@ NSString *const HAEntityDomainCalendar     = @"calendar";
             directions = @[@"N", @"NE", @"E", @"SE", @"S", @"SW", @"W", @"NW"];
         });
         NSInteger index = (NSInteger)round([bearing doubleValue] / 45.0) % 8;
+        if (index < 0) index += 8;
         return directions[index];
     }
     return [bearing description];
@@ -525,8 +542,8 @@ NSString *const HAEntityDomainCalendar     = @"calendar";
 
 - (NSString *)toggleService {
     NSString *d = [self domain];
-    if ([d isEqualToString:HAEntityDomainLock]) return @"lock";
-    if ([d isEqualToString:HAEntityDomainCover]) return @"toggle";
+    if ([d isEqualToString:HAEntityDomainLock]) return [self isLocked] ? @"unlock" : @"lock";
+    if ([d isEqualToString:HAEntityDomainCover] || [d isEqualToString:@"valve"]) return @"toggle";
     if ([d isEqualToString:HAEntityDomainScene]) return @"turn_on";
     if ([d isEqualToString:HAEntityDomainScript]) return @"turn_on";
     if ([d isEqualToString:HAEntityDomainButton] ||

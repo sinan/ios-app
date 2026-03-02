@@ -7,8 +7,8 @@
 @property (nonatomic, copy)   NSString *token;
 @property (nonatomic, strong) SRWebSocket *socket;
 @property (nonatomic, assign) NSInteger nextMessageId;
-@property (nonatomic, assign, readwrite, getter=isConnected) BOOL connected;
-@property (nonatomic, assign, readwrite, getter=isAuthenticated) BOOL authenticated;
+@property (atomic, assign, readwrite, getter=isConnected) BOOL connected;
+@property (atomic, assign, readwrite, getter=isAuthenticated) BOOL authenticated;
 @end
 
 @implementation HAWebSocketClient
@@ -160,33 +160,20 @@
     }
 
     if ([type isEqualToString:@"auth_invalid"]) {
-        HAAuthManager *auth = [HAAuthManager sharedManager];
-        if (auth.authMode == HAAuthModeOAuth && auth.refreshToken.length > 0) {
-            NSLog(@"[HAWebSocket] auth_invalid — attempting token refresh");
-            [self disconnect];
-            [auth refreshAccessTokenWithCompletion:^(BOOL success, NSError *refreshError) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (success) {
-                        NSLog(@"[HAWebSocket] Token refreshed, reconnecting");
-                        self.token = auth.accessToken;
-                        [self connect];
-                    } else {
-                        NSLog(@"[HAWebSocket] Token refresh failed: %@", refreshError.localizedDescription);
-                        [self.delegate webSocketClient:self didDisconnectWithError:refreshError];
-                    }
-                });
-            }];
-            return;
-        }
-
-        NSString *msg = message[@"message"] ?: @"Authentication failed";
-        NSError *error = [NSError errorWithDomain:@"HAWebSocket"
-                                             code:401
-                                         userInfo:@{NSLocalizedDescriptionKey: msg}];
+        NSLog(@"[HAWebSocket] auth_invalid — attempting token refresh");
         [self disconnect];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.delegate webSocketClient:self didDisconnectWithError:error];
-        });
+        [[HAAuthManager sharedManager] handleAuthFailureWithCompletion:^(NSString *newToken, NSError *refreshError) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (newToken) {
+                    NSLog(@"[HAWebSocket] Token refreshed, reconnecting");
+                    self.token = newToken;
+                    [self connect];
+                } else {
+                    NSLog(@"[HAWebSocket] Auth failed: %@", refreshError.localizedDescription);
+                    [self.delegate webSocketClient:self didDisconnectWithError:refreshError];
+                }
+            });
+        }];
         return;
     }
 

@@ -145,6 +145,10 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
             postNotificationName:HAConnectionManagerDidReceiveLovelaceNotification
                           object:self
                         userInfo:@{@"dashboard": self.lovelaceDashboard}];
+    } else {
+        if ([self.delegate respondsToSelector:@selector(connectionManagerDidFailToLoadLovelaceDashboard:)]) {
+            [self.delegate connectionManagerDidFailToLoadLovelaceDashboard:self];
+        }
     }
 
     [[NSNotificationCenter defaultCenter]
@@ -166,9 +170,45 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
     self.intentionalDisconnect = YES;
     [self cancelReconnect];
     [self.wsClient disconnect];
+
+    // Fail all pending completion handlers so callers don't hang indefinitely
+    NSDictionary<NSNumber *, void (^)(id, NSError *)> *pending = [self.pendingCompletions copy];
+    [self.pendingCompletions removeAllObjects];
+    NSError *disconnectError = [NSError errorWithDomain:@"HAConnectionManager" code:-3
+        userInfo:@{NSLocalizedDescriptionKey: @"Disconnected"}];
+    for (NSNumber *key in pending) {
+        void (^completion)(id, NSError *) = pending[key];
+        completion(nil, disconnectError);
+    }
     self.wsClient = nil;
     self.apiClient = nil;
     self.connected = NO;
+
+    // Clear all cached data so a subsequent connect() starts fresh
+    @synchronized(self.entityStore) {
+        [self.entityStore removeAllObjects];
+    }
+    self.lovelaceDashboard = nil;
+    self.pendingStrategyConfig = nil;
+    self.availableDashboards = nil;
+    self.areaNames = nil;
+    self.entityAreaMap = nil;
+    self.deviceAreaMap = nil;
+    self.floors = nil;
+    self.floorByAreaId = nil;
+    self.rawEntityRegistry = nil;
+    self.rawAreaRegistry = nil;
+    self.registriesLoaded = NO;
+    self.areasLoaded = NO;
+    self.entitiesRegistryLoaded = NO;
+    self.devicesLoaded = NO;
+    self.floorsLoaded = NO;
+    self.lovelaceMessageId = 0;
+    self.dashboardListMessageId = 0;
+    self.areaRegistryMessageId = 0;
+    self.entityRegistryMessageId = 0;
+    self.deviceRegistryMessageId = 0;
+    self.floorRegistryMessageId = 0;
 }
 
 #pragma mark - Data
@@ -849,8 +889,10 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
                     NSString *component = panel[@"component_name"];
                     if (![component isEqualToString:@"lovelace"]) continue;
 
-                    NSString *title = panel[@"title"] ?: key;
-                    NSString *urlPath = panel[@"url_path"] ?: key;
+                    id rawTitle = panel[@"title"];
+                    NSString *title = ([rawTitle isKindOfClass:[NSString class]] && [rawTitle length] > 0) ? rawTitle : key;
+                    id rawUrlPath = panel[@"url_path"];
+                    NSString *urlPath = ([rawUrlPath isKindOfClass:[NSString class]] && [rawUrlPath length] > 0) ? rawUrlPath : key;
                     [dashboards addObject:@{@"title": title, @"url_path": urlPath}];
                 }
                 // Sort by title for consistent ordering
@@ -919,8 +961,50 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
             }
             self.lovelaceMessageId = 0;
         } else if (msgId == self.lovelaceMessageId && !success) {
-            NSLog(@"[HAConnection] Lovelace config fetch failed: %@", message[@"error"]);
+            NSDictionary *error = message[@"error"];
+            NSString *errorCode = [error isKindOfClass:[NSDictionary class]] ? error[@"code"] : nil;
+            NSLog(@"[HAConnection] Lovelace config fetch failed: %@", error);
             self.lovelaceMessageId = 0;
+
+            if ([errorCode isEqualToString:@"config_not_found"]) {
+                // Server uses the auto-generated default overview (no custom Lovelace config).
+                // Treat this as an implicit "original-states" strategy dashboard.
+                NSLog(@"[HAConnection] No Lovelace config — using original-states strategy");
+                NSDictionary *implicitStrategy = @{@"type": @"original-states"};
+                self.pendingStrategyConfig = implicitStrategy;
+
+                NSDictionary *currentEntities = [self allEntities];
+                if (currentEntities.count == 0) {
+                    NSLog(@"[HAConnection] Deferring strategy resolution (0 entities loaded)");
+                    return;
+                }
+
+                HALovelaceDashboard *resolved =
+                    [HAStrategyResolver resolveDashboardWithStrategy:implicitStrategy
+                                                           entities:currentEntities
+                                                          areaNames:self.areaNames ?: @{}
+                                                      entityAreaMap:self.entityAreaMap ?: @{}
+                                                     deviceAreaMap:self.deviceAreaMap ?: @{}
+                                                             floors:self.floors
+                                                     entityRegistry:self.entityRegistryEntries];
+                if (resolved) {
+                    self.lovelaceDashboard = resolved;
+                    if ([self.delegate respondsToSelector:@selector(connectionManager:didReceiveLovelaceDashboard:)]) {
+                        [self.delegate connectionManager:self didReceiveLovelaceDashboard:self.lovelaceDashboard];
+                    }
+                    [[NSNotificationCenter defaultCenter]
+                        postNotificationName:HAConnectionManagerDidReceiveLovelaceNotification
+                                      object:self
+                                    userInfo:@{@"dashboard": self.lovelaceDashboard}];
+                } else {
+                    // Strategy resolver couldn't produce a dashboard yet — will retry after states/registries
+                    NSLog(@"[HAConnection] Strategy resolution deferred until registries load");
+                }
+            } else {
+                if ([self.delegate respondsToSelector:@selector(connectionManagerDidFailToLoadLovelaceDashboard:)]) {
+                    [self.delegate connectionManagerDidFailToLoadLovelaceDashboard:self];
+                }
+            }
         } else if (msgId == self.areaRegistryMessageId) {
             self.areaRegistryMessageId = 0;
             if (success) {

@@ -1,4 +1,5 @@
 #import "HAFloor.h"
+#import "HASafeDict.h"
 
 @implementation HAFloor
 
@@ -6,18 +7,12 @@
     self = [super init];
     if (self) {
         _floorId = dict[@"floor_id"];
-        _name = dict[@"name"] ?: _floorId;
-
-        id level = dict[@"level"];
-        if ([level isKindOfClass:[NSNumber class]]) {
-            _level = [level integerValue];
-        } else {
-            _level = 0;
-        }
+        _name = HASafeDictString(dict, @"name", _floorId);
+        _level = HASafeDictInteger(dict, @"level", 0);
 
         // Area IDs can be in "areas" key as an array of area_id strings
-        NSArray *areas = dict[@"areas"];
-        if ([areas isKindOfClass:[NSArray class]]) {
+        NSArray *areas = HASafeDictArrayOrNil(dict, @"areas");
+        if (areas) {
             NSMutableArray *areaIds = [NSMutableArray arrayWithCapacity:areas.count];
             for (id areaEntry in areas) {
                 if ([areaEntry isKindOfClass:[NSString class]]) {
