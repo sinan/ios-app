@@ -1,5 +1,6 @@
 #import "HAAlarmEntityCell.h"
 #import "HAEntity.h"
+#import "HAEntityAttributes.h"
 #import "HAConnectionManager.h"
 #import "HADashboardConfig.h"
 #import "HATheme.h"
@@ -21,6 +22,9 @@ static const NSInteger kKeypadTagEnter = 11;
 @property (nonatomic, strong) UILabel *alarmStateLabel;
 @property (nonatomic, strong) UIButton *armAwayButton;
 @property (nonatomic, strong) UIButton *armHomeButton;
+@property (nonatomic, strong) UIButton *armNightButton;
+@property (nonatomic, strong) UIButton *armVacationButton;
+@property (nonatomic, strong) UIButton *armBypassButton;
 @property (nonatomic, strong) UIButton *disarmButton;
 @property (nonatomic, strong) UITextField *codeTextField;
 @property (nonatomic, strong) UIView *keypadContainer;
@@ -55,10 +59,13 @@ static const NSInteger kKeypadTagEnter = 11;
     self.stateLabel.hidden = YES;
     self.keypadButtons = [NSMutableArray array];
 
-    // Alarm state label (prominent display)
+    // Alarm state badge (pill-shaped label with tinted background)
     self.alarmStateLabel = [[UILabel alloc] init];
-    self.alarmStateLabel.font = [UIFont boldSystemFontOfSize:16];
-    self.alarmStateLabel.textColor = [HATheme primaryTextColor];
+    self.alarmStateLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    self.alarmStateLabel.textColor = [UIColor whiteColor];
+    self.alarmStateLabel.textAlignment = NSTextAlignmentCenter;
+    self.alarmStateLabel.layer.cornerRadius = 12;
+    self.alarmStateLabel.layer.masksToBounds = YES;
     self.alarmStateLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.alarmStateLabel];
 
@@ -69,6 +76,15 @@ static const NSInteger kKeypadTagEnter = 11;
     self.armHomeButton = [self createActionButtonWithTitle:@"Home"
                                                     color:[HATheme warningColor]
                                                    action:@selector(armHomeTapped)];
+    self.armNightButton = [self createActionButtonWithTitle:@"Night"
+                                                      color:[HATheme destructiveColor]
+                                                     action:@selector(armNightTapped)];
+    self.armVacationButton = [self createActionButtonWithTitle:@"Vacation"
+                                                        color:[HATheme destructiveColor]
+                                                       action:@selector(armVacationTapped)];
+    self.armBypassButton = [self createActionButtonWithTitle:@"Bypass"
+                                                      color:[HATheme warningColor]
+                                                     action:@selector(armBypassTapped)];
     self.disarmButton = [self createActionButtonWithTitle:@"Disarm"
                                                    color:[HATheme successColor]
                                                   action:@selector(disarmTapped)];
@@ -106,10 +122,13 @@ static const NSInteger kKeypadTagEnter = 11;
 - (UIButton *)createActionButtonWithTitle:(NSString *)title color:(UIColor *)color action:(SEL)action {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     [button setTitle:title forState:UIControlStateNormal];
-    button.titleLabel.font = [UIFont boldSystemFontOfSize:11];
-    button.backgroundColor = color;
-    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    button.layer.cornerRadius = 4.0;
+    button.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    // Pill-shaped with tinted background instead of solid color blocks
+    button.backgroundColor = [color colorWithAlphaComponent:0.15];
+    [button setTitleColor:color forState:UIControlStateNormal];
+    button.layer.cornerRadius = kActionButtonHeight / 2.0; // pill shape
+    button.layer.masksToBounds = YES;
+    button.contentEdgeInsets = UIEdgeInsetsMake(4, 12, 4, 12);
     button.translatesAutoresizingMaskIntoConstraints = NO;
     [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:button];
@@ -184,39 +203,44 @@ static const NSInteger kKeypadTagEnter = 11;
 - (void)setupConstraints {
     UIView *cv = self.contentView;
 
-    // Alarm state label: below name
+    // Alarm state badge: below name, left-aligned pill
     [NSLayoutConstraint activateConstraints:@[
         [self.alarmStateLabel.leadingAnchor constraintEqualToAnchor:cv.leadingAnchor constant:kPadding],
-        [self.alarmStateLabel.trailingAnchor constraintEqualToAnchor:cv.trailingAnchor constant:-kPadding],
         [self.alarmStateLabel.topAnchor constraintEqualToAnchor:self.nameLabel.bottomAnchor constant:4],
+        [self.alarmStateLabel.heightAnchor constraintEqualToConstant:24],
     ]];
 
-    // Action buttons: row below alarm state
+    // Action buttons: UIStackView row below alarm state
+    UIStackView *buttonStack = [[UIStackView alloc] initWithArrangedSubviews:@[
+        self.armAwayButton, self.armHomeButton, self.armNightButton,
+        self.armVacationButton, self.armBypassButton, self.disarmButton
+    ]];
+    buttonStack.axis = UILayoutConstraintAxisHorizontal;
+    buttonStack.spacing = kActionButtonSpacing;
+    buttonStack.translatesAutoresizingMaskIntoConstraints = NO;
+    [cv addSubview:buttonStack];
+
+    for (UIButton *btn in buttonStack.arrangedSubviews) {
+        [btn.heightAnchor constraintEqualToConstant:kActionButtonHeight].active = YES;
+    }
+
     [NSLayoutConstraint activateConstraints:@[
-        // Disarm (rightmost)
-        [self.disarmButton.trailingAnchor constraintEqualToAnchor:cv.trailingAnchor constant:-kPadding],
-        [self.disarmButton.topAnchor constraintEqualToAnchor:self.alarmStateLabel.bottomAnchor constant:8],
-        [self.disarmButton.widthAnchor constraintEqualToConstant:kActionButtonWidth],
-        [self.disarmButton.heightAnchor constraintEqualToConstant:kActionButtonHeight],
-
-        // Home (middle)
-        [self.armHomeButton.trailingAnchor constraintEqualToAnchor:self.disarmButton.leadingAnchor constant:-kActionButtonSpacing],
-        [self.armHomeButton.centerYAnchor constraintEqualToAnchor:self.disarmButton.centerYAnchor],
-        [self.armHomeButton.widthAnchor constraintEqualToConstant:kActionButtonWidth],
-        [self.armHomeButton.heightAnchor constraintEqualToConstant:kActionButtonHeight],
-
-        // Away (leftmost)
-        [self.armAwayButton.trailingAnchor constraintEqualToAnchor:self.armHomeButton.leadingAnchor constant:-kActionButtonSpacing],
-        [self.armAwayButton.centerYAnchor constraintEqualToAnchor:self.disarmButton.centerYAnchor],
-        [self.armAwayButton.widthAnchor constraintEqualToConstant:kActionButtonWidth],
-        [self.armAwayButton.heightAnchor constraintEqualToConstant:kActionButtonHeight],
+        [buttonStack.leadingAnchor constraintGreaterThanOrEqualToAnchor:cv.leadingAnchor constant:kPadding],
+        [buttonStack.trailingAnchor constraintLessThanOrEqualToAnchor:cv.trailingAnchor constant:-kPadding],
+        [buttonStack.topAnchor constraintEqualToAnchor:self.alarmStateLabel.bottomAnchor constant:8],
+        [buttonStack.centerXAnchor constraintEqualToAnchor:cv.centerXAnchor],
     ]];
+
+    // Night, Vacation, Bypass hidden by default — shown based on supported_features
+    self.armNightButton.hidden = YES;
+    self.armVacationButton.hidden = YES;
+    self.armBypassButton.hidden = YES;
 
     // Code text field: centered below buttons
     CGFloat codeFieldWidth = 3.0 * kKeypadButtonSize + 2.0 * kKeypadButtonSpacing;
     [NSLayoutConstraint activateConstraints:@[
         [self.codeTextField.centerXAnchor constraintEqualToAnchor:cv.centerXAnchor],
-        [self.codeTextField.topAnchor constraintEqualToAnchor:self.disarmButton.bottomAnchor constant:8],
+        [self.codeTextField.topAnchor constraintEqualToAnchor:buttonStack.bottomAnchor constant:8],
         [self.codeTextField.widthAnchor constraintEqualToConstant:codeFieldWidth],
         [self.codeTextField.heightAnchor constraintEqualToConstant:kCodeFieldHeight],
     ]];
@@ -234,29 +258,72 @@ static const NSInteger kKeypadTagEnter = 11;
     [super configureWithEntity:entity configItem:configItem];
 
     NSString *state = [entity alarmState];
-    self.alarmStateLabel.text = [self displayStringForState:state];
+    BOOL isArmed = [state hasPrefix:@"armed"];
+    BOOL isDisarmed = [state isEqualToString:@"disarmed"];
+    BOOL isTriggered = [state isEqualToString:@"triggered"];
 
-    // Color code the state
-    if ([state isEqualToString:@"disarmed"]) {
-        self.alarmStateLabel.textColor = [HATheme successColor];
-    } else if ([state isEqualToString:@"triggered"]) {
-        self.alarmStateLabel.textColor = [HATheme destructiveColor];
-    } else if ([state isEqualToString:@"pending"]) {
-        self.alarmStateLabel.textColor = [HATheme warningColor];
+    // State badge: shield icon + state text with colored background
+    NSString *stateText = [self displayStringForState:state];
+    self.alarmStateLabel.text = [NSString stringWithFormat:@"  %@  ", stateText]; // padding for pill
+    if (isArmed) {
+        self.alarmStateLabel.backgroundColor = [HATheme successColor];
+    } else if (isTriggered) {
+        self.alarmStateLabel.backgroundColor = [HATheme destructiveColor];
+    } else if (isDisarmed) {
+        self.alarmStateLabel.backgroundColor = [[HATheme secondaryTextColor] colorWithAlphaComponent:0.3];
+        self.alarmStateLabel.textColor = [HATheme primaryTextColor];
     } else {
-        self.alarmStateLabel.textColor = [HATheme destructiveColor];
+        self.alarmStateLabel.backgroundColor = [HATheme warningColor];
     }
 
     BOOL available = entity.isAvailable;
-    self.armAwayButton.enabled = available;
-    self.armHomeButton.enabled = available;
-    self.disarmButton.enabled = available;
+    NSInteger features = HAAttrInteger(entity.attributes, HAAttrSupportedFeatures, 31);
 
-    // Show keypad only when code_format is non-nil (entity requires a code)
-    BOOL showKeypad = ([entity alarmCodeFormat] != nil);
-    self.keypadVisible = showKeypad;
-    self.codeTextField.hidden = !showKeypad;
-    self.keypadContainer.hidden = !showKeypad;
+    // Contextual buttons: when armed, only show Disarm. When disarmed, show arm options.
+    if (isArmed || isTriggered) {
+        // Armed or triggered: only show Disarm
+        self.armAwayButton.hidden = YES;
+        self.armHomeButton.hidden = YES;
+        self.armNightButton.hidden = YES;
+        self.armVacationButton.hidden = YES;
+        self.armBypassButton.hidden = YES;
+        self.disarmButton.hidden = NO;
+        self.disarmButton.enabled = available;
+    } else {
+        // Disarmed/pending: show arm options based on supported_features
+        self.disarmButton.hidden = YES;
+        self.armHomeButton.hidden = !(features & 1);       // ARM_HOME
+        self.armAwayButton.hidden = !(features & 2);        // ARM_AWAY
+        self.armNightButton.hidden = !(features & 4);       // ARM_NIGHT
+        self.armBypassButton.hidden = !(features & 16);     // ARM_CUSTOM_BYPASS
+        self.armVacationButton.hidden = !(features & 32);   // ARM_VACATION
+        self.armAwayButton.enabled = available;
+        self.armHomeButton.enabled = available;
+        self.armNightButton.enabled = available;
+        self.armVacationButton.enabled = available;
+        self.armBypassButton.enabled = available;
+    }
+
+    // Show keypad when code_arm_required is YES and code_format is set,
+    // or when disarming (always needs code if code_format is set)
+    BOOL codeArmRequired = HAAttrBool(entity.attributes, @"code_arm_required", YES);
+    BOOL hasCodeFormat = ([entity alarmCodeFormat] != nil);
+    BOOL showCode = hasCodeFormat && (codeArmRequired || isArmed) && entity.isAvailable;
+    NSString *codeFormat = [entity alarmCodeFormat];
+    BOOL isTextCode = showCode && codeFormat && ![codeFormat isEqualToString:@"number"];
+    self.keypadVisible = showCode;
+    self.codeTextField.hidden = !showCode;
+    // Text code format: show system keyboard, hide custom numeric keypad
+    // Number code format: hide system keyboard, show custom numeric keypad
+    if (isTextCode) {
+        self.codeTextField.inputView = nil; // allow system keyboard
+        self.codeTextField.keyboardType = UIKeyboardTypeDefault;
+        self.codeTextField.secureTextEntry = YES;
+        self.keypadContainer.hidden = YES;
+    } else {
+        self.codeTextField.inputView = [[UIView alloc] initWithFrame:CGRectZero]; // suppress keyboard
+        self.keypadContainer.hidden = !showCode;
+    }
     self.codeTextField.text = @"";
     self.pendingService = nil;
 }
@@ -315,8 +382,8 @@ static const NSInteger kKeypadTagEnter = 11;
     [HAHaptics mediumImpact];
 
     if (self.keypadVisible) {
+        // Set pending service — code is submitted when user presses Enter on keypad
         self.pendingService = @"alarm_arm_away";
-        [self submitCodeForService:@"alarm_arm_away"];
     } else {
         [self callAlarmService:@"alarm_arm_away"];
     }
@@ -328,9 +395,41 @@ static const NSInteger kKeypadTagEnter = 11;
 
     if (self.keypadVisible) {
         self.pendingService = @"alarm_arm_home";
-        [self submitCodeForService:@"alarm_arm_home"];
     } else {
         [self callAlarmService:@"alarm_arm_home"];
+    }
+}
+
+- (void)armNightTapped {
+    if (!self.entity) return;
+    [HAHaptics mediumImpact];
+
+    if (self.keypadVisible) {
+        self.pendingService = @"alarm_arm_night";
+    } else {
+        [self callAlarmService:@"alarm_arm_night"];
+    }
+}
+
+- (void)armVacationTapped {
+    if (!self.entity) return;
+    [HAHaptics mediumImpact];
+
+    if (self.keypadVisible) {
+        self.pendingService = @"alarm_arm_vacation";
+    } else {
+        [self callAlarmService:@"alarm_arm_vacation"];
+    }
+}
+
+- (void)armBypassTapped {
+    if (!self.entity) return;
+    [HAHaptics mediumImpact];
+
+    if (self.keypadVisible) {
+        self.pendingService = @"alarm_arm_custom_bypass";
+    } else {
+        [self callAlarmService:@"alarm_arm_custom_bypass"];
     }
 }
 
@@ -340,7 +439,6 @@ static const NSInteger kKeypadTagEnter = 11;
 
     if (self.keypadVisible) {
         self.pendingService = @"alarm_disarm";
-        [self submitCodeForService:@"alarm_disarm"];
     } else {
         [self callAlarmService:@"alarm_disarm"];
     }
@@ -356,8 +454,16 @@ static const NSInteger kKeypadTagEnter = 11;
 #pragma mark - UITextFieldDelegate
 
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
-    // We handle input via keypad; don't show system keyboard
-    return NO;
+    // Allow editing when using system keyboard (text code format);
+    // deny when using custom numeric keypad (inputView is set)
+    return (textField.inputView == nil);
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    // Submit code on Return key (text code mode)
+    [self submitCodeForService:self.pendingService ?: @"alarm_disarm"];
+    [textField resignFirstResponder];
+    return YES;
 }
 
 #pragma mark - Reuse
@@ -368,7 +474,13 @@ static const NSInteger kKeypadTagEnter = 11;
     self.alarmStateLabel.textColor = [HATheme primaryTextColor];
     self.armAwayButton.backgroundColor = [HATheme destructiveColor];
     self.armHomeButton.backgroundColor = [HATheme warningColor];
+    self.armNightButton.backgroundColor = [HATheme destructiveColor];
+    self.armVacationButton.backgroundColor = [HATheme destructiveColor];
+    self.armBypassButton.backgroundColor = [HATheme warningColor];
     self.disarmButton.backgroundColor = [HATheme successColor];
+    self.armNightButton.hidden = YES;
+    self.armVacationButton.hidden = YES;
+    self.armBypassButton.hidden = YES;
     self.codeTextField.text = @"";
     self.codeTextField.layer.borderColor = [HATheme controlBorderColor].CGColor;
     self.codeTextField.backgroundColor = [HATheme controlBackgroundColor];

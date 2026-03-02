@@ -2,9 +2,17 @@
 #import "HAEntity.h"
 #import "HADashboardConfig.h"
 #import "HATheme.h"
+#import "HAAuthManager.h"
+#import "NSMutableURLRequest+HAHelpers.h"
+
+static const CGFloat kAvatarSize = 40.0;
 
 @interface HAPersonEntityCell ()
 @property (nonatomic, strong) UILabel *locationLabel;
+@property (nonatomic, strong) UILabel *gpsLabel;
+@property (nonatomic, strong) UIImageView *avatarView;
+@property (nonatomic, strong) NSURLSessionDataTask *imageTask;
+@property (nonatomic, copy) NSString *currentPictureURL;
 @end
 
 @implementation HAPersonEntityCell
@@ -15,19 +23,41 @@
 
     CGFloat padding = 10.0;
 
-    // Location label (display-only)
-    self.locationLabel = [[UILabel alloc] init];
-    self.locationLabel.font = [UIFont boldSystemFontOfSize:18];
-    self.locationLabel.textColor = [HATheme primaryTextColor];
-    self.locationLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.locationLabel];
+    // Avatar image view (circular)
+    self.avatarView = [[UIImageView alloc] init];
+    self.avatarView.contentMode = UIViewContentModeScaleAspectFill;
+    self.avatarView.clipsToBounds = YES;
+    self.avatarView.layer.cornerRadius = kAvatarSize / 2.0;
+    self.avatarView.backgroundColor = [HATheme controlBackgroundColor];
+    self.avatarView.translatesAutoresizingMaskIntoConstraints = NO;
+    self.avatarView.hidden = YES;
+    [self.contentView addSubview:self.avatarView];
 
-    [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.locationLabel attribute:NSLayoutAttributeLeading
-        relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeLeading multiplier:1 constant:padding]];
-    [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.locationLabel attribute:NSLayoutAttributeTrailing
-        relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeTrailing multiplier:1 constant:-padding]];
-    [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.locationLabel attribute:NSLayoutAttributeTop
-        relatedBy:NSLayoutRelationEqual toItem:self.nameLabel attribute:NSLayoutAttributeBottom multiplier:1 constant:4]];
+    // Location label (display-only)
+    self.locationLabel = [self labelWithFont:[UIFont boldSystemFontOfSize:18] color:[HATheme primaryTextColor] lines:1];
+
+    // Avatar: top-right
+    [NSLayoutConstraint activateConstraints:@[
+        [self.avatarView.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-padding],
+        [self.avatarView.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
+        [self.avatarView.widthAnchor constraintEqualToConstant:kAvatarSize],
+        [self.avatarView.heightAnchor constraintEqualToConstant:kAvatarSize],
+    ]];
+
+    // GPS coordinates label (secondary, below location)
+    self.gpsLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:10 weight:UIFontWeightRegular]
+                                  color:[HATheme secondaryTextColor] lines:1];
+    self.gpsLabel.hidden = YES;
+
+    // Location label: below name, constrained before avatar
+    [NSLayoutConstraint activateConstraints:@[
+        [self.locationLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:padding],
+        [self.locationLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.avatarView.leadingAnchor constant:-8],
+        [self.locationLabel.topAnchor constraintEqualToAnchor:self.nameLabel.bottomAnchor constant:4],
+        [self.gpsLabel.leadingAnchor constraintEqualToAnchor:self.locationLabel.leadingAnchor],
+        [self.gpsLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.avatarView.leadingAnchor constant:-8],
+        [self.gpsLabel.topAnchor constraintEqualToAnchor:self.locationLabel.bottomAnchor constant:1],
+    ]];
 }
 
 - (void)configureWithEntity:(HAEntity *)entity configItem:(HADashboardConfigItem *)configItem {
@@ -45,12 +75,85 @@
         self.locationLabel.text = [state stringByReplacingOccurrencesOfString:@"_" withString:@" "];
         self.locationLabel.textColor = [UIColor colorWithRed:0.0 green:0.48 blue:1.0 alpha:1.0];
     }
+
+    // GPS coordinates
+    NSNumber *lat = entity.attributes[@"latitude"];
+    NSNumber *lon = entity.attributes[@"longitude"];
+    if ([lat isKindOfClass:[NSNumber class]] && [lon isKindOfClass:[NSNumber class]]) {
+        NSNumber *accuracy = entity.attributes[@"gps_accuracy"];
+        if ([accuracy isKindOfClass:[NSNumber class]]) {
+            self.gpsLabel.text = [NSString stringWithFormat:@"%.4f, %.4f (\u00B1%ldm)",
+                [lat doubleValue], [lon doubleValue], (long)[accuracy integerValue]];
+        } else {
+            self.gpsLabel.text = [NSString stringWithFormat:@"%.4f, %.4f",
+                [lat doubleValue], [lon doubleValue]];
+        }
+        self.gpsLabel.hidden = NO;
+    } else {
+        self.gpsLabel.hidden = YES;
+    }
+
+    // Load entity_picture as avatar
+    NSString *picturePath = entity.attributes[@"entity_picture"];
+    if ([picturePath isKindOfClass:[NSString class]] && picturePath.length > 0) {
+        self.avatarView.hidden = NO;
+        [self loadAvatarFromPath:picturePath];
+    } else {
+        self.avatarView.hidden = YES;
+        self.avatarView.image = nil;
+    }
+}
+
+- (void)loadAvatarFromPath:(NSString *)path {
+    // Skip if already loading the same URL
+    if ([path isEqualToString:self.currentPictureURL] && self.avatarView.image) return;
+    self.currentPictureURL = path;
+
+    // Cancel previous request
+    [self.imageTask cancel];
+
+    HAAuthManager *auth = [HAAuthManager sharedManager];
+    NSString *serverURL = auth.serverURL;
+    NSString *token = auth.accessToken;
+    if (!serverURL || !token) return;
+
+    NSURL *url = [NSURL URLWithString:[serverURL stringByAppendingString:path]];
+    if (!url) return;
+
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    [request ha_setAuthHeaders:token];
+
+    __weak typeof(self) weakSelf = self;
+    NSString *capturedPath = [path copy];
+    self.imageTask = [[NSURLSession sharedSession] dataTaskWithRequest:request
+        completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            if (error || !data) return;
+            UIImage *image = [UIImage imageWithData:data];
+            if (!image) return;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong typeof(weakSelf) strongSelf = weakSelf;
+                if (!strongSelf) return;
+                // Only apply if still showing the same entity
+                if ([capturedPath isEqualToString:strongSelf.currentPictureURL]) {
+                    strongSelf.avatarView.image = image;
+                }
+            });
+        }];
+    [self.imageTask resume];
 }
 
 - (void)prepareForReuse {
     [super prepareForReuse];
+    [self.imageTask cancel];
+    self.imageTask = nil;
+    self.currentPictureURL = nil;
+    self.avatarView.image = nil;
+    self.avatarView.hidden = YES;
+    self.avatarView.backgroundColor = [HATheme controlBackgroundColor];
     self.locationLabel.text = nil;
     self.locationLabel.textColor = [HATheme primaryTextColor];
+    self.gpsLabel.text = nil;
+    self.gpsLabel.hidden = YES;
 }
 
 @end

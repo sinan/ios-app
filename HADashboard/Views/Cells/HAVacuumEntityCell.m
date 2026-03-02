@@ -20,6 +20,10 @@ static const CGFloat kButtonSpacing  = 12.0;
 @property (nonatomic, strong) UIButton *playPauseButton;
 @property (nonatomic, strong) UIButton *returnHomeButton;
 @property (nonatomic, strong) UIButton *powerButton;
+@property (nonatomic, strong) UIButton *locateButton;
+@property (nonatomic, strong) UIButton *stopButton;
+@property (nonatomic, strong) UIButton *spotButton;
+@property (nonatomic, strong) UIButton *fanSpeedButton;
 @property (nonatomic, copy)   NSArray<NSString *> *configuredCommands;
 @end
 
@@ -45,21 +49,26 @@ static const CGFloat kButtonSpacing  = 12.0;
     [self.iconCircle addSubview:self.iconLabel];
 
     // -- Status label --
-    self.statusLabel2 = [[UILabel alloc] init];
-    self.statusLabel2.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
-    self.statusLabel2.textColor = [HATheme secondaryTextColor];
+    self.statusLabel2 = [self labelWithFont:[UIFont systemFontOfSize:13 weight:UIFontWeightMedium] color:[HATheme secondaryTextColor] lines:1];
     self.statusLabel2.textAlignment = NSTextAlignmentCenter;
-    self.statusLabel2.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.statusLabel2];
 
     // -- Command buttons --
     self.playPauseButton  = [self makeCommandButton];
     self.returnHomeButton = [self makeCommandButton];
     self.powerButton      = [self makeCommandButton];
 
+    self.locateButton     = [self makeCommandButton];
+    self.stopButton       = [self makeCommandButton];
+    self.spotButton       = [self makeCommandButton];
+    self.fanSpeedButton   = [self makeCommandButton];
+
     [self.playPauseButton  addTarget:self action:@selector(playPauseTapped)  forControlEvents:UIControlEventTouchUpInside];
     [self.returnHomeButton addTarget:self action:@selector(returnHomeTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.powerButton      addTarget:self action:@selector(powerTapped)      forControlEvents:UIControlEventTouchUpInside];
+    [self.locateButton     addTarget:self action:@selector(locateTapped)     forControlEvents:UIControlEventTouchUpInside];
+    [self.stopButton       addTarget:self action:@selector(stopTapped)       forControlEvents:UIControlEventTouchUpInside];
+    [self.spotButton       addTarget:self action:@selector(spotTapped)       forControlEvents:UIControlEventTouchUpInside];
+    [self.fanSpeedButton   addTarget:self action:@selector(fanSpeedTapped)   forControlEvents:UIControlEventTouchUpInside];
 
     // --- Layout constraints ---
     // Icon circle and status label use auto layout. Buttons are positioned in layoutSubviews
@@ -91,6 +100,10 @@ static const CGFloat kButtonSpacing  = 12.0;
     self.playPauseButton.translatesAutoresizingMaskIntoConstraints = YES;
     self.returnHomeButton.translatesAutoresizingMaskIntoConstraints = YES;
     self.powerButton.translatesAutoresizingMaskIntoConstraints = YES;
+    self.locateButton.translatesAutoresizingMaskIntoConstraints = YES;
+    self.stopButton.translatesAutoresizingMaskIntoConstraints = YES;
+    self.spotButton.translatesAutoresizingMaskIntoConstraints = YES;
+    self.fanSpeedButton.translatesAutoresizingMaskIntoConstraints = YES;
 }
 
 - (void)layoutSubviews {
@@ -103,7 +116,11 @@ static const CGFloat kButtonSpacing  = 12.0;
     // Collect visible buttons
     NSMutableArray<UIButton *> *visibleButtons = [NSMutableArray array];
     if (!self.playPauseButton.hidden) [visibleButtons addObject:self.playPauseButton];
+    if (!self.stopButton.hidden) [visibleButtons addObject:self.stopButton];
     if (!self.returnHomeButton.hidden) [visibleButtons addObject:self.returnHomeButton];
+    if (!self.locateButton.hidden) [visibleButtons addObject:self.locateButton];
+    if (!self.spotButton.hidden) [visibleButtons addObject:self.spotButton];
+    if (!self.fanSpeedButton.hidden) [visibleButtons addObject:self.fanSpeedButton];
     if (!self.powerButton.hidden) [visibleButtons addObject:self.powerButton];
 
     NSUInteger count = visibleButtons.count;
@@ -155,17 +172,34 @@ static const CGFloat kButtonSpacing  = 12.0;
     BOOL supportsReturn   = (features & (1 << 4)) != 0;  // RETURN_HOME = 16
     BOOL supportsTurnOn   = (features & (1 << 0)) != 0;  // TURN_ON = 1
     BOOL supportsTurnOff  = (features & (1 << 1)) != 0;  // TURN_OFF = 2
+    BOOL supportsLocate   = (features & (1 << 9)) != 0;  // LOCATE = 512
+    BOOL supportsSpot     = (features & (1 << 5)) != 0;  // CLEAN_SPOT = 32
+    BOOL supportsFanSpeed = (features & (1 << 6)) != 0;  // FAN_SPEED = 64
 
-    BOOL showPlayPause = [self.configuredCommands containsObject:@"start_pause"]
+    BOOL hasCommands = self.configuredCommands.count > 0;
+
+    BOOL showPlayPause = (hasCommands ? [self.configuredCommands containsObject:@"start_pause"] : YES)
                          && (supportsStart || supportsPause);
-    BOOL showReturnHome = [self.configuredCommands containsObject:@"return_home"]
+    BOOL showReturnHome = (hasCommands ? [self.configuredCommands containsObject:@"return_home"] : YES)
                           && supportsReturn;
-    BOOL showPower = [self.configuredCommands containsObject:@"on_off"]
+    BOOL showPower = (hasCommands ? [self.configuredCommands containsObject:@"on_off"] : NO)
                      && (supportsTurnOn || supportsTurnOff);
+    BOOL showLocate = (hasCommands ? [self.configuredCommands containsObject:@"locate"] : NO)
+                      && supportsLocate;
+    BOOL showStop = (hasCommands ? [self.configuredCommands containsObject:@"stop"] : NO)
+                    && supportsStop;
+    BOOL showSpot = (hasCommands ? [self.configuredCommands containsObject:@"clean_spot"] : NO)
+                    && supportsSpot;
+    BOOL showFanSpeed = (hasCommands ? [self.configuredCommands containsObject:@"fan_speed"] : NO)
+                        && supportsFanSpeed;
 
     self.playPauseButton.hidden = !showPlayPause;
     self.returnHomeButton.hidden = !showReturnHome;
     self.powerButton.hidden = !showPower;
+    self.locateButton.hidden = !showLocate;
+    self.stopButton.hidden = !showStop;
+    self.spotButton.hidden = !showSpot;
+    self.fanSpeedButton.hidden = !showFanSpeed;
 
     if (!entity) {
         self.statusLabel2.text = @"Unavailable";
@@ -193,9 +227,17 @@ static const CGFloat kButtonSpacing  = 12.0;
     self.playPauseButton.enabled = available;
     self.returnHomeButton.enabled = available;
     self.powerButton.enabled = available;
+    self.locateButton.enabled = available;
+    self.stopButton.enabled = available;
+    self.spotButton.enabled = available;
+    self.fanSpeedButton.enabled = available;
     self.playPauseButton.alpha = available ? 1.0 : 0.4;
     self.returnHomeButton.alpha = available ? 1.0 : 0.4;
     self.powerButton.alpha = available ? 1.0 : 0.4;
+    self.locateButton.alpha = available ? 1.0 : 0.4;
+    self.stopButton.alpha = available ? 1.0 : 0.4;
+    self.spotButton.alpha = available ? 1.0 : 0.4;
+    self.fanSpeedButton.alpha = available ? 1.0 : 0.4;
 }
 
 - (void)applyIconColorForState:(NSString *)vacuumState {
@@ -247,12 +289,29 @@ static const CGFloat kButtonSpacing  = 12.0;
     // Power button: show power-off styling when on, power-on when off
     [self setButton:self.powerButton iconName:@"power"];
 
+    // New buttons
+    [self setButton:self.locateButton iconName:@"map-marker-radius"];
+    [self setButton:self.stopButton iconName:@"stop"];
+    [self setButton:self.spotButton iconName:@"target"];
+    // Fan speed: show current speed text
+    NSString *fanSpeed = HAAttrString(self.entity.attributes, HAAttrFanSpeed);
+    if (fanSpeed) {
+        [self.fanSpeedButton setAttributedTitle:nil forState:UIControlStateNormal];
+        [self.fanSpeedButton setTitle:fanSpeed forState:UIControlStateNormal];
+        self.fanSpeedButton.titleLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
+        [self.fanSpeedButton setTitleColor:[HATheme primaryTextColor] forState:UIControlStateNormal];
+    } else {
+        [self setButton:self.fanSpeedButton iconName:@"fan"];
+    }
+
     // Button background colors
     UIColor *btnBg = [HATheme tertiaryTextColor];
     btnBg = [btnBg colorWithAlphaComponent:0.25];
 
-    self.playPauseButton.backgroundColor = btnBg;
-    self.returnHomeButton.backgroundColor = btnBg;
+    for (UIButton *btn in @[self.playPauseButton, self.returnHomeButton, self.locateButton,
+                             self.stopButton, self.spotButton, self.fanSpeedButton]) {
+        btn.backgroundColor = btnBg;
+    }
     self.powerButton.backgroundColor = isOn ? btnBg : [[HATheme secondaryTextColor] colorWithAlphaComponent:0.15];
 }
 
@@ -269,35 +328,30 @@ static const CGFloat kButtonSpacing  = 12.0;
 #pragma mark - Actions
 
 - (void)playPauseTapped {
-    if (!self.entity) return;
     [HAHaptics mediumImpact];
+
+    NSString *domain = [self.entity domain];
+    BOOL isLawnMower = [domain isEqualToString:@"lawn_mower"];
 
     NSString *state = [[self.entity vacuumStatus] ?: self.entity.state lowercaseString];
     NSString *service;
-    if ([state isEqualToString:@"cleaning"]) {
-        service = @"pause";
+    if ([state isEqualToString:@"cleaning"] || [state isEqualToString:@"mowing"]) {
+        service = isLawnMower ? @"pause" : @"pause";
     } else {
-        service = @"start";
+        service = isLawnMower ? @"start_mowing" : @"start";
     }
 
-    [[HAConnectionManager sharedManager] callService:service
-                                            inDomain:HAEntityDomainVacuum
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:service inDomain:domain];
 }
 
 - (void)returnHomeTapped {
-    if (!self.entity) return;
     [HAHaptics mediumImpact];
-
-    [[HAConnectionManager sharedManager] callService:@"return_to_base"
-                                            inDomain:HAEntityDomainVacuum
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    NSString *domain = [self.entity domain];
+    NSString *service = [domain isEqualToString:@"lawn_mower"] ? @"dock" : @"return_to_base";
+    [self callService:service inDomain:domain];
 }
 
 - (void)powerTapped {
-    if (!self.entity) return;
     [HAHaptics mediumImpact];
 
     NSString *state = [[self.entity vacuumStatus] ?: self.entity.state lowercaseString];
@@ -308,10 +362,48 @@ static const CGFloat kButtonSpacing  = 12.0;
         service = @"turn_off";
     }
 
-    [[HAConnectionManager sharedManager] callService:service
-                                            inDomain:HAEntityDomainVacuum
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:service inDomain:HAEntityDomainVacuum];
+}
+
+- (void)locateTapped {
+    [HAHaptics mediumImpact];
+    [self callService:@"locate" inDomain:HAEntityDomainVacuum];
+}
+
+- (void)stopTapped {
+    [HAHaptics mediumImpact];
+    [self callService:@"stop" inDomain:HAEntityDomainVacuum];
+}
+
+- (void)spotTapped {
+    [HAHaptics mediumImpact];
+    [self callService:@"clean_spot" inDomain:HAEntityDomainVacuum];
+}
+
+- (void)fanSpeedTapped {
+    if (!self.entity) return;
+    NSArray *speeds = HAAttrArray(self.entity.attributes, HAAttrFanSpeedList);
+    if (speeds.count == 0) return;
+    NSString *current = HAAttrString(self.entity.attributes, HAAttrFanSpeed);
+
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Fan Speed"
+                                                                  message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+    for (NSString *speed in speeds) {
+        BOOL isCurrent = [speed isEqualToString:current];
+        NSString *title = isCurrent ? [NSString stringWithFormat:@"\u2713 %@", [speed capitalizedString]] : [speed capitalizedString];
+        [alert addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
+            [self callService:@"set_fan_speed" inDomain:HAEntityDomainVacuum withData:@{@"fan_speed": speed}];
+        }]];
+    }
+    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+
+    UIResponder *responder = self;
+    while (responder && ![responder isKindOfClass:[UIViewController class]]) responder = [responder nextResponder];
+    if ([responder isKindOfClass:[UIViewController class]]) {
+        alert.popoverPresentationController.sourceView = self.fanSpeedButton;
+        [(UIViewController *)responder presentViewController:alert animated:YES completion:nil];
+    }
 }
 
 #pragma mark - Reuse
@@ -325,6 +417,10 @@ static const CGFloat kButtonSpacing  = 12.0;
     self.playPauseButton.hidden = NO;
     self.returnHomeButton.hidden = NO;
     self.powerButton.hidden = NO;
+    self.locateButton.hidden = YES;
+    self.stopButton.hidden = YES;
+    self.spotButton.hidden = YES;
+    self.fanSpeedButton.hidden = YES;
     self.statusLabel2.textColor = [HATheme secondaryTextColor];
 }
 

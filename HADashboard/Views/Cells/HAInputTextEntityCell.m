@@ -108,10 +108,7 @@
     }
 
     NSDictionary *data = @{@"value": newValue};
-    [[HAConnectionManager sharedManager] callService:@"set_value"
-                                            inDomain:@"input_text"
-                                            withData:data
-                                            entityId:self.entity.entityId];
+    [self callService:@"set_value" inDomain:@"input_text" withData:data];
 }
 
 - (void)prepareForReuse {

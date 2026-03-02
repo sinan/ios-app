@@ -9,6 +9,8 @@
 @property (nonatomic, strong) UIButton *startButton;
 @property (nonatomic, strong) UIButton *pauseButton;
 @property (nonatomic, strong) UIButton *cancelButton;
+@property (nonatomic, strong) UIButton *finishButton;
+@property (nonatomic, strong) UIButton *changeButton;
 @end
 
 @implementation HATimerEntityCell
@@ -20,11 +22,7 @@
     CGFloat padding = 10.0;
 
     // Time display
-    self.timeLabel = [[UILabel alloc] init];
-    self.timeLabel.font = [UIFont monospacedDigitSystemFontOfSize:20 weight:UIFontWeightMedium];
-    self.timeLabel.textColor = [HATheme primaryTextColor];
-    self.timeLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.timeLabel];
+    self.timeLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:20 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
 
     CGFloat buttonWidth = 56.0;
     CGFloat buttonHeight = 28.0;
@@ -96,6 +94,36 @@
         relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:buttonWidth]];
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.startButton attribute:NSLayoutAttributeHeight
         relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:buttonHeight]];
+
+    // Finish button (force-complete the timer)
+    self.finishButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.finishButton setTitle:@"Finish" forState:UIControlStateNormal];
+    self.finishButton.titleLabel.font = [UIFont boldSystemFontOfSize:12];
+    self.finishButton.backgroundColor = [HATheme accentColor];
+    [self.finishButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.finishButton.layer.cornerRadius = 4.0;
+    self.finishButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.finishButton addTarget:self action:@selector(finishTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.finishButton];
+
+    // Change button (set new duration)
+    self.changeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.changeButton setTitle:@"Change" forState:UIControlStateNormal];
+    self.changeButton.titleLabel.font = [UIFont boldSystemFontOfSize:12];
+    [self.changeButton setTitleColor:[HATheme accentColor] forState:UIControlStateNormal];
+    self.changeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.changeButton addTarget:self action:@selector(changeTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.changeButton];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.finishButton.trailingAnchor constraintEqualToAnchor:self.startButton.leadingAnchor constant:-buttonSpacing],
+        [self.finishButton.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-padding],
+        [self.finishButton.widthAnchor constraintEqualToConstant:buttonWidth],
+        [self.finishButton.heightAnchor constraintEqualToConstant:buttonHeight],
+        // Change button: left of time label, same Y
+        [self.changeButton.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-padding],
+        [self.changeButton.centerYAnchor constraintEqualToAnchor:self.timeLabel.centerYAnchor],
+    ]];
 }
 
 - (void)configureWithEntity:(HAEntity *)entity configItem:(HADashboardConfigItem *)configItem {
@@ -127,32 +155,72 @@
     self.startButton.enabled = available && (isIdle || isPaused);
     self.pauseButton.enabled = available && isActive;
     self.cancelButton.enabled = available && (isActive || isPaused);
+    self.finishButton.enabled = available && (isActive || isPaused);
+    self.changeButton.enabled = available;
 }
 
 #pragma mark - Actions
 
 - (void)startTapped {
-    if (!self.entity) return;
-    [[HAConnectionManager sharedManager] callService:@"start"
-                                            inDomain:HAEntityDomainTimer
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:@"start" inDomain:HAEntityDomainTimer];
 }
 
 - (void)pauseTapped {
-    if (!self.entity) return;
-    [[HAConnectionManager sharedManager] callService:@"pause"
-                                            inDomain:HAEntityDomainTimer
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:@"pause" inDomain:HAEntityDomainTimer];
 }
 
 - (void)cancelTapped {
-    if (!self.entity) return;
-    [[HAConnectionManager sharedManager] callService:@"cancel"
-                                            inDomain:HAEntityDomainTimer
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:@"cancel" inDomain:HAEntityDomainTimer];
+}
+
+- (void)finishTapped {
+    [self callService:@"finish" inDomain:HAEntityDomainTimer];
+}
+
+- (void)changeTapped {
+    UIResponder *responder = self;
+    while (responder && ![responder isKindOfClass:[UIViewController class]]) {
+        responder = [responder nextResponder];
+    }
+    UIViewController *vc = (UIViewController *)responder;
+    if (!vc) return;
+
+    UIDatePicker *picker = [[UIDatePicker alloc] init];
+    picker.datePickerMode = UIDatePickerModeCountDownTimer;
+    picker.countDownDuration = 300; // default 5 minutes
+
+    // Parse current duration as default
+    NSString *duration = [self.entity timerDuration];
+    if (duration.length > 0) {
+        NSArray *parts = [duration componentsSeparatedByString:@":"];
+        if (parts.count == 3) {
+            NSTimeInterval secs = [parts[0] doubleValue] * 3600 + [parts[1] doubleValue] * 60 + [parts[2] doubleValue];
+            if (secs > 0) picker.countDownDuration = secs;
+        }
+    }
+
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Set Duration"
+                                                                  message:@"\n\n\n\n\n\n\n"
+                                                           preferredStyle:UIAlertControllerStyleAlert];
+    [alert.view addSubview:picker];
+    picker.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+        [picker.centerXAnchor constraintEqualToAnchor:alert.view.centerXAnchor],
+        [picker.topAnchor constraintEqualToAnchor:alert.view.topAnchor constant:50],
+    ]];
+
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:@"Set" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
+        NSTimeInterval secs = picker.countDownDuration;
+        NSInteger h = (NSInteger)(secs / 3600);
+        NSInteger m = (NSInteger)((NSInteger)secs % 3600) / 60;
+        NSInteger s = (NSInteger)secs % 60;
+        NSString *dur = [NSString stringWithFormat:@"%ld:%02ld:%02ld", (long)h, (long)m, (long)s];
+        [weakSelf callService:@"change" inDomain:HAEntityDomainTimer withData:@{@"duration": dur}];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+
+    [vc presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)prepareForReuse {
@@ -162,6 +230,7 @@
     self.startButton.backgroundColor = [HATheme successColor];
     self.pauseButton.backgroundColor = [HATheme warningColor];
     self.cancelButton.backgroundColor = [HATheme destructiveColor];
+    self.finishButton.backgroundColor = [HATheme accentColor];
 }
 
 @end

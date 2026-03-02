@@ -131,10 +131,7 @@
             (long)comp.hour, (long)comp.minute, (long)comp.second];
     }
 
-    [[HAConnectionManager sharedManager] callService:@"set_datetime"
-                                            inDomain:@"input_datetime"
-                                            withData:data
-                                            entityId:self.entity.entityId];
+    [self callService:@"set_datetime" inDomain:@"input_datetime" withData:data];
 }
 
 - (void)prepareForReuse {

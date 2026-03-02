@@ -1,6 +1,7 @@
 #import "HAEntityDetailSection.h"
 #import "HAEntity.h"
 #import "HATheme.h"
+#import "HASwitch.h"
 #import "HAHaptics.h"
 #import "HAEntityDisplayHelper.h"
 #import "HAColorWheelView.h"
@@ -17,6 +18,7 @@
 @property (nonatomic, strong) UISlider *colorTempSlider;
 @property (nonatomic, strong) UILabel *colorTempLabel;
 @property (nonatomic, strong) UIButton *effectButton;
+@property (nonatomic, strong) UIButton *flashButton;
 @property (nonatomic, weak) HAEntity *entity;
 @property (nonatomic, weak) UIView *containerRef;
 @property (nonatomic, assign) BOOL hasColorTemp;
@@ -229,6 +231,25 @@
         prevAnchor = self.effectButton;
     }
 
+    // Flash button (quick identify blink)
+    self.flashButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.flashButton setTitle:@"\u26A1 Flash" forState:UIControlStateNormal];
+    self.flashButton.titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+    self.flashButton.backgroundColor = [HATheme buttonBackgroundColor];
+    self.flashButton.layer.cornerRadius = 8;
+    self.flashButton.clipsToBounds = YES;
+    self.flashButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.flashButton addTarget:self action:@selector(flashTapped) forControlEvents:UIControlEventTouchUpInside];
+    [container addSubview:self.flashButton];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.flashButton.topAnchor constraintEqualToAnchor:prevAnchor.bottomAnchor constant:12],
+        [self.flashButton.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
+        [self.flashButton.widthAnchor constraintEqualToConstant:100],
+        [self.flashButton.heightAnchor constraintEqualToConstant:36],
+    ]];
+    prevAnchor = self.flashButton;
+
     // Scene chips (scenes in the same area as this light)
     if (self.areaScenes.count > 0) {
         UILabel *scenesHeader = [[UILabel alloc] init];
@@ -268,6 +289,7 @@
     if (self.hasHSColor) h += 232; // label + wheel + spacing
     if (self.hasColorTemp) h += 58; // label + gradient slider + spacing
     if (self.hasEffects) h += 48; // button
+    h += 48; // flash button
     if (self.areaScenes.count > 0) h += 64; // label + chips row
     return h;
 }
@@ -301,6 +323,8 @@
         [self.effectButton setTitle:[NSString stringWithFormat:@"Effect: %@  \u25BE", title] forState:UIControlStateNormal];
         self.effectButton.enabled = isOn;
     }
+
+    self.flashButton.enabled = isOn;
 
     // Color wheel
     if (self.colorWheel) {
@@ -385,6 +409,13 @@
 }
 
 #pragma mark - HAColorWheelViewDelegate
+
+- (void)flashTapped {
+    HAEntity *entity = self.entity;
+    if (!entity || !self.serviceBlock) return;
+    [HAHaptics mediumImpact];
+    self.serviceBlock(@"turn_on", [entity domain], @{@"flash": @"short"}, entity.entityId);
+}
 
 - (void)colorWheelView:(HAColorWheelView *)view didChangeHue:(CGFloat)hue saturation:(CGFloat)saturation {
     self.colorLabel.text = [NSString stringWithFormat:@"H: %.0f\u00B0  S: %.0f%%", hue, saturation];
@@ -507,6 +538,8 @@
 @property (nonatomic, strong) UISegmentedControl *modeControl;
 @property (nonatomic, strong) UILabel *fanModeLabel;
 @property (nonatomic, strong) UISegmentedControl *fanModeControl;
+@property (nonatomic, strong) UISwitch *auxHeatSwitch;
+@property (nonatomic, strong) UILabel *auxHeatLabel;
 @property (nonatomic, weak) HAEntity *entity;
 @end
 
@@ -579,6 +612,30 @@
         bottomView = self.fanModeControl;
     }
 
+    // Aux heat toggle (when entity reports aux_heat attribute)
+    BOOL hasAuxHeat = (entity.attributes[@"aux_heat"] != nil);
+    if (hasAuxHeat) {
+        self.auxHeatLabel = [[UILabel alloc] init];
+        self.auxHeatLabel.text = @"Aux Heat";
+        self.auxHeatLabel.font = [UIFont systemFontOfSize:14];
+        self.auxHeatLabel.textColor = [HATheme primaryTextColor];
+        self.auxHeatLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        [container addSubview:self.auxHeatLabel];
+
+        self.auxHeatSwitch = [[UISwitch alloc] init];
+        self.auxHeatSwitch.translatesAutoresizingMaskIntoConstraints = NO;
+        [self.auxHeatSwitch addTarget:self action:@selector(auxHeatChanged:) forControlEvents:UIControlEventValueChanged];
+        [container addSubview:self.auxHeatSwitch];
+
+        [NSLayoutConstraint activateConstraints:@[
+            [self.auxHeatLabel.topAnchor constraintEqualToAnchor:bottomView.bottomAnchor constant:12],
+            [self.auxHeatLabel.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
+            [self.auxHeatSwitch.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
+            [self.auxHeatSwitch.centerYAnchor constraintEqualToAnchor:self.auxHeatLabel.centerYAnchor],
+        ]];
+        bottomView = self.auxHeatLabel;
+    }
+
     [NSLayoutConstraint activateConstraints:@[
         [self.targetLabel.topAnchor constraintEqualToAnchor:container.topAnchor],
         [self.targetLabel.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
@@ -598,8 +655,10 @@
 }
 
 - (CGFloat)preferredHeight {
-    BOOL hasFanModes = self.fanModeControl != nil;
-    return hasFanModes ? 130 : 80;
+    CGFloat h = 80; // base: target + mode
+    if (self.fanModeControl) h += 50;
+    if (self.auxHeatSwitch) h += 40;
+    return h;
 }
 
 - (void)updateWithEntity:(HAEntity *)entity {
@@ -637,6 +696,13 @@
             self.fanModeControl.selectedSegmentIndex = -1;
         }
     }
+
+    // Aux heat
+    if (self.auxHeatSwitch) {
+        BOOL auxOn = [entity.attributes[@"aux_heat"] isKindOfClass:[NSNumber class]]
+            ? [entity.attributes[@"aux_heat"] boolValue] : NO;
+        self.auxHeatSwitch.on = auxOn;
+    }
 }
 
 - (void)stepperChanged:(UIStepper *)sender {
@@ -667,6 +733,12 @@
         [HAHaptics lightImpact];
         self.serviceBlock(@"set_fan_mode", @"climate", @{@"fan_mode": fanMode}, self.entity.entityId);
     }
+}
+
+- (void)auxHeatChanged:(UISwitch *)sender {
+    if (!self.entity || !self.serviceBlock) return;
+    [HAHaptics lightImpact];
+    self.serviceBlock(@"set_aux_heat", @"climate", @{@"aux_heat": @(sender.isOn)}, self.entity.entityId);
 }
 
 @end
@@ -881,7 +953,7 @@
     self.entity = entity;
     UIView *container = [[UIView alloc] init];
 
-    self.toggleSwitch = [[UISwitch alloc] init];
+    self.toggleSwitch = [[HASwitch alloc] init];
     self.toggleSwitch.translatesAutoresizingMaskIntoConstraints = NO;
     [self.toggleSwitch addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
     [container addSubview:self.toggleSwitch];
@@ -1387,7 +1459,7 @@
     self.oscillateLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [container addSubview:self.oscillateLabel];
 
-    self.oscillateSwitch = [[UISwitch alloc] init];
+    self.oscillateSwitch = [[HASwitch alloc] init];
     self.oscillateSwitch.translatesAutoresizingMaskIntoConstraints = NO;
     [self.oscillateSwitch addTarget:self action:@selector(oscillateChanged:) forControlEvents:UIControlEventValueChanged];
     [container addSubview:self.oscillateSwitch];

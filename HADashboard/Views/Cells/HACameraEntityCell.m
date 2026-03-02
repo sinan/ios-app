@@ -23,12 +23,17 @@ static const NSInteger kOverlayButtonTagBase = 9000;
 @property (nonatomic, strong) UIImageView *snapshotView;
 @property (nonatomic, strong) UIActivityIndicatorView *loadingSpinner;
 @property (nonatomic, strong) UILabel *errorLabel;
+@property (nonatomic, strong) UILabel *stateBadge;
 @property (nonatomic, strong) NSTimer *refreshTimer;
 @property (nonatomic, strong) NSURLSession *imageSession;
 @property (nonatomic, strong) NSURLSessionDataTask *currentTask;
 @property (nonatomic, copy)   NSString *currentEntityId;
 @property (nonatomic, assign) BOOL needsSnapshotLoad;
 @property (nonatomic, assign) NSInteger consecutiveFailures;
+
+// Camera service buttons (power toggle + snapshot)
+@property (nonatomic, strong) UIButton *cameraPowerButton;
+@property (nonatomic, strong) UIButton *cameraSnapshotButton;
 
 // Overlay action buttons
 @property (nonatomic, strong) UIView *overlayBar;
@@ -113,6 +118,67 @@ static const NSInteger kOverlayButtonTagBase = 9000;
     [self.snapshotView addConstraint:[NSLayoutConstraint constraintWithItem:self.errorLabel attribute:NSLayoutAttributeLeading
         relatedBy:NSLayoutRelationGreaterThanOrEqual toItem:self.snapshotView attribute:NSLayoutAttributeLeading multiplier:1 constant:padding]];
 
+    // State badge (recording/streaming indicator, top-right corner)
+    self.stateBadge = [[UILabel alloc] init];
+    self.stateBadge.font = [UIFont systemFontOfSize:9 weight:UIFontWeightBold];
+    self.stateBadge.textColor = [UIColor whiteColor];
+    self.stateBadge.textAlignment = NSTextAlignmentCenter;
+    self.stateBadge.backgroundColor = [[UIColor redColor] colorWithAlphaComponent:0.8];
+    self.stateBadge.layer.cornerRadius = 4;
+    self.stateBadge.clipsToBounds = YES;
+    self.stateBadge.translatesAutoresizingMaskIntoConstraints = NO;
+    self.stateBadge.hidden = YES;
+    [self.snapshotView addSubview:self.stateBadge];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.stateBadge.topAnchor constraintEqualToAnchor:self.snapshotView.topAnchor constant:6],
+        [self.stateBadge.trailingAnchor constraintEqualToAnchor:self.snapshotView.trailingAnchor constant:-6],
+        [self.stateBadge.heightAnchor constraintEqualToConstant:16],
+        [self.stateBadge.widthAnchor constraintGreaterThanOrEqualToConstant:40],
+    ]];
+
+    // Camera power toggle button (top-left of snapshot)
+    self.cameraPowerButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    self.cameraPowerButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5];
+    self.cameraPowerButton.layer.cornerRadius = 14;
+    self.cameraPowerButton.clipsToBounds = YES;
+    self.cameraPowerButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.cameraPowerButton.hidden = YES;
+    [self.cameraPowerButton addTarget:self action:@selector(cameraPowerTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.snapshotView addSubview:self.cameraPowerButton];
+
+    // Camera snapshot button (left of power)
+    self.cameraSnapshotButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    self.cameraSnapshotButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5];
+    self.cameraSnapshotButton.layer.cornerRadius = 14;
+    self.cameraSnapshotButton.clipsToBounds = YES;
+    self.cameraSnapshotButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.cameraSnapshotButton.hidden = YES;
+    [self.cameraSnapshotButton addTarget:self action:@selector(cameraSnapshotTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.snapshotView addSubview:self.cameraSnapshotButton];
+
+    // Set icons via MDI glyphs
+    NSString *powerGlyph = [HAIconMapper glyphForIconName:@"power"] ?: @"\u23FB";
+    NSString *snapGlyph = [HAIconMapper glyphForIconName:@"camera"] ?: @"\U0001F4F7";
+    UIFont *iconFont = [HAIconMapper mdiFontOfSize:14];
+    [self.cameraPowerButton setAttributedTitle:[[NSAttributedString alloc] initWithString:powerGlyph
+        attributes:@{NSFontAttributeName: iconFont, NSForegroundColorAttributeName: [UIColor whiteColor]}]
+        forState:UIControlStateNormal];
+    [self.cameraSnapshotButton setAttributedTitle:[[NSAttributedString alloc] initWithString:snapGlyph
+        attributes:@{NSFontAttributeName: iconFont, NSForegroundColorAttributeName: [UIColor whiteColor]}]
+        forState:UIControlStateNormal];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.cameraPowerButton.topAnchor constraintEqualToAnchor:self.snapshotView.topAnchor constant:6],
+        [self.cameraPowerButton.leadingAnchor constraintEqualToAnchor:self.snapshotView.leadingAnchor constant:6],
+        [self.cameraPowerButton.widthAnchor constraintEqualToConstant:28],
+        [self.cameraPowerButton.heightAnchor constraintEqualToConstant:28],
+        [self.cameraSnapshotButton.topAnchor constraintEqualToAnchor:self.snapshotView.topAnchor constant:6],
+        [self.cameraSnapshotButton.leadingAnchor constraintEqualToAnchor:self.cameraPowerButton.trailingAnchor constant:4],
+        [self.cameraSnapshotButton.widthAnchor constraintEqualToConstant:28],
+        [self.cameraSnapshotButton.heightAnchor constraintEqualToConstant:28],
+    ]];
+
     // Shared session for image fetches — no caching to always get fresh frames
     NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
     config.timeoutIntervalForRequest = 8.0;
@@ -152,6 +218,20 @@ static const NSInteger kOverlayButtonTagBase = 9000;
 
     self.errorLabel.hidden = YES;
 
+    // State badge: show recording/streaming indicator
+    NSString *camState = entity.state;
+    if ([camState isEqualToString:@"recording"]) {
+        self.stateBadge.text = @" REC ";
+        self.stateBadge.backgroundColor = [[UIColor redColor] colorWithAlphaComponent:0.8];
+        self.stateBadge.hidden = NO;
+    } else if ([camState isEqualToString:@"streaming"]) {
+        self.stateBadge.text = @" LIVE ";
+        self.stateBadge.backgroundColor = [[UIColor systemGreenColor] colorWithAlphaComponent:0.8];
+        self.stateBadge.hidden = NO;
+    } else {
+        self.stateBadge.hidden = YES;
+    }
+
     if (entityChanged) {
         self.snapshotView.image = nil;
         self.consecutiveFailures = 0;
@@ -159,8 +239,30 @@ static const NSInteger kOverlayButtonTagBase = 9000;
         self.needsSnapshotLoad = YES;
     }
 
+    // Camera service buttons: show when entity is available
+    NSInteger features = [entity supportedFeatures];
+    BOOL supportsTurnOn = (features & 1) != 0;
+    BOOL supportsTurnOff = (features & 2) != 0;
+    self.cameraPowerButton.hidden = !(supportsTurnOn || supportsTurnOff) || !entity.isAvailable;
+    // Snapshot is always available for cameras
+    self.cameraSnapshotButton.hidden = !entity.isAvailable;
+
     // Configure overlay action buttons from customProperties
     [self configureOverlayElementsFromConfigItem:configItem];
+}
+
+#pragma mark - Camera Service Actions
+
+- (void)cameraPowerTapped {
+    if (!self.entity) return;
+    NSString *state = self.entity.state;
+    NSString *service = [state isEqualToString:@"off"] ? @"turn_on" : @"turn_off";
+    [self callService:service inDomain:@"camera"];
+}
+
+- (void)cameraSnapshotTapped {
+    if (!self.entity) return;
+    [self callService:@"snapshot" inDomain:@"camera" withData:@{@"filename": @"/config/www/snapshot.jpg"}];
 }
 
 #pragma mark - Overlay Action Buttons

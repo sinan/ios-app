@@ -10,6 +10,10 @@
 @property (nonatomic, strong) UIButton *stopButton;
 @property (nonatomic, strong) UIButton *closeButton;
 @property (nonatomic, strong) UILabel *positionLabel;
+@property (nonatomic, strong) UISlider *positionSlider;
+@property (nonatomic, strong) UISlider *tiltSlider;
+@property (nonatomic, strong) UILabel *tiltLabel;
+@property (nonatomic, assign) BOOL isTrackingSlider;
 @end
 
 @implementation HACoverEntityCell
@@ -29,12 +33,8 @@
 
     self.stopButton.backgroundColor = [HATheme buttonBackgroundColor];
 
-    self.positionLabel = [[UILabel alloc] init];
-    self.positionLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular];
-    self.positionLabel.textColor = [HATheme secondaryTextColor];
+    self.positionLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
     self.positionLabel.textAlignment = NSTextAlignmentRight;
-    self.positionLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.positionLabel];
 
     // Position label: top-right
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.positionLabel attribute:NSLayoutAttributeTrailing
@@ -69,6 +69,48 @@
         relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:btnWidth]];
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.closeButton attribute:NSLayoutAttributeHeight
         relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:btnHeight]];
+
+    // Position slider — between buttons and name area
+    self.positionSlider = [[UISlider alloc] init];
+    self.positionSlider.translatesAutoresizingMaskIntoConstraints = NO;
+    self.positionSlider.minimumValue = 0;
+    self.positionSlider.maximumValue = 100;
+    self.positionSlider.hidden = YES;
+    [self.positionSlider addTarget:self action:@selector(posSliderTouchDown) forControlEvents:UIControlEventTouchDown];
+    [self.positionSlider addTarget:self action:@selector(posSliderChanged) forControlEvents:UIControlEventValueChanged];
+    [self.positionSlider addTarget:self action:@selector(posSliderTouchUp) forControlEvents:UIControlEventTouchUpInside];
+    [self.positionSlider addTarget:self action:@selector(posSliderTouchUp) forControlEvents:UIControlEventTouchUpOutside];
+    [self.contentView addSubview:self.positionSlider];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.positionSlider.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:padding],
+        [self.positionSlider.trailingAnchor constraintEqualToAnchor:self.positionLabel.leadingAnchor constant:-8],
+        [self.positionSlider.bottomAnchor constraintEqualToAnchor:self.openButton.topAnchor constant:-6],
+    ]];
+
+    // Tilt slider + label
+    self.tiltLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:10 weight:UIFontWeightRegular]
+                                   color:[HATheme secondaryTextColor] lines:1];
+    self.tiltLabel.hidden = YES;
+
+    self.tiltSlider = [[UISlider alloc] init];
+    self.tiltSlider.translatesAutoresizingMaskIntoConstraints = NO;
+    self.tiltSlider.minimumValue = 0;
+    self.tiltSlider.maximumValue = 100;
+    self.tiltSlider.hidden = YES;
+    [self.tiltSlider addTarget:self action:@selector(tiltSliderTouchDown) forControlEvents:UIControlEventTouchDown];
+    [self.tiltSlider addTarget:self action:@selector(tiltSliderChanged) forControlEvents:UIControlEventValueChanged];
+    [self.tiltSlider addTarget:self action:@selector(tiltSliderTouchUp) forControlEvents:UIControlEventTouchUpInside];
+    [self.tiltSlider addTarget:self action:@selector(tiltSliderTouchUp) forControlEvents:UIControlEventTouchUpOutside];
+    [self.contentView addSubview:self.tiltSlider];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.tiltLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-padding],
+        [self.tiltLabel.centerYAnchor constraintEqualToAnchor:self.positionSlider.centerYAnchor],
+        [self.tiltSlider.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:padding],
+        [self.tiltSlider.trailingAnchor constraintEqualToAnchor:self.tiltLabel.leadingAnchor constant:-4],
+        [self.tiltSlider.bottomAnchor constraintEqualToAnchor:self.positionSlider.topAnchor constant:-4],
+    ]];
 }
 
 - (UIButton *)makeButtonWithTitle:(NSString *)title action:(SEL)action {
@@ -87,17 +129,50 @@
     [super configureWithEntity:entity configItem:configItem];
 
     BOOL available = entity.isAvailable;
+    // Filter buttons by supported_features bitmask (HA cover feature flags)
+    // SUPPORT_OPEN=0x01, SUPPORT_CLOSE=0x02, SUPPORT_STOP=0x08
+    NSInteger features = [entity supportedFeatures];
+    BOOL hasFeatures = (features > 0); // 0 means not reported — show all
+    self.openButton.hidden  = hasFeatures && !(features & 0x01);
+    self.closeButton.hidden = hasFeatures && !(features & 0x02);
+    self.stopButton.hidden  = hasFeatures && !(features & 0x08);
     self.openButton.enabled = available;
     self.stopButton.enabled = available;
     self.closeButton.enabled = available;
 
+    // Position slider + label
     NSInteger position = [entity coverPosition];
     NSNumber *posAttr = HAAttrNumber(entity.attributes, HAAttrCurrentPosition);
-    if (posAttr) {
+    BOOL hasPosition = (posAttr != nil) && (features == 0 || (features & 0x04)); // SUPPORT_SET_POSITION=0x04
+    if (hasPosition) {
         self.positionLabel.text = [NSString stringWithFormat:@"%ld%%", (long)position];
         self.positionLabel.hidden = NO;
+        self.positionSlider.hidden = NO;
+        self.positionSlider.enabled = available;
+        if (!self.isTrackingSlider) {
+            self.positionSlider.value = position;
+        }
+        self.positionSlider.minimumTrackTintColor = [HATheme activeTintColor];
     } else {
         self.positionLabel.hidden = YES;
+        self.positionSlider.hidden = YES;
+    }
+
+    // Tilt slider
+    NSNumber *tiltAttr = entity.attributes[@"current_tilt_position"];
+    BOOL hasTilt = ([tiltAttr isKindOfClass:[NSNumber class]]);
+    if (hasTilt) {
+        self.tiltSlider.hidden = NO;
+        self.tiltSlider.enabled = available;
+        self.tiltLabel.hidden = NO;
+        self.tiltLabel.text = [NSString stringWithFormat:@"Tilt %ld%%", (long)[tiltAttr integerValue]];
+        if (!self.isTrackingSlider) {
+            self.tiltSlider.value = [tiltAttr floatValue];
+        }
+        self.tiltSlider.minimumTrackTintColor = [HATheme activeTintColor];
+    } else {
+        self.tiltSlider.hidden = YES;
+        self.tiltLabel.hidden = YES;
     }
 
     // Highlight state
@@ -113,43 +188,74 @@
 
 #pragma mark - Actions
 
+- (NSString *)serviceDomain {
+    // Support both cover and valve domains — same UI, different service names
+    return [self.entity domain] ?: @"cover";
+}
+
 - (void)openTapped {
-    if (!self.entity) return;
-
     [HAHaptics mediumImpact];
-
-    [[HAConnectionManager sharedManager] callService:@"open_cover"
-                                            inDomain:@"cover"
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    NSString *domain = [self serviceDomain];
+    NSString *service = [domain isEqualToString:@"valve"] ? @"open_valve" : @"open_cover";
+    [self callService:service inDomain:domain];
 }
 
 - (void)stopTapped {
-    if (!self.entity) return;
-
     [HAHaptics mediumImpact];
-
-    [[HAConnectionManager sharedManager] callService:@"stop_cover"
-                                            inDomain:@"cover"
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    NSString *domain = [self serviceDomain];
+    NSString *service = [domain isEqualToString:@"valve"] ? @"stop_valve" : @"stop_cover";
+    [self callService:service inDomain:domain];
 }
 
 - (void)closeTapped {
-    if (!self.entity) return;
-
     [HAHaptics mediumImpact];
+    NSString *domain = [self serviceDomain];
+    NSString *service = [domain isEqualToString:@"valve"] ? @"close_valve" : @"close_cover";
+    [self callService:service inDomain:domain];
+}
 
-    [[HAConnectionManager sharedManager] callService:@"close_cover"
-                                            inDomain:@"cover"
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+#pragma mark - Position Slider
+
+- (void)posSliderTouchDown { self.isTrackingSlider = YES; }
+
+- (void)posSliderChanged {
+    self.positionLabel.text = [NSString stringWithFormat:@"%.0f%%", self.positionSlider.value];
+}
+
+- (void)posSliderTouchUp {
+    self.isTrackingSlider = NO;
+    [HAHaptics lightImpact];
+    NSString *domain = [self serviceDomain];
+    NSString *service = [domain isEqualToString:@"valve"] ? @"set_valve_position" : @"set_cover_position";
+    [self callService:service inDomain:domain
+             withData:@{@"position": @((NSInteger)self.positionSlider.value)}];
+}
+
+#pragma mark - Tilt Slider
+
+- (void)tiltSliderTouchDown { self.isTrackingSlider = YES; }
+
+- (void)tiltSliderChanged {
+    self.tiltLabel.text = [NSString stringWithFormat:@"Tilt %.0f%%", self.tiltSlider.value];
+}
+
+- (void)tiltSliderTouchUp {
+    self.isTrackingSlider = NO;
+    [HAHaptics lightImpact];
+    NSString *domain = [self serviceDomain];
+    // Valve doesn't have tilt, but keep the service call generic
+    [self callService:@"set_cover_tilt_position" inDomain:domain
+             withData:@{@"tilt_position": @((NSInteger)self.tiltSlider.value)}];
 }
 
 - (void)prepareForReuse {
     [super prepareForReuse];
     self.positionLabel.text = nil;
     self.positionLabel.hidden = YES;
+    self.positionSlider.hidden = YES;
+    self.tiltSlider.hidden = YES;
+    self.tiltLabel.hidden = YES;
+    self.isTrackingSlider = NO;
     self.contentView.backgroundColor = [HATheme cellBackgroundColor];
     self.positionLabel.textColor = [HATheme secondaryTextColor];
     self.openButton.backgroundColor = [HATheme buttonBackgroundColor];

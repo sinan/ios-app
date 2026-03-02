@@ -93,9 +93,15 @@
 
     BOOL hasTarget = targetTemp != nil && ![mode isEqualToString:@"off"];
     self.tempStepper.hidden = !hasTarget;
+    self.tempStepper.enabled = hasTarget && entity.isAvailable;
     self.targetTempLabel.hidden = !hasTarget;
 
     if (hasTarget) {
+        // Update stepper range/step from entity attributes (matches detail view behavior)
+        self.tempStepper.minimumValue = entity.minTemperature.doubleValue;
+        self.tempStepper.maximumValue = entity.maxTemperature.doubleValue;
+        double stepVal = HAAttrDouble(entity.attributes, @"target_temp_step", 0.5);
+        if (stepVal > 0) self.tempStepper.stepValue = stepVal;
         self.tempStepper.value = targetTemp.doubleValue;
         self.targetTempLabel.text = [NSString stringWithFormat:@"Target: %.1f\u00B0", targetTemp.doubleValue];
     }

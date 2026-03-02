@@ -28,21 +28,60 @@
 #pragma mark - Color Temperature
 
 - (NSNumber *)colorTempKelvin {
-    return HAAttrNumber(self.attributes, HAAttrColorTempKelvin);
+    NSNumber *kelvin = HAAttrNumber(self.attributes, HAAttrColorTempKelvin);
+    if (kelvin) return kelvin;
+    // Fallback: convert from mireds (1,000,000 / mireds = kelvin)
+    NSNumber *mireds = HAAttrNumber(self.attributes, @"color_temp");
+    if (mireds && [mireds doubleValue] > 0) {
+        return @(1000000.0 / [mireds doubleValue]);
+    }
+    return nil;
 }
 
 - (NSNumber *)minColorTempKelvin {
-    return HAAttrNumber(self.attributes, HAAttrMinColorTempKelvin);
+    NSNumber *kelvin = HAAttrNumber(self.attributes, HAAttrMinColorTempKelvin);
+    if (kelvin) return kelvin;
+    // Fallback: max_mireds → min_kelvin (inverse relationship)
+    NSNumber *maxMireds = HAAttrNumber(self.attributes, @"max_mireds");
+    if (maxMireds && [maxMireds doubleValue] > 0) {
+        return @(1000000.0 / [maxMireds doubleValue]);
+    }
+    return nil;
 }
 
 - (NSNumber *)maxColorTempKelvin {
-    return HAAttrNumber(self.attributes, HAAttrMaxColorTempKelvin);
+    NSNumber *kelvin = HAAttrNumber(self.attributes, HAAttrMaxColorTempKelvin);
+    if (kelvin) return kelvin;
+    // Fallback: min_mireds → max_kelvin (inverse relationship)
+    NSNumber *minMireds = HAAttrNumber(self.attributes, @"min_mireds");
+    if (minMireds && [minMireds doubleValue] > 0) {
+        return @(1000000.0 / [minMireds doubleValue]);
+    }
+    return nil;
 }
 
 #pragma mark - HS Color
 
 - (NSArray<NSNumber *> *)hsColor {
     return HAAttrArray(self.attributes, HAAttrHSColor);
+}
+
+#pragma mark - RGB / RGBW / RGBWW / XY Color
+
+- (NSArray<NSNumber *> *)rgbColor {
+    return HAAttrArray(self.attributes, @"rgb_color");
+}
+
+- (NSArray<NSNumber *> *)rgbwColor {
+    return HAAttrArray(self.attributes, @"rgbw_color");
+}
+
+- (NSArray<NSNumber *> *)rgbwwColor {
+    return HAAttrArray(self.attributes, @"rgbww_color");
+}
+
+- (NSArray<NSNumber *> *)xyColor {
+    return HAAttrArray(self.attributes, @"xy_color");
 }
 
 #pragma mark - Effects
@@ -92,6 +131,35 @@
 
 - (BOOL)supportsEffects {
     return [self effectList].count > 0;
+}
+
+#pragma mark - Current Color
+
+- (UIColor *)currentColor {
+    // Try hs_color first (most common)
+    NSArray<NSNumber *> *hs = [self hsColor];
+    if (hs.count >= 2) {
+        CGFloat hue = [hs[0] doubleValue] / 360.0;
+        CGFloat sat = [hs[1] doubleValue] / 100.0;
+        return [UIColor colorWithHue:hue saturation:sat brightness:1.0 alpha:1.0];
+    }
+    // Fallback: rgb_color
+    NSArray<NSNumber *> *rgb = [self rgbColor];
+    if (rgb.count >= 3) {
+        return [UIColor colorWithRed:[rgb[0] doubleValue] / 255.0
+                               green:[rgb[1] doubleValue] / 255.0
+                                blue:[rgb[2] doubleValue] / 255.0
+                               alpha:1.0];
+    }
+    // Fallback: rgbw_color (ignore white channel for display)
+    NSArray<NSNumber *> *rgbw = [self rgbwColor];
+    if (rgbw.count >= 3) {
+        return [UIColor colorWithRed:[rgbw[0] doubleValue] / 255.0
+                               green:[rgbw[1] doubleValue] / 255.0
+                                blue:[rgbw[2] doubleValue] / 255.0
+                               alpha:1.0];
+    }
+    return nil;
 }
 
 @end

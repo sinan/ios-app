@@ -21,12 +21,9 @@
     CGFloat padding = 10.0;
 
     // Value label (large, prominent)
-    self.valueLabel = [[UILabel alloc] init];
-    self.valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightBold];
-    self.valueLabel.textColor = [HATheme primaryTextColor];
+    self.valueLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightBold]
+                                    color:[HATheme primaryTextColor] lines:1];
     self.valueLabel.textAlignment = NSTextAlignmentRight;
-    self.valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.valueLabel];
 
     CGFloat buttonSize = 32.0;
     CGFloat buttonSpacing = 6.0;
@@ -99,44 +96,32 @@
     self.valueLabel.text = [NSString stringWithFormat:@"%ld", (long)[entity counterValue]];
 
     BOOL available = entity.isAvailable;
-    self.incrementButton.enabled = available;
-    self.decrementButton.enabled = available;
+    NSInteger value = [entity counterValue];
+    // Clamp buttons at min/max if defined
+    NSNumber *minAttr = entity.attributes[@"minimum"];
+    NSNumber *maxAttr = entity.attributes[@"maximum"];
+    BOOL atMin = ([minAttr isKindOfClass:[NSNumber class]] && value <= [minAttr integerValue]);
+    BOOL atMax = ([maxAttr isKindOfClass:[NSNumber class]] && value >= [maxAttr integerValue]);
+    self.incrementButton.enabled = available && !atMax;
+    self.decrementButton.enabled = available && !atMin;
     self.resetButton.enabled = available;
 }
 
 #pragma mark - Actions
 
 - (void)incrementTapped {
-    if (!self.entity) return;
-
     [HAHaptics lightImpact];
-
-    [[HAConnectionManager sharedManager] callService:@"increment"
-                                            inDomain:HAEntityDomainCounter
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:@"increment" inDomain:HAEntityDomainCounter];
 }
 
 - (void)decrementTapped {
-    if (!self.entity) return;
-
     [HAHaptics lightImpact];
-
-    [[HAConnectionManager sharedManager] callService:@"decrement"
-                                            inDomain:HAEntityDomainCounter
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:@"decrement" inDomain:HAEntityDomainCounter];
 }
 
 - (void)resetTapped {
-    if (!self.entity) return;
-
     [HAHaptics mediumImpact];
-
-    [[HAConnectionManager sharedManager] callService:@"reset"
-                                            inDomain:HAEntityDomainCounter
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:@"reset" inDomain:HAEntityDomainCounter];
 }
 
 - (void)prepareForReuse {

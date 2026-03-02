@@ -33,14 +33,10 @@ static const NSTimeInterval kPressFeedbackDuration = 1.5;
     [self.contentView addSubview:self.pressButton];
 
     // Feedback label
-    self.feedbackLabel = [[UILabel alloc] init];
+    self.feedbackLabel = [self labelWithFont:[UIFont boldSystemFontOfSize:13] color:[HATheme successColor] lines:1];
     self.feedbackLabel.text = @"Pressed";
-    self.feedbackLabel.font = [UIFont boldSystemFontOfSize:13];
-    self.feedbackLabel.textColor = [HATheme successColor];
     self.feedbackLabel.textAlignment = NSTextAlignmentCenter;
     self.feedbackLabel.alpha = 0.0;
-    self.feedbackLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.feedbackLabel];
 
     // Press button: right side, vertically centered
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.pressButton attribute:NSLayoutAttributeTrailing
@@ -79,11 +75,7 @@ static const NSTimeInterval kPressFeedbackDuration = 1.5;
 
     [HAHaptics mediumImpact];
 
-    NSString *domain = [self.entity domain];
-    [[HAConnectionManager sharedManager] callService:@"press"
-                                            inDomain:domain
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:@"press" inDomain:[self.entity domain]];
 
     __weak typeof(self) weakSelf = self;
     [UIView animateWithDuration:0.2 animations:^{

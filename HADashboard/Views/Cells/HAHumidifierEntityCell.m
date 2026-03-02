@@ -3,11 +3,14 @@
 #import "HAConnectionManager.h"
 #import "HADashboardConfig.h"
 #import "HATheme.h"
+#import "HASwitch.h"
 
 @interface HAHumidifierEntityCell ()
 @property (nonatomic, strong) UISwitch *toggleSwitch;
 @property (nonatomic, strong) UISlider *humiditySlider;
 @property (nonatomic, strong) UILabel *humidityLabel;
+@property (nonatomic, strong) UILabel *currentHumidityLabel;
+@property (nonatomic, strong) UIButton *modeButton;
 @property (nonatomic, assign) BOOL sliderDragging;
 @end
 
@@ -20,18 +23,14 @@
     CGFloat padding = 10.0;
 
     // Toggle switch
-    self.toggleSwitch = [[UISwitch alloc] init];
+    self.toggleSwitch = [[HASwitch alloc] init];
     self.toggleSwitch.translatesAutoresizingMaskIntoConstraints = NO;
     [self.toggleSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
     [self.contentView addSubview:self.toggleSwitch];
 
     // Humidity label
-    self.humidityLabel = [[UILabel alloc] init];
-    self.humidityLabel.font = [UIFont monospacedDigitSystemFontOfSize:16 weight:UIFontWeightMedium];
-    self.humidityLabel.textColor = [HATheme primaryTextColor];
+    self.humidityLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:16 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
     self.humidityLabel.textAlignment = NSTextAlignmentRight;
-    self.humidityLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.humidityLabel];
 
     // Humidity slider
     self.humiditySlider = [[UISlider alloc] init];
@@ -52,6 +51,25 @@
         relatedBy:NSLayoutRelationEqual toItem:self.toggleSwitch attribute:NSLayoutAttributeLeading multiplier:1 constant:-padding]];
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.humidityLabel attribute:NSLayoutAttributeCenterY
         relatedBy:NSLayoutRelationEqual toItem:self.toggleSwitch attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]];
+
+    // Current humidity + mode label row: below name
+    self.currentHumidityLabel = [self labelWithFont:[UIFont systemFontOfSize:11] color:[HATheme secondaryTextColor] lines:1];
+
+    // Mode button
+    self.modeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.modeButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    [self.modeButton setTitleColor:[HATheme accentColor] forState:UIControlStateNormal];
+    self.modeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.modeButton.hidden = YES;
+    [self.modeButton addTarget:self action:@selector(modeTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.modeButton];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.currentHumidityLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:padding],
+        [self.currentHumidityLabel.topAnchor constraintEqualToAnchor:self.nameLabel.bottomAnchor constant:2],
+        [self.modeButton.trailingAnchor constraintEqualToAnchor:self.toggleSwitch.leadingAnchor constant:-8],
+        [self.modeButton.centerYAnchor constraintEqualToAnchor:self.currentHumidityLabel.centerYAnchor],
+    ]];
 
     // Slider: bottom
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.humiditySlider attribute:NSLayoutAttributeLeading
@@ -82,6 +100,26 @@
     NSString *display = target ? [NSString stringWithFormat:@"%.0f%%", [target floatValue]] : @"--%%";
     self.humidityLabel.text = display;
 
+    // Current humidity + action display (Tasks 3.10, 3.11)
+    NSNumber *currentH = [entity humidifierCurrentHumidity];
+    NSString *action = HAAttrString(entity.attributes, @"action");
+    NSMutableArray *infoParts = [NSMutableArray array];
+    if (currentH) [infoParts addObject:[NSString stringWithFormat:@"Current: %.0f%%", currentH.floatValue]];
+    if (action.length > 0) [infoParts addObject:[action capitalizedString]];
+    self.currentHumidityLabel.text = infoParts.count > 0 ? [infoParts componentsJoinedByString:@" · "] : nil;
+    self.currentHumidityLabel.hidden = (infoParts.count == 0);
+
+    // Mode selector (Task 3.9)
+    NSArray *modes = HAAttrArray(entity.attributes, HAAttrAvailableModes);
+    NSString *currentMode = HAAttrString(entity.attributes, HAAttrMode);
+    if (entity.isOn && modes.count > 0) {
+        NSString *title = currentMode.length > 0 ? [currentMode capitalizedString] : @"Mode";
+        [self.modeButton setTitle:title forState:UIControlStateNormal];
+        self.modeButton.hidden = NO;
+    } else {
+        self.modeButton.hidden = YES;
+    }
+
     if (entity.isOn) {
         self.contentView.backgroundColor = [HATheme coolTintColor];
     } else {
@@ -92,13 +130,34 @@
 #pragma mark - Actions
 
 - (void)switchToggled:(UISwitch *)sender {
-    if (!self.entity) return;
-
     NSString *service = sender.isOn ? @"turn_on" : @"turn_off";
-    [[HAConnectionManager sharedManager] callService:service
-                                            inDomain:HAEntityDomainHumidifier
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:service inDomain:HAEntityDomainHumidifier];
+}
+
+- (void)modeTapped {
+    if (!self.entity) return;
+    NSArray *modes = HAAttrArray(self.entity.attributes, HAAttrAvailableModes);
+    if (modes.count == 0) return;
+    NSString *current = HAAttrString(self.entity.attributes, HAAttrMode);
+
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Mode"
+                                                                  message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+    for (NSString *mode in modes) {
+        BOOL isCurrent = [mode isEqualToString:current];
+        NSString *title = isCurrent ? [NSString stringWithFormat:@"\u2713 %@", [mode capitalizedString]] : [mode capitalizedString];
+        [alert addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
+            [self callService:@"set_mode" inDomain:HAEntityDomainHumidifier withData:@{@"mode": mode}];
+        }]];
+    }
+    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+
+    UIResponder *responder = self;
+    while (responder && ![responder isKindOfClass:[UIViewController class]]) responder = [responder nextResponder];
+    if ([responder isKindOfClass:[UIViewController class]]) {
+        alert.popoverPresentationController.sourceView = self.modeButton;
+        [(UIViewController *)responder presentViewController:alert animated:YES completion:nil];
+    }
 }
 
 - (void)sliderTouchDown:(UISlider *)sender {
@@ -111,16 +170,12 @@
 
 - (void)sliderTouchUp:(UISlider *)sender {
     self.sliderDragging = NO;
-    if (!self.entity) return;
 
     float snapped = roundf(sender.value);
     sender.value = snapped;
 
     NSDictionary *data = @{@"humidity": @((NSInteger)snapped)};
-    [[HAConnectionManager sharedManager] callService:@"set_humidity"
-                                            inDomain:HAEntityDomainHumidifier
-                                            withData:data
-                                            entityId:self.entity.entityId];
+    [self callService:@"set_humidity" inDomain:HAEntityDomainHumidifier withData:data];
 }
 
 - (void)prepareForReuse {
@@ -133,6 +188,9 @@
     self.sliderDragging = NO;
     self.contentView.backgroundColor = [HATheme cellBackgroundColor];
     self.humidityLabel.textColor = [HATheme primaryTextColor];
+    self.currentHumidityLabel.hidden = YES;
+    self.currentHumidityLabel.text = nil;
+    self.modeButton.hidden = YES;
 }
 
 @end

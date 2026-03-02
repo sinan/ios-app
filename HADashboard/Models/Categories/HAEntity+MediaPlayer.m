@@ -22,4 +22,20 @@
     return HAAttrArray(self.attributes, HAAttrSoundModeList) ?: @[];
 }
 
+- (NSString *)mediaSource {
+    return HAAttrString(self.attributes, @"source");
+}
+
+- (NSArray<NSString *> *)mediaSourceList {
+    return HAAttrArray(self.attributes, @"source_list") ?: @[];
+}
+
+- (BOOL)mediaShuffle {
+    return HAAttrBool(self.attributes, @"shuffle", NO);
+}
+
+- (NSString *)mediaRepeat {
+    return HAAttrString(self.attributes, @"repeat") ?: @"off";
+}
+
 @end

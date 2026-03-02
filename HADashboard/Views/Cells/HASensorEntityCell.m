@@ -17,20 +17,13 @@
     // Override: use a large value display
     self.stateLabel.hidden = YES;
 
-    self.valueLabel = [[UILabel alloc] init];
-    self.valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightMedium];
-    self.valueLabel.textColor = [HATheme primaryTextColor];
+    self.valueLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightMedium]
+                                     color:[HATheme primaryTextColor] lines:1];
     self.valueLabel.textAlignment = NSTextAlignmentLeft;
     self.valueLabel.adjustsFontSizeToFitWidth = YES;
     self.valueLabel.minimumScaleFactor = 0.5;
-    self.valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.valueLabel];
 
-    self.unitLabel = [[UILabel alloc] init];
-    self.unitLabel.font = [UIFont systemFontOfSize:14];
-    self.unitLabel.textColor = [HATheme secondaryTextColor];
-    self.unitLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.unitLabel];
+    self.unitLabel = [self labelWithFont:[UIFont systemFontOfSize:14] color:[HATheme secondaryTextColor] lines:1];
 
     CGFloat padding = 10.0;
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.valueLabel attribute:NSLayoutAttributeLeading

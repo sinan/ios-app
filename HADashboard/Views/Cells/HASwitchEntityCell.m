@@ -1,4 +1,5 @@
 #import "HASwitchEntityCell.h"
+#import "HASwitch.h"
 #import "HAEntity.h"
 #import "HAConnectionManager.h"
 #import "HADashboardConfig.h"
@@ -14,7 +15,7 @@
 - (void)setupSubviews {
     [super setupSubviews];
 
-    self.toggleSwitch = [[UISwitch alloc] init];
+    self.toggleSwitch = [[HASwitch alloc] init];
     self.toggleSwitch.translatesAutoresizingMaskIntoConstraints = NO;
     [self.toggleSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
     [self.contentView addSubview:self.toggleSwitch];
@@ -48,10 +49,7 @@
     [HAHaptics lightImpact];
 
     NSString *service = sender.isOn ? [self.entity turnOnService] : [self.entity turnOffService];
-    [[HAConnectionManager sharedManager] callService:service
-                                            inDomain:[self.entity domain]
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:service inDomain:[self.entity domain]];
 }
 
 - (void)prepareForReuse {

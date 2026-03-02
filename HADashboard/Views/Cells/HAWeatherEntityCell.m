@@ -136,6 +136,31 @@ static const NSInteger kDefaultForecastRows = 5;
         [details addObject:[NSString stringWithFormat:@"Pressure: %.0f", pressure.doubleValue]];
     }
 
+    NSNumber *visibility = HAAttrNumber(entity.attributes, @"visibility");
+    if (visibility) {
+        [details addObject:[NSString stringWithFormat:@"Vis: %.0f", visibility.doubleValue]];
+    }
+
+    NSNumber *uvIndex = HAAttrNumber(entity.attributes, @"uv_index");
+    if (uvIndex) {
+        [details addObject:[NSString stringWithFormat:@"UV: %.0f", uvIndex.doubleValue]];
+    }
+
+    NSNumber *precipitation = HAAttrNumber(entity.attributes, @"precipitation");
+    if (precipitation) {
+        [details addObject:[NSString stringWithFormat:@"Precip: %.1f", precipitation.doubleValue]];
+    }
+
+    NSNumber *dewPoint = HAAttrNumber(entity.attributes, @"dew_point");
+    if (dewPoint) {
+        [details addObject:[NSString stringWithFormat:@"Dew: %.0f°", dewPoint.doubleValue]];
+    }
+
+    NSNumber *cloudCoverage = HAAttrNumber(entity.attributes, @"cloud_coverage");
+    if (cloudCoverage) {
+        [details addObject:[NSString stringWithFormat:@"Cloud: %.0f%%", cloudCoverage.doubleValue]];
+    }
+
     self.detailsLabel.text = [details componentsJoinedByString:@"  \u00B7  "];
 
     // Background tint based on condition

@@ -3,13 +3,18 @@
 #import "HAConnectionManager.h"
 #import "HADashboardConfig.h"
 #import "HATheme.h"
+#import "HASwitch.h"
 #import "HAHaptics.h"
 
 @interface HAFanEntityCell ()
 @property (nonatomic, strong) UISwitch *toggleSwitch;
 @property (nonatomic, strong) UISlider *speedSlider;
 @property (nonatomic, strong) UILabel *speedLabel;
-@property (nonatomic, strong) UILabel *presetLabel;
+@property (nonatomic, strong) UIButton *presetButton;
+@property (nonatomic, strong) UIButton *oscillateButton;
+@property (nonatomic, strong) UIButton *directionButton;
+@property (nonatomic, strong) UIButton *speedDownButton;
+@property (nonatomic, strong) UIButton *speedUpButton;
 @property (nonatomic, assign) BOOL sliderDragging;
 @end
 
@@ -22,25 +27,40 @@
     CGFloat padding = 10.0;
 
     // On/off toggle
-    self.toggleSwitch = [[UISwitch alloc] init];
+    self.toggleSwitch = [[HASwitch alloc] init];
     self.toggleSwitch.translatesAutoresizingMaskIntoConstraints = NO;
     [self.toggleSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
     [self.contentView addSubview:self.toggleSwitch];
 
     // Speed percentage label
-    self.speedLabel = [[UILabel alloc] init];
-    self.speedLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular];
-    self.speedLabel.textColor = [HATheme secondaryTextColor];
+    self.speedLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
     self.speedLabel.textAlignment = NSTextAlignmentRight;
-    self.speedLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.speedLabel];
 
-    // Preset mode label (below name when applicable)
-    self.presetLabel = [[UILabel alloc] init];
-    self.presetLabel.font = [UIFont systemFontOfSize:11];
-    self.presetLabel.textColor = [HATheme secondaryTextColor];
-    self.presetLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.presetLabel];
+    // Preset mode button (below name, tappable for action sheet)
+    self.presetButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.presetButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    [self.presetButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
+    self.presetButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.presetButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+    self.presetButton.hidden = YES;
+    [self.presetButton addTarget:self action:@selector(presetTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.presetButton];
+
+    // Oscillate button (small icon toggle)
+    self.oscillateButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.oscillateButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.oscillateButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.oscillateButton.hidden = YES;
+    [self.oscillateButton addTarget:self action:@selector(oscillateTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.oscillateButton];
+
+    // Direction button
+    self.directionButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.directionButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.directionButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.directionButton.hidden = YES;
+    [self.directionButton addTarget:self action:@selector(directionTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.directionButton];
 
     // Speed slider
     self.speedSlider = [[UISlider alloc] init];
@@ -58,11 +78,16 @@
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.toggleSwitch attribute:NSLayoutAttributeTop
         relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeTop multiplier:1 constant:padding]];
 
-    // Preset label: below name
-    [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.presetLabel attribute:NSLayoutAttributeLeading
-        relatedBy:NSLayoutRelationEqual toItem:self.contentView attribute:NSLayoutAttributeLeading multiplier:1 constant:padding]];
-    [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.presetLabel attribute:NSLayoutAttributeTop
-        relatedBy:NSLayoutRelationEqual toItem:self.nameLabel attribute:NSLayoutAttributeBottom multiplier:1 constant:2]];
+    // Preset button: below name
+    [NSLayoutConstraint activateConstraints:@[
+        [self.presetButton.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:padding],
+        [self.presetButton.topAnchor constraintEqualToAnchor:self.nameLabel.bottomAnchor constant:2],
+        // Oscillate + direction: right of preset, same Y
+        [self.oscillateButton.leadingAnchor constraintEqualToAnchor:self.presetButton.trailingAnchor constant:8],
+        [self.oscillateButton.centerYAnchor constraintEqualToAnchor:self.presetButton.centerYAnchor],
+        [self.directionButton.leadingAnchor constraintEqualToAnchor:self.oscillateButton.trailingAnchor constant:4],
+        [self.directionButton.centerYAnchor constraintEqualToAnchor:self.presetButton.centerYAnchor],
+    ]];
 
     // Speed slider: bottom
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.speedSlider attribute:NSLayoutAttributeLeading
@@ -79,6 +104,35 @@
         relatedBy:NSLayoutRelationEqual toItem:self.speedSlider attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]];
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.speedLabel attribute:NSLayoutAttributeWidth
         relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:44]];
+
+    // Speed +/- buttons (right side, above/below speed label)
+    CGFloat btnSize = 24.0;
+    self.speedUpButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.speedUpButton setTitle:@"+" forState:UIControlStateNormal];
+    self.speedUpButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
+    self.speedUpButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.speedUpButton.hidden = YES;
+    [self.speedUpButton addTarget:self action:@selector(speedUpTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.speedUpButton];
+
+    self.speedDownButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.speedDownButton setTitle:@"\u2212" forState:UIControlStateNormal]; // minus sign
+    self.speedDownButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
+    self.speedDownButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.speedDownButton.hidden = YES;
+    [self.speedDownButton addTarget:self action:@selector(speedDownTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.speedDownButton];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.speedUpButton.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-2],
+        [self.speedUpButton.bottomAnchor constraintEqualToAnchor:self.speedSlider.topAnchor constant:-2],
+        [self.speedUpButton.widthAnchor constraintEqualToConstant:btnSize],
+        [self.speedUpButton.heightAnchor constraintEqualToConstant:btnSize],
+        [self.speedDownButton.trailingAnchor constraintEqualToAnchor:self.speedUpButton.leadingAnchor constant:-2],
+        [self.speedDownButton.centerYAnchor constraintEqualToAnchor:self.speedUpButton.centerYAnchor],
+        [self.speedDownButton.widthAnchor constraintEqualToConstant:btnSize],
+        [self.speedDownButton.heightAnchor constraintEqualToConstant:btnSize],
+    ]];
 }
 
 - (void)configureWithEntity:(HAEntity *)entity configItem:(HADashboardConfigItem *)configItem {
@@ -96,14 +150,45 @@
     self.speedSlider.hidden = !isOn;
     self.speedLabel.hidden = !isOn;
     self.speedLabel.text = [NSString stringWithFormat:@"%ld%%", (long)speedPct];
+    self.speedUpButton.hidden = !isOn;
+    self.speedDownButton.hidden = !isOn;
+    self.speedUpButton.enabled = entity.isAvailable;
+    self.speedDownButton.enabled = entity.isAvailable;
 
-    // Show preset mode if active
+    // Preset mode (tappable)
     NSString *preset = [entity fanPresetMode];
-    if (preset && isOn) {
-        self.presetLabel.text = preset;
-        self.presetLabel.hidden = NO;
+    NSArray *presetModes = entity.attributes[@"preset_modes"];
+    if (preset && isOn && [presetModes isKindOfClass:[NSArray class]] && presetModes.count > 0) {
+        [self.presetButton setTitle:[NSString stringWithFormat:@"%@ \u25BE", [preset capitalizedString]]
+                           forState:UIControlStateNormal];
+        self.presetButton.hidden = NO;
+        self.presetButton.enabled = entity.isAvailable;
     } else {
-        self.presetLabel.hidden = YES;
+        self.presetButton.hidden = YES;
+    }
+
+    // Oscillate toggle
+    NSNumber *oscillating = entity.attributes[@"oscillating"];
+    if ([oscillating isKindOfClass:[NSNumber class]] && isOn) {
+        NSString *title = [oscillating boolValue] ? @"\u223F On" : @"\u223F Off"; // ∿
+        [self.oscillateButton setTitle:title forState:UIControlStateNormal];
+        [self.oscillateButton setTitleColor:[oscillating boolValue] ? [HATheme accentColor] : [HATheme secondaryTextColor]
+                                   forState:UIControlStateNormal];
+        self.oscillateButton.hidden = NO;
+        self.oscillateButton.enabled = entity.isAvailable;
+    } else {
+        self.oscillateButton.hidden = YES;
+    }
+
+    // Direction control
+    NSString *direction = entity.attributes[@"direction"];
+    if ([direction isKindOfClass:[NSString class]] && isOn) {
+        NSString *title = [direction isEqualToString:@"reverse"] ? @"\u21BA" : @"\u21BB"; // ↺ ↻
+        [self.directionButton setTitle:title forState:UIControlStateNormal];
+        self.directionButton.hidden = NO;
+        self.directionButton.enabled = entity.isAvailable;
+    } else {
+        self.directionButton.hidden = YES;
     }
 
     // Background tint when on
@@ -117,15 +202,10 @@
 #pragma mark - Actions
 
 - (void)switchToggled:(UISwitch *)sender {
-    if (!self.entity) return;
-
     [HAHaptics lightImpact];
 
     NSString *service = sender.isOn ? @"turn_on" : @"turn_off";
-    [[HAConnectionManager sharedManager] callService:service
-                                            inDomain:@"fan"
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    [self callService:service inDomain:@"fan"];
 }
 
 - (void)sliderTouchDown:(UISlider *)sender {
@@ -139,16 +219,63 @@
 
 - (void)sliderTouchUp:(UISlider *)sender {
     self.sliderDragging = NO;
-    if (!self.entity) return;
 
     [HAHaptics lightImpact];
 
     NSInteger pct = (NSInteger)round(sender.value);
     NSDictionary *data = @{@"percentage": @(pct)};
-    [[HAConnectionManager sharedManager] callService:@"set_percentage"
-                                            inDomain:@"fan"
-                                            withData:data
-                                            entityId:self.entity.entityId];
+    [self callService:@"set_percentage" inDomain:@"fan" withData:data];
+}
+
+- (void)presetTapped {
+    NSArray *modes = self.entity.attributes[@"preset_modes"];
+    if (![modes isKindOfClass:[NSArray class]] || modes.count == 0) return;
+    UIResponder *responder = self;
+    while (responder && ![responder isKindOfClass:[UIViewController class]]) responder = [responder nextResponder];
+    UIViewController *vc = (UIViewController *)responder;
+    if (!vc) return;
+
+    NSString *current = [self.entity fanPresetMode];
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:nil message:nil
+                                                           preferredStyle:UIAlertControllerStyleActionSheet];
+    for (NSString *mode in modes) {
+        UIAlertAction *action = [UIAlertAction actionWithTitle:[mode capitalizedString]
+                                                         style:UIAlertActionStyleDefault
+                                                       handler:^(UIAlertAction *a) {
+            [HAHaptics lightImpact];
+            [self callService:@"set_preset_mode" inDomain:@"fan" withData:@{@"preset_mode": mode}];
+        }];
+        if ([mode isEqualToString:current]) [action setValue:@YES forKey:@"checked"];
+        [sheet addAction:action];
+    }
+    [sheet addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    sheet.popoverPresentationController.sourceView = self.presetButton;
+    sheet.popoverPresentationController.sourceRect = self.presetButton.bounds;
+    [vc presentViewController:sheet animated:YES completion:nil];
+}
+
+- (void)oscillateTapped {
+    [HAHaptics lightImpact];
+    NSNumber *current = self.entity.attributes[@"oscillating"];
+    BOOL newValue = ![current boolValue];
+    [self callService:@"oscillate" inDomain:@"fan" withData:@{@"oscillating": @(newValue)}];
+}
+
+- (void)directionTapped {
+    [HAHaptics lightImpact];
+    NSString *current = self.entity.attributes[@"direction"];
+    NSString *newDir = [current isEqualToString:@"reverse"] ? @"forward" : @"reverse";
+    [self callService:@"set_direction" inDomain:@"fan" withData:@{@"direction": newDir}];
+}
+
+- (void)speedUpTapped {
+    [HAHaptics lightImpact];
+    [self callService:@"increase_speed" inDomain:@"fan"];
+}
+
+- (void)speedDownTapped {
+    [HAHaptics lightImpact];
+    [self callService:@"decrease_speed" inDomain:@"fan"];
 }
 
 - (void)prepareForReuse {
@@ -158,11 +285,14 @@
     self.speedSlider.hidden = YES;
     self.speedLabel.hidden = YES;
     self.speedLabel.text = nil;
-    self.presetLabel.hidden = YES;
+    self.presetButton.hidden = YES;
+    self.oscillateButton.hidden = YES;
+    self.directionButton.hidden = YES;
+    self.speedUpButton.hidden = YES;
+    self.speedDownButton.hidden = YES;
     self.sliderDragging = NO;
     self.contentView.backgroundColor = [HATheme cellBackgroundColor];
     self.speedLabel.textColor = [HATheme secondaryTextColor];
-    self.presetLabel.textColor = [HATheme secondaryTextColor];
 }
 
 @end

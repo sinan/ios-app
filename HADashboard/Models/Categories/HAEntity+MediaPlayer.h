@@ -10,5 +10,9 @@
 - (NSString *)mediaAppName;
 - (NSString *)mediaSoundMode;
 - (NSArray<NSString *> *)mediaSoundModes;
+- (NSString *)mediaSource;
+- (NSArray<NSString *> *)mediaSourceList;
+- (BOOL)mediaShuffle;
+- (NSString *)mediaRepeat;  // "off", "all", "one"
 
 @end

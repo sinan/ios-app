@@ -9,6 +9,7 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
 
 @interface HASceneEntityCell ()
 @property (nonatomic, strong) UIButton *activateButton;
+@property (nonatomic, strong) UIButton *stopButton;
 @property (nonatomic, strong) UILabel *feedbackLabel;
 @property (nonatomic, assign) BOOL activating;
 @end
@@ -33,14 +34,10 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
     [self.contentView addSubview:self.activateButton];
 
     // Feedback label (shown briefly after activation)
-    self.feedbackLabel = [[UILabel alloc] init];
+    self.feedbackLabel = [self labelWithFont:[UIFont boldSystemFontOfSize:13] color:[HATheme successColor] lines:1];
     self.feedbackLabel.text = @"Activated";
-    self.feedbackLabel.font = [UIFont boldSystemFontOfSize:13];
-    self.feedbackLabel.textColor = [HATheme successColor];
     self.feedbackLabel.textAlignment = NSTextAlignmentCenter;
     self.feedbackLabel.alpha = 0.0;
-    self.feedbackLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.feedbackLabel];
 
     // Activate button: centered bottom
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.activateButton attribute:NSLayoutAttributeTrailing
@@ -57,6 +54,25 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
         relatedBy:NSLayoutRelationEqual toItem:self.activateButton attribute:NSLayoutAttributeCenterX multiplier:1 constant:0]];
     [self.contentView addConstraint:[NSLayoutConstraint constraintWithItem:self.feedbackLabel attribute:NSLayoutAttributeCenterY
         relatedBy:NSLayoutRelationEqual toItem:self.activateButton attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]];
+
+    // Stop button (for running scripts)
+    self.stopButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.stopButton setTitle:@"Stop" forState:UIControlStateNormal];
+    self.stopButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
+    self.stopButton.backgroundColor = [HATheme destructiveColor];
+    [self.stopButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.stopButton.layer.cornerRadius = 6.0;
+    self.stopButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.stopButton.hidden = YES;
+    [self.stopButton addTarget:self action:@selector(stopTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.stopButton];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.stopButton.trailingAnchor constraintEqualToAnchor:self.activateButton.leadingAnchor constant:-4],
+        [self.stopButton.centerYAnchor constraintEqualToAnchor:self.activateButton.centerYAnchor],
+        [self.stopButton.widthAnchor constraintEqualToConstant:60],
+        [self.stopButton.heightAnchor constraintEqualToConstant:32],
+    ]];
 }
 
 - (void)configureWithEntity:(HAEntity *)entity configItem:(HADashboardConfigItem *)configItem {
@@ -67,11 +83,17 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
     NSString *domain = [entity domain];
     if ([domain isEqualToString:HAEntityDomainScript]) {
         [self.activateButton setTitle:@"Run" forState:UIControlStateNormal];
-        self.activateButton.backgroundColor = [HATheme accentColor];
+        // Show Stop button when script is running
+        BOOL isRunning = entity.isOn;
+        self.stopButton.hidden = !isRunning;
+    } else if ([domain isEqualToString:@"automation"]) {
+        [self.activateButton setTitle:@"Trigger" forState:UIControlStateNormal];
+        self.stopButton.hidden = YES;
     } else {
         [self.activateButton setTitle:@"Activate" forState:UIControlStateNormal];
-        self.activateButton.backgroundColor = [HATheme accentColor];
+        self.stopButton.hidden = YES;
     }
+    self.activateButton.backgroundColor = [HATheme accentColor];
 
     // Reset feedback state if not currently animating
     if (!self.activating) {
@@ -89,12 +111,10 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
 
     [HAHaptics notifySuccess];
 
-    // Call the service
+    // Call the service — automation uses trigger, others use turn_on
     NSString *domain = [self.entity domain];
-    [[HAConnectionManager sharedManager] callService:@"turn_on"
-                                            inDomain:domain
-                                            withData:nil
-                                            entityId:self.entity.entityId];
+    NSString *service = [domain isEqualToString:@"automation"] ? @"trigger" : @"turn_on";
+    [self callService:service inDomain:domain];
 
     // Visual feedback: flash the button, show "Activated"
     __weak typeof(self) weakSelf = self;
@@ -118,6 +138,12 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
     }];
 }
 
+- (void)stopTapped {
+    if (!self.entity) return;
+    [HAHaptics mediumImpact];
+    [self callService:@"turn_off" inDomain:[self.entity domain]];
+}
+
 - (void)prepareForReuse {
     [super prepareForReuse];
     self.activating = NO;
@@ -126,6 +152,8 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
     self.contentView.backgroundColor = [HATheme cellBackgroundColor];
     self.activateButton.backgroundColor = [HATheme accentColor];
     self.feedbackLabel.textColor = [HATheme successColor];
+    self.stopButton.hidden = YES;
+    self.stopButton.backgroundColor = [HATheme destructiveColor];
 }
 
 @end

@@ -61,4 +61,10 @@
 /// Returns NO for nil, empty, "unavailable", "unknown", "on", "off".
 + (BOOL)isNumericString:(NSString *)string;
 
+/// Format an ISO 8601 timestamp or state value per HA's format option.
+/// Supports: "relative" (e.g. "5 min ago"), "total" (duration since epoch),
+/// "date" (date only), "time" (time only), "datetime" (date + time).
+/// Returns the original value if format is unknown or parsing fails.
++ (NSString *)formattedValue:(NSString *)value withFormat:(NSString *)format;
+
 @end

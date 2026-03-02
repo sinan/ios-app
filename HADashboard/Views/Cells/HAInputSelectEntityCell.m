@@ -92,17 +92,12 @@
 }
 
 - (void)selectOption:(NSString *)option {
-    if (!self.entity) return;
-
     [HAHaptics selectionChanged];
 
     [self.optionButton setTitle:option forState:UIControlStateNormal];
 
     NSDictionary *data = @{@"option": option};
-    [[HAConnectionManager sharedManager] callService:@"select_option"
-                                            inDomain:[self.entity domain]
-                                            withData:data
-                                            entityId:self.entity.entityId];
+    [self callService:@"select_option" inDomain:[self.entity domain] withData:data];
 }
 
 - (void)prepareForReuse {
