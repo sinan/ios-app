@@ -1,5 +1,6 @@
 #import "HALovelaceParser.h"
 #import "HADashboardConfig.h"
+#import "HASafeDict.h"
 
 #pragma mark - HALovelaceView
 
@@ -14,40 +15,33 @@
 - (instancetype)initWithDictionary:(NSDictionary *)dict {
     self = [super init];
     if (self) {
-        _title = dict[@"title"] ?: @"Home";
+        _title = HASafeDictString(dict, @"title", @"Home");
 
-        NSArray *viewDicts = dict[@"views"];
-        if ([viewDicts isKindOfClass:[NSArray class]]) {
+        NSArray *viewDicts = HASafeDictArrayOrNil(dict, @"views");
+        if (viewDicts) {
             NSMutableArray *views = [NSMutableArray arrayWithCapacity:viewDicts.count];
             for (NSDictionary *vd in viewDicts) {
                 if (![vd isKindOfClass:[NSDictionary class]]) continue;
                 HALovelaceView *view = [[HALovelaceView alloc] init];
-                view.title = vd[@"title"] ?: [NSString stringWithFormat:@"View %lu", (unsigned long)(views.count + 1)];
+                view.title = HASafeDictString(vd, @"title", [NSString stringWithFormat:@"View %lu", (unsigned long)(views.count + 1)]);
                 view.path  = vd[@"path"];
                 view.icon  = vd[@"icon"];
                 // Collect cards from both "cards" (classic) and "sections" (HA 2024+)
                 NSMutableArray *allCards = [NSMutableArray array];
-                NSArray *directCards = vd[@"cards"];
-                if ([directCards isKindOfClass:[NSArray class]]) {
+                NSArray *directCards = HASafeDictArrayOrNil(vd, @"cards");
+                if (directCards) {
                     [allCards addObjectsFromArray:directCards];
                 }
-                NSArray *sections = vd[@"sections"];
-                if ([sections isKindOfClass:[NSArray class]]) {
+                NSArray *sections = HASafeDictArrayOrNil(vd, @"sections");
+                if (sections) {
                     NSMutableArray *parsedSections = [NSMutableArray arrayWithCapacity:sections.count];
                     for (NSDictionary *section in sections) {
                         if (![section isKindOfClass:[NSDictionary class]]) continue;
-                        NSString *sectionTitle = nil;
-                        if ([section[@"title"] isKindOfClass:[NSString class]]) {
-                            sectionTitle = section[@"title"];
-                        }
-                        NSArray *sectionCards = section[@"cards"];
-                        if (![sectionCards isKindOfClass:[NSArray class]]) sectionCards = @[];
+                        NSString *sectionTitle = HASafeDictStringOrNil(section, @"title");
+                        NSArray *sectionCards = HASafeDictArrayOrNil(section, @"cards") ?: @[];
                         [allCards addObjectsFromArray:sectionCards];
 
-                        NSString *sectionIcon = nil;
-                        if ([section[@"icon"] isKindOfClass:[NSString class]]) {
-                            sectionIcon = section[@"icon"];
-                        }
+                        NSString *sectionIcon = HASafeDictStringOrNil(section, @"icon");
                         [parsedSections addObject:@{
                             @"title": sectionTitle ?: @"",
                             @"icon": sectionIcon ?: @"",
@@ -58,14 +52,12 @@
                 }
                 view.rawCards = [allCards copy];
                 // Parse max_columns from HA view config (sections layout column cap)
-                if ([vd[@"max_columns"] isKindOfClass:[NSNumber class]]) {
-                    view.maxColumns = [vd[@"max_columns"] integerValue];
+                NSNumber *maxColsNum = HASafeDictNumberOrNil(vd, @"max_columns");
+                if (maxColsNum) {
+                    view.maxColumns = [maxColsNum integerValue];
                 }
                 // Determine view type: explicit "type" field, or inferred from content
-                NSString *explicitType = nil;
-                if ([vd[@"type"] isKindOfClass:[NSString class]]) {
-                    explicitType = vd[@"type"];
-                }
+                NSString *explicitType = HASafeDictStringOrNil(vd, @"type");
                 if ([explicitType isEqualToString:@"panel"]) {
                     view.viewType = @"panel";
                 } else if ([explicitType isEqualToString:@"sidebar"]) {
@@ -119,10 +111,7 @@
             NSString *haSectionTitle = rawSection[@"title"];
             if (haSectionTitle.length == 0) haSectionTitle = nil;
             // Icon from section-level config (HA 2024.12+)
-            NSString *haSectionIcon = nil;
-            if ([rawSection[@"icon"] isKindOfClass:[NSString class]]) {
-                haSectionIcon = rawSection[@"icon"];
-            }
+            NSString *haSectionIcon = HASafeDictStringOrNil(rawSection, @"icon");
             NSArray *sectionCards = rawSection[@"cards"];
 
             // Look for heading cards to extract section title/icon (fallback)
@@ -239,13 +228,8 @@
             NSString *cardType = card[@"type"];
             if ([cardType isEqualToString:@"heading"]) continue;
 
-            NSString *cardTitle = nil;
-            if ([card[@"title"] isKindOfClass:[NSString class]]) {
-                cardTitle = card[@"title"];
-            }
-            if (!cardTitle && [card[@"heading"] isKindOfClass:[NSString class]]) {
-                cardTitle = card[@"heading"];
-            }
+            NSString *cardTitle = HASafeDictStringOrNil(card, @"title");
+            if (!cardTitle) cardTitle = HASafeDictStringOrNil(card, @"heading");
 
             [self processCard:card
                  sectionTitle:cardTitle
@@ -285,6 +269,25 @@
     // sub-grid packing (e.g., thermostat(9) + vacuum(3) need to be on the
     // same row, which requires their headings to be merged into the same items).
     if ([cardType isEqualToString:@"heading"]) return;
+
+    // Markdown card: no entity, just content text
+    if ([cardType isEqualToString:@"markdown"]) {
+        HADashboardConfigSection *section = [[HADashboardConfigSection alloc] init];
+        section.cardType = @"markdown";
+        HADashboardConfigItem *item = [[HADashboardConfigItem alloc] init];
+        item.cardType = @"markdown";
+        item.columnSpan = 1;
+        item.rowSpan = 1;
+        NSMutableDictionary *props = [NSMutableDictionary dictionary];
+        if ([card[@"content"] isKindOfClass:[NSString class]]) props[@"markdown_content"] = card[@"content"];
+        if ([card[@"title"] isKindOfClass:[NSString class]]) props[@"markdown_title"] = card[@"title"];
+        if ([card[@"text_only"] isKindOfClass:[NSNumber class]]) props[@"text_only"] = card[@"text_only"];
+        if (props.count > 0) item.customProperties = [props copy];
+        section.items = @[item];
+        [sections addObject:section];
+        [allItems addObject:item];
+        return;
+    }
 
     // Conditional cards: unwrap the inner card and attach conditions.
     // The inner card is shown only when all conditions are met (checked at display time).
@@ -469,12 +472,8 @@
 
     // Use card title if no section title provided
     if (!sectionTitle) {
-        if ([card[@"title"] isKindOfClass:[NSString class]]) {
-            sectionTitle = card[@"title"];
-        }
-        if (!sectionTitle && [card[@"heading"] isKindOfClass:[NSString class]]) {
-            sectionTitle = card[@"heading"];
-        }
+        sectionTitle = HASafeDictStringOrNil(card, @"title");
+        if (!sectionTitle) sectionTitle = HASafeDictStringOrNil(card, @"heading");
     }
 
     // Column span and row span from grid_options / layout_options
@@ -583,11 +582,47 @@
     // - "entities": standard entities card
     // - "custom:badge-card": compact badge row
     // - "custom:mini-graph-card": graph card with optional secondary entity values
-    BOOL isComposite = [cardType isEqualToString:@"entities"];
+    BOOL isComposite = [cardType isEqualToString:@"entities"] || [cardType isEqualToString:@"entity-filter"];
     NSString *compositeType = @"entities";
-    if ([cardType containsString:@"badge"]) {
+    if ([cardType isEqualToString:@"entity-filter"]) {
+        // Entity-filter card: store state_filter conditions for runtime filtering
+        NSMutableDictionary *filterProps = section.customProperties
+            ? [section.customProperties mutableCopy]
+            : [NSMutableDictionary dictionary];
+        NSArray *stateFilter = card[@"state_filter"];
+        if ([stateFilter isKindOfClass:[NSArray class]]) {
+            filterProps[@"state_filter"] = stateFilter;
+        }
+        NSDictionary *cardConfig = card[@"card"];
+        if ([cardConfig isKindOfClass:[NSDictionary class]]) {
+            if ([cardConfig[@"type"] isKindOfClass:[NSString class]]) {
+                filterProps[@"inner_card_type"] = cardConfig[@"type"];
+            }
+        }
+        section.customProperties = [filterProps copy];
+    } else if ([cardType containsString:@"badge"]) {
         isComposite = YES;
         compositeType = @"badges";
+    } else if ([cardType isEqualToString:@"glance"]) {
+        isComposite = YES;
+        compositeType = @"glance";
+        // Store per-entity configs (name, icon, show_state, tap_action, etc.)
+        NSArray *rawEntities = card[@"entities"];
+        if ([rawEntities isKindOfClass:[NSArray class]]) {
+            NSMutableArray *entityConfigs = [NSMutableArray arrayWithCapacity:rawEntities.count];
+            for (id entry in rawEntities) {
+                if ([entry isKindOfClass:[NSDictionary class]]) {
+                    [entityConfigs addObject:entry];
+                } else if ([entry isKindOfClass:[NSString class]]) {
+                    [entityConfigs addObject:@{@"entity": entry}];
+                }
+            }
+            NSMutableDictionary *props = section.customProperties
+                ? [section.customProperties mutableCopy]
+                : [NSMutableDictionary dictionary];
+            props[@"entityConfigs"] = [entityConfigs copy];
+            section.customProperties = [props copy];
+        }
     } else if ([cardType containsString:@"mini-graph"]) {
         // Render as a single composite graph card with all entities
         isComposite = YES;
@@ -635,8 +670,9 @@
         if (graphProps.count > 0) {
             section.customProperties = [graphProps copy];
         }
-    } else if ([cardType isEqualToString:@"history-graph"]) {
-        // HA built-in history-graph: multi-entity graph with hours_to_show
+    } else if ([cardType isEqualToString:@"history-graph"] ||
+               [cardType isEqualToString:@"statistics-graph"]) {
+        // HA built-in history-graph / statistics-graph: multi-entity graph
         isComposite = YES;
         compositeType = @"graph";
         // history-graph uses "title" (already captured in sectionTitle/section.title)
@@ -671,18 +707,155 @@
         isComposite = YES;
         compositeType = @"badges";
         section.customProperties = @{@"chipStyle": @YES};
+    } else if ([cardType isEqualToString:@"area"]) {
+        // Area card: composite card showing area summary with toggles
+        isComposite = YES;
+        compositeType = @"area";
+        NSMutableDictionary *areaProps = [NSMutableDictionary dictionary];
+        if ([card[@"area"] isKindOfClass:[NSString class]]) areaProps[@"area_id"] = card[@"area"];
+        if ([card[@"image"] isKindOfClass:[NSString class]]) areaProps[@"image"] = card[@"image"];
+        if ([card[@"camera_image"] isKindOfClass:[NSString class]]) areaProps[@"camera_image"] = card[@"camera_image"];
+        if ([card[@"display_type"] isKindOfClass:[NSString class]]) areaProps[@"display_type"] = card[@"display_type"];
+        if (!section.title && areaProps[@"area_id"]) {
+            section.title = [[areaProps[@"area_id"] stringByReplacingOccurrencesOfString:@"_" withString:@" "] capitalizedString];
+        }
+        if (areaProps.count > 0) section.customProperties = [areaProps copy];
+    } else if ([cardType isEqualToString:@"picture-glance"]) {
+        // Picture-glance card: image background with entity state overlays
+        isComposite = YES;
+        compositeType = @"picture-glance";
+        NSMutableDictionary *pgProps = [NSMutableDictionary dictionary];
+        if ([card[@"image"] isKindOfClass:[NSString class]]) pgProps[@"image"] = card[@"image"];
+        if ([card[@"camera_image"] isKindOfClass:[NSString class]]) pgProps[@"camera_image"] = card[@"camera_image"];
+        if ([card[@"camera_view"] isKindOfClass:[NSString class]]) pgProps[@"camera_view"] = card[@"camera_view"];
+        if ([card[@"state_image"] isKindOfClass:[NSDictionary class]]) pgProps[@"state_image"] = card[@"state_image"];
+        if ([card[@"title"] isKindOfClass:[NSString class]]) section.title = card[@"title"];
+        if (pgProps.count > 0) section.customProperties = [pgProps copy];
+    } else if ([cardType isEqualToString:@"map"]) {
+        // Map card: shows entity locations
+        isComposite = YES;
+        compositeType = @"map";
+        NSMutableDictionary *mapProps = [NSMutableDictionary dictionary];
+        if ([card[@"default_zoom"] isKindOfClass:[NSNumber class]]) mapProps[@"default_zoom"] = card[@"default_zoom"];
+        if ([card[@"dark_mode"] isKindOfClass:[NSNumber class]]) mapProps[@"dark_mode"] = card[@"dark_mode"];
+        if ([card[@"aspect_ratio"] isKindOfClass:[NSString class]]) mapProps[@"aspect_ratio"] = card[@"aspect_ratio"];
+        if ([card[@"title"] isKindOfClass:[NSString class]]) section.title = card[@"title"];
+        if (mapProps.count > 0) section.customProperties = [mapProps copy];
     }
 
-    // Entities card: parse show_header_toggle and scene chip metadata
+    // Entities card: parse per-entity action configs, special rows, show_header_toggle, scene chips
     if ([cardType isEqualToString:@"entities"]) {
+        // Store raw entities array for special row type rendering (divider, section, weblink)
+        NSArray *rawEntities = card[@"entities"];
+        if ([rawEntities isKindOfClass:[NSArray class]]) {
+            // Collect ordered row list with type info for the cell to render
+            NSMutableArray *orderedRows = [NSMutableArray arrayWithCapacity:rawEntities.count];
+            for (id entry in rawEntities) {
+                if ([entry isKindOfClass:[NSString class]]) {
+                    [orderedRows addObject:@{@"entity": entry}];
+                } else if ([entry isKindOfClass:[NSDictionary class]]) {
+                    NSDictionary *dict = (NSDictionary *)entry;
+                    NSString *rowType = dict[@"type"];
+                    if ([rowType isEqualToString:@"divider"]) {
+                        [orderedRows addObject:@{@"row_type": @"divider"}];
+                    } else if ([rowType isEqualToString:@"section"]) {
+                        NSMutableDictionary *row = [NSMutableDictionary dictionaryWithObject:@"section" forKey:@"row_type"];
+                        if (dict[@"label"]) row[@"label"] = dict[@"label"];
+                        [orderedRows addObject:[row copy]];
+                    } else if ([rowType isEqualToString:@"weblink"]) {
+                        NSMutableDictionary *row = [NSMutableDictionary dictionaryWithObject:@"weblink" forKey:@"row_type"];
+                        if (dict[@"name"]) row[@"name"] = dict[@"name"];
+                        if (dict[@"url"]) row[@"url"] = dict[@"url"];
+                        if (dict[@"icon"]) row[@"icon"] = dict[@"icon"];
+                        [orderedRows addObject:[row copy]];
+                    } else if ([rowType isEqualToString:@"button"] || [rowType isEqualToString:@"call-service"]) {
+                        NSMutableDictionary *row = [NSMutableDictionary dictionaryWithObject:@"button" forKey:@"row_type"];
+                        if (dict[@"name"]) row[@"name"] = dict[@"name"];
+                        if (dict[@"icon"]) row[@"icon"] = dict[@"icon"];
+                        if (dict[@"action_name"]) row[@"action_name"] = dict[@"action_name"];
+                        if (dict[@"service"]) row[@"service"] = dict[@"service"];
+                        if ([dict[@"service_data"] isKindOfClass:[NSDictionary class]]) row[@"service_data"] = dict[@"service_data"];
+                        [orderedRows addObject:[row copy]];
+                    } else if ([rowType isEqualToString:@"buttons"]) {
+                        NSMutableDictionary *row = [NSMutableDictionary dictionaryWithObject:@"buttons" forKey:@"row_type"];
+                        if ([dict[@"entities"] isKindOfClass:[NSArray class]]) row[@"entities"] = dict[@"entities"];
+                        [orderedRows addObject:[row copy]];
+                    } else if ([rowType isEqualToString:@"conditional"]) {
+                        NSMutableDictionary *row = [NSMutableDictionary dictionaryWithObject:@"conditional" forKey:@"row_type"];
+                        if ([dict[@"conditions"] isKindOfClass:[NSArray class]]) row[@"conditions"] = dict[@"conditions"];
+                        if ([dict[@"row"] isKindOfClass:[NSDictionary class]]) row[@"row"] = dict[@"row"];
+                        [orderedRows addObject:[row copy]];
+                    } else if (dict[@"entity"]) {
+                        [orderedRows addObject:@{@"entity": dict[@"entity"]}];
+                    }
+                }
+            }
+            // Only store if there are special rows (otherwise standard entityIds order is fine)
+            BOOL hasSpecialRows = NO;
+            for (NSDictionary *row in orderedRows) {
+                if (row[@"row_type"]) { hasSpecialRows = YES; break; }
+            }
+            if (hasSpecialRows) {
+                NSMutableDictionary *earlyProps = section.customProperties
+                    ? [section.customProperties mutableCopy]
+                    : [NSMutableDictionary dictionary];
+                earlyProps[@"orderedRows"] = [orderedRows copy];
+                section.customProperties = [earlyProps copy];
+            }
+        }
+        if ([rawEntities isKindOfClass:[NSArray class]]) {
+            NSMutableDictionary *entityRowConfigs = [NSMutableDictionary dictionary];
+            for (id entry in rawEntities) {
+                if (![entry isKindOfClass:[NSDictionary class]]) continue;
+                NSDictionary *dict = (NSDictionary *)entry;
+                NSString *eid = dict[@"entity"];
+                if (!eid) continue;
+                NSMutableDictionary *rowCfg = [NSMutableDictionary dictionary];
+                // Action configs
+                for (NSString *key in @[@"tap_action", @"hold_action", @"double_tap_action"]) {
+                    if ([dict[key] isKindOfClass:[NSDictionary class]]) {
+                        rowCfg[key] = dict[key];
+                    }
+                }
+                // Display configs
+                if ([dict[@"secondary_info"] isKindOfClass:[NSString class]]) {
+                    rowCfg[@"secondary_info"] = dict[@"secondary_info"];
+                }
+                if ([dict[@"format"] isKindOfClass:[NSString class]]) {
+                    rowCfg[@"format"] = dict[@"format"];
+                }
+                if ([dict[@"attribute"] isKindOfClass:[NSString class]]) {
+                    rowCfg[@"attribute"] = dict[@"attribute"];
+                }
+                if ([dict[@"state_color"] isKindOfClass:[NSNumber class]]) {
+                    rowCfg[@"state_color"] = dict[@"state_color"];
+                }
+                if (rowCfg.count > 0) {
+                    entityRowConfigs[eid] = [rowCfg copy];
+                }
+            }
+            if (entityRowConfigs.count > 0) {
+                NSMutableDictionary *props = section.customProperties
+                    ? [section.customProperties mutableCopy]
+                    : [NSMutableDictionary dictionary];
+                props[@"entityRowConfigs"] = [entityRowConfigs copy];
+                section.customProperties = [props copy];
+            }
+        }
         NSMutableDictionary *props = section.customProperties
             ? [section.customProperties mutableCopy]
             : [NSMutableDictionary dictionary];
         BOOL changed = NO;
 
         id toggle = card[@"show_header_toggle"];
-        if ([toggle isKindOfClass:[NSNumber class]] && [toggle boolValue]) {
-            props[@"showHeaderToggle"] = @YES;
+        if ([toggle isKindOfClass:[NSNumber class]]) {
+            props[@"showHeaderToggle"] = toggle;
+            changed = YES;
+        }
+
+        id stateColor = card[@"state_color"];
+        if ([stateColor isKindOfClass:[NSNumber class]]) {
+            props[@"state_color"] = stateColor;
             changed = YES;
         }
 
@@ -707,6 +880,25 @@
         item.cardType    = compositeType;
         item.columnSpan  = cardColumnSpan;
         item.rowSpan     = cardRowSpan;
+
+        // Glance card: store card-level display settings on the item
+        if ([compositeType isEqualToString:@"glance"]) {
+            NSMutableDictionary *props = [NSMutableDictionary dictionary];
+            if (card[@"title"])       props[@"glance_title"] = card[@"title"];
+            if (card[@"columns"])     props[@"columns"]      = card[@"columns"];
+            if (card[@"show_name"])   props[@"show_name"]    = card[@"show_name"];
+            if (card[@"show_state"])  props[@"show_state"]   = card[@"show_state"];
+            if (card[@"show_icon"])   props[@"show_icon"]    = card[@"show_icon"];
+            if (card[@"state_color"]) props[@"state_color"]  = card[@"state_color"];
+            // Action configs
+            for (NSString *actionKey in @[@"tap_action", @"hold_action", @"double_tap_action"]) {
+                if ([card[actionKey] isKindOfClass:[NSDictionary class]]) {
+                    props[actionKey] = card[actionKey];
+                }
+            }
+            if (props.count > 0) item.customProperties = [props copy];
+        }
+
         section.items = @[item];
         [allItems addObject:item];
     } else {
@@ -740,6 +932,10 @@
                 item.displayName = cardName;
             }
             item.cardType = cardType;
+            // HA "sensor" card with graph: line → render as graph card
+            if ([cardType isEqualToString:@"sensor"] && [card[@"graph"] isKindOfClass:[NSString class]]) {
+                item.cardType = @"graph";
+            }
             item.columnSpan  = cardColumnSpan;
             item.rowSpan     = cardRowSpan;
 
@@ -762,6 +958,22 @@
             if ([card[@"icon"] isKindOfClass:[NSString class]]) props[@"icon"] = card[@"icon"];
             // Card-level color override
             if ([card[@"color"] isKindOfClass:[NSString class]]) props[@"color"] = card[@"color"];
+            // Button/tile card visibility flags — always set if present in card config.
+            // JSON false → @NO (a valid NSNumber, not nil).
+            for (NSString *visKey in @[@"show_name", @"show_state", @"show_icon", @"hide_state",
+                                       @"show_entity_picture", @"vertical"]) {
+                id val = card[visKey];
+                if (val) props[visKey] = val;
+            }
+            // Tile card: state_content (string or array of strings)
+            id stateContent = card[@"state_content"];
+            if (stateContent) props[@"state_content"] = stateContent;
+            // Tile/entity card: attribute display override
+            if ([card[@"attribute"] isKindOfClass:[NSString class]]) props[@"attribute"] = card[@"attribute"];
+            // Entity/statistic card: state_color, unit, stat_type
+            if ([card[@"state_color"] isKindOfClass:[NSNumber class]]) props[@"state_color"] = card[@"state_color"];
+            if ([card[@"unit"] isKindOfClass:[NSString class]]) props[@"unit"] = card[@"unit"];
+            if ([card[@"stat_type"] isKindOfClass:[NSString class]]) props[@"stat_type"] = card[@"stat_type"];
 
             // Clock-weather card: extract sensor overrides and display config
             if ([cardType containsString:@"clock-weather"]) {
@@ -849,6 +1061,30 @@
                         [ranges addObject:@{@"from": @(from), @"to": @(to), @"color": entries[i][@"color"]}];
                     }
                     props[@"severity"] = ranges;
+                }
+                // Segments: newer HA gauge format [{from,to,color,label},...] — stored as severity
+                NSArray *segments = card[@"segments"];
+                if ([segments isKindOfClass:[NSArray class]] && segments.count > 0 && !props[@"severity"]) {
+                    props[@"severity"] = segments; // same format, compatible with severity rendering
+                }
+            }
+
+            // Tile card features (brightness slider, cover buttons, etc.)
+            NSArray *features = card[@"features"];
+            if ([features isKindOfClass:[NSArray class]] && features.count > 0) {
+                props[@"features"] = features;
+            }
+            NSString *featuresPosition = card[@"features_position"];
+            if ([featuresPosition isKindOfClass:[NSString class]]) {
+                props[@"features_position"] = featuresPosition;
+            }
+
+            // Tap/hold/double-tap action configs (all card types)
+            for (NSString *actionKey in @[@"tap_action", @"hold_action", @"double_tap_action",
+                                          @"icon_tap_action", @"icon_hold_action", @"icon_double_tap_action"]) {
+                NSDictionary *actionDict = card[actionKey];
+                if ([actionDict isKindOfClass:[NSDictionary class]]) {
+                    props[actionKey] = actionDict;
                 }
             }
 

@@ -1,4 +1,5 @@
 #import "HADashboardConfig.h"
+#import "HASafeDict.h"
 
 #pragma mark - HADashboardConfigItem
 
@@ -7,12 +8,12 @@
 - (instancetype)initWithDictionary:(NSDictionary *)dict {
     self = [super init];
     if (self) {
-        _entityId    = dict[@"entity_id"] ?: @"";
+        _entityId    = HASafeDictString(dict, @"entity_id", @"");
         _displayName = dict[@"display_name"];
-        _column      = [dict[@"column"] integerValue];
-        _row         = [dict[@"row"] integerValue];
-        _columnSpan  = dict[@"column_span"] ? [dict[@"column_span"] integerValue] : 1;
-        _rowSpan     = dict[@"row_span"] ? [dict[@"row_span"] integerValue] : 1;
+        _column      = HASafeDictInteger(dict, @"column", 0);
+        _row         = HASafeDictInteger(dict, @"row", 0);
+        _columnSpan  = HASafeDictInteger(dict, @"column_span", 1);
+        _rowSpan     = HASafeDictInteger(dict, @"row_span", 1);
     }
     return self;
 }
@@ -46,8 +47,8 @@
     }
 
     HADashboardConfig *config = [[HADashboardConfig alloc] init];
-    config.title   = dict[@"title"] ?: @"Dashboard";
-    config.columns = dict[@"columns"] ? [dict[@"columns"] integerValue] : 3;
+    config.title   = HASafeDictString(dict, @"title", @"Dashboard");
+    config.columns = HASafeDictInteger(dict, @"columns", 3);
 
     NSArray *itemDicts = dict[@"items"];
     if ([itemDicts isKindOfClass:[NSArray class]]) {

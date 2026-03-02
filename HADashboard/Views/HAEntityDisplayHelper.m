@@ -300,6 +300,73 @@
         : [NSString stringWithFormat:@"%@ ago", timeString];
 }
 
++ (NSString *)formattedValue:(NSString *)value withFormat:(NSString *)format {
+    if (!value || !format) return value;
+
+    if ([format isEqualToString:@"relative"]) {
+        NSString *relative = [self relativeTimeFromISO8601:value];
+        return relative ?: value;
+    }
+
+    // Parse ISO date for other formats
+    static NSDateFormatter *isoParser = nil;
+    static NSDateFormatter *isoParserAlt = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        isoParser = [[NSDateFormatter alloc] init];
+        isoParser.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+        isoParser.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
+        isoParserAlt = [[NSDateFormatter alloc] init];
+        isoParserAlt.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+        isoParserAlt.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
+    });
+
+    NSDate *date = [isoParser dateFromString:value];
+    if (!date) date = [isoParserAlt dateFromString:value];
+    if (!date) return value;
+
+    if ([format isEqualToString:@"date"]) {
+        static NSDateFormatter *dateFormatter = nil;
+        static dispatch_once_t dateOnce;
+        dispatch_once(&dateOnce, ^{
+            dateFormatter = [[NSDateFormatter alloc] init];
+            dateFormatter.dateStyle = NSDateFormatterMediumStyle;
+            dateFormatter.timeStyle = NSDateFormatterNoStyle;
+        });
+        return [dateFormatter stringFromDate:date];
+    }
+
+    if ([format isEqualToString:@"time"]) {
+        static NSDateFormatter *timeFormatter = nil;
+        static dispatch_once_t timeOnce;
+        dispatch_once(&timeOnce, ^{
+            timeFormatter = [[NSDateFormatter alloc] init];
+            timeFormatter.dateStyle = NSDateFormatterNoStyle;
+            timeFormatter.timeStyle = NSDateFormatterShortStyle;
+        });
+        return [timeFormatter stringFromDate:date];
+    }
+
+    if ([format isEqualToString:@"datetime"]) {
+        static NSDateFormatter *dtFormatter = nil;
+        static dispatch_once_t dtOnce;
+        dispatch_once(&dtOnce, ^{
+            dtFormatter = [[NSDateFormatter alloc] init];
+            dtFormatter.dateStyle = NSDateFormatterMediumStyle;
+            dtFormatter.timeStyle = NSDateFormatterShortStyle;
+        });
+        return [dtFormatter stringFromDate:date];
+    }
+
+    if ([format isEqualToString:@"total"]) {
+        // Duration since epoch in human-readable form
+        NSTimeInterval elapsed = [date timeIntervalSinceNow];
+        return [self formattedDurationFromValue:fabs(elapsed) unit:@"s"];
+    }
+
+    return value;
+}
+
 #pragma mark - Icon
 
 + (NSString *)iconGlyphForEntity:(HAEntity *)entity {
@@ -338,11 +405,17 @@
             else glyph = [HAIconMapper glyphForIconName:@"battery-alert"];
         }
     }
-    // 4. Device-class-specific icon for sensor
+    // 4. Device-class-specific icon for sensor / binary_sensor
     if (!glyph && [[entity domain] isEqualToString:@"sensor"]) {
         NSString *deviceClass = [entity deviceClass];
         if (deviceClass) {
             glyph = [self iconGlyphForSensorDeviceClass:deviceClass];
+        }
+    }
+    if (!glyph && [[entity domain] isEqualToString:@"binary_sensor"]) {
+        NSString *deviceClass = [entity deviceClass];
+        if (deviceClass) {
+            glyph = [self iconGlyphForBinarySensorDeviceClass:deviceClass isOn:[entity isOn]];
         }
     }
     // 5. State-aware domain icons (on/off variants)
@@ -650,10 +723,12 @@
             : [HATheme secondaryTextColor];
     }
 
-    // ── Scene / Script: accent when available ──
+    // ── Scene / Script / Button: gradient-derived tint when available ──
     if ([domain isEqualToString:HAEntityDomainScene] ||
-        [domain isEqualToString:HAEntityDomainScript]) {
-        return [HATheme accentColor];
+        [domain isEqualToString:HAEntityDomainScript] ||
+        [domain isEqualToString:HAEntityDomainButton] ||
+        [domain isEqualToString:HAEntityDomainInputButton]) {
+        return [HATheme switchTintColor];
     }
 
     // ── Update: orange when update available ──

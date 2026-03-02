@@ -33,6 +33,16 @@
 #import "HATileEntityCell.h"
 #import "HAGaugeCardCell.h"
 #import "HACalendarCardCell.h"
+#import "HAGlanceCardCell.h"
+#import "HAWaterHeaterEntityCell.h"
+#import "HAEntityCardCell.h"
+#import "HAStatisticCardCell.h"
+#import "HAMarkdownCardCell.h"
+#import "HARemoteEntityCell.h"
+#import "HAImageEntityCell.h"
+#import "HAAreaCardCell.h"
+#import "HAPictureGlanceCardCell.h"
+#import "HAMapCardCell.h"
 
 static NSString *const kBaseCellId             = @"HABaseEntityCell";
 static NSString *const kTileCellId            = @"HATileEntityCell";
@@ -44,6 +54,10 @@ static NSString *const kGraphCardCellId        = @"HAGraphCardCell";
 static NSString *const kClockWeatherCellId     = @"HAClockWeatherCell";
 static NSString *const kGaugeCardCellId        = @"HAGaugeCardCell";
 static NSString *const kCalendarCardCellId     = @"HACalendarCardCell";
+static NSString *const kGlanceCardCellId       = @"HAGlanceCardCell";
+static NSString *const kEntityCardCellId       = @"HAEntityCardCell";
+static NSString *const kStatisticCardCellId    = @"HAStatisticCardCell";
+static NSString *const kMarkdownCardCellId     = @"HAMarkdownCardCell";
 static NSString *const kSwitchCellId       = @"HASwitchEntityCell";
 static NSString *const kSensorCellId       = @"HASensorEntityCell";
 static NSString *const kLightCellId        = @"HALightEntityCell";
@@ -67,6 +81,12 @@ static NSString *const kTimerCellId         = @"HATimerEntityCell";
 static NSString *const kCounterCellId       = @"HACounterEntityCell";
 static NSString *const kPersonCellId        = @"HAPersonEntityCell";
 static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
+static NSString *const kWaterHeaterCellId   = @"HAWaterHeaterEntityCell";
+static NSString *const kRemoteCellId        = @"HARemoteEntityCell";
+static NSString *const kImageCellId         = @"HAImageEntityCell";
+static NSString *const kAreaCardCellId      = @"HAAreaCardCell";
+static NSString *const kPictureGlanceCellId = @"HAPictureGlanceCardCell";
+static NSString *const kMapCardCellId       = @"HAMapCardCell";
 
 @implementation HAEntityCellFactory
 
@@ -104,6 +124,16 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
     [collectionView registerClass:[HATileEntityCell class]       forCellWithReuseIdentifier:kTileCellId];
     [collectionView registerClass:[HAGaugeCardCell class]       forCellWithReuseIdentifier:kGaugeCardCellId];
     [collectionView registerClass:[HACalendarCardCell class]   forCellWithReuseIdentifier:kCalendarCardCellId];
+    [collectionView registerClass:[HAGlanceCardCell class]    forCellWithReuseIdentifier:kGlanceCardCellId];
+    [collectionView registerClass:[HAWaterHeaterEntityCell class] forCellWithReuseIdentifier:kWaterHeaterCellId];
+    [collectionView registerClass:[HAEntityCardCell class]       forCellWithReuseIdentifier:kEntityCardCellId];
+    [collectionView registerClass:[HAStatisticCardCell class]   forCellWithReuseIdentifier:kStatisticCardCellId];
+    [collectionView registerClass:[HAMarkdownCardCell class]   forCellWithReuseIdentifier:kMarkdownCardCellId];
+    [collectionView registerClass:[HARemoteEntityCell class]     forCellWithReuseIdentifier:kRemoteCellId];
+    [collectionView registerClass:[HAImageEntityCell class]      forCellWithReuseIdentifier:kImageCellId];
+    [collectionView registerClass:[HAAreaCardCell class]          forCellWithReuseIdentifier:kAreaCardCellId];
+    [collectionView registerClass:[HAPictureGlanceCardCell class] forCellWithReuseIdentifier:kPictureGlanceCellId];
+    [collectionView registerClass:[HAMapCardCell class]           forCellWithReuseIdentifier:kMapCardCellId];
 }
 
 + (NSString *)reuseIdentifierForEntity:(HAEntity *)entity {
@@ -147,7 +177,11 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
     if ([domain isEqualToString:HAEntityDomainClimate]) {
         return kClimateCellId;
     }
-    if ([domain isEqualToString:HAEntityDomainCover]) {
+    if ([domain isEqualToString:@"water_heater"]) {
+        return kWaterHeaterCellId;
+    }
+    if ([domain isEqualToString:HAEntityDomainCover] ||
+        [domain isEqualToString:@"valve"]) {
         return kCoverCellId;
     }
     if ([domain isEqualToString:HAEntityDomainCamera]) {
@@ -160,7 +194,8 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
         return kMediaPlayerCellId;
     }
     if ([domain isEqualToString:HAEntityDomainScene] ||
-        [domain isEqualToString:HAEntityDomainScript]) {
+        [domain isEqualToString:HAEntityDomainScript] ||
+        [domain isEqualToString:@"automation"]) {
         return kSceneCellId;
     }
     if ([domain isEqualToString:HAEntityDomainButton] ||
@@ -170,7 +205,8 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
     if ([domain isEqualToString:HAEntityDomainHumidifier]) {
         return kHumidifierCellId;
     }
-    if ([domain isEqualToString:HAEntityDomainVacuum]) {
+    if ([domain isEqualToString:HAEntityDomainVacuum] ||
+        [domain isEqualToString:@"lawn_mower"]) {
         return kVacuumCellId;
     }
     if ([domain isEqualToString:HAEntityDomainAlarmControlPanel]) {
@@ -182,7 +218,8 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
     if ([domain isEqualToString:HAEntityDomainCounter]) {
         return kCounterCellId;
     }
-    if ([domain isEqualToString:HAEntityDomainPerson]) {
+    if ([domain isEqualToString:HAEntityDomainPerson] ||
+        [domain isEqualToString:@"device_tracker"]) {
         return kPersonCellId;
     }
     if ([domain isEqualToString:HAEntityDomainUpdate]) {
@@ -191,6 +228,19 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
     if ([domain isEqualToString:HAEntityDomainCalendar]) {
         return kCalendarCardCellId;
     }
+
+    // Wave 5: Route new domains to existing cells
+    // Note: device_tracker is already handled above (with HAEntityDomainPerson)
+    if ([domain isEqualToString:@"text"]) return kInputTextCellId;
+    if ([domain isEqualToString:@"date"] || [domain isEqualToString:@"time"]) return kInputDateTimeCellId;
+    if ([domain isEqualToString:@"valve"]) return kCoverCellId;
+    if ([domain isEqualToString:@"lawn_mower"]) return kVacuumCellId;
+    if ([domain isEqualToString:@"sun"]) return kSensorCellId;
+    if ([domain isEqualToString:@"event"]) return kSensorCellId;
+    if ([domain isEqualToString:@"todo"]) return kSensorCellId;
+    if ([domain isEqualToString:@"group"]) return kSwitchCellId;
+    if ([domain isEqualToString:@"remote"]) return kRemoteCellId;
+    if ([domain isEqualToString:@"image"]) return kImageCellId;
 
     // Unknown domains use the base cell
     return kBaseCellId;
@@ -204,11 +254,20 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
     if ([cardType isEqualToString:@"badges"]) {
         return kBadgeRowCellId;
     }
+    if ([cardType isEqualToString:@"entity"]) {
+        return kEntityCardCellId;
+    }
+    if ([cardType isEqualToString:@"statistic"]) {
+        return kStatisticCardCellId;
+    }
+    if ([cardType isEqualToString:@"markdown"]) {
+        return kMarkdownCardCellId;
+    }
     if ([cardType isEqualToString:@"thermostat"] && [[entity domain] isEqualToString:@"climate"]) {
         return kThermostatGaugeCellId;
     }
     if ([cardType isEqualToString:@"graph"] || [cardType isEqualToString:@"mini-graph-card"] ||
-        [cardType isEqualToString:@"history-graph"]) {
+        [cardType isEqualToString:@"history-graph"] || [cardType isEqualToString:@"statistics-graph"]) {
         return kGraphCardCellId;
     }
     if ([cardType isEqualToString:@"heading"]) {
@@ -220,11 +279,23 @@ static NSString *const kUpdateCellId        = @"HAUpdateEntityCell";
     if ([cardType isEqualToString:@"gauge"]) {
         return kGaugeCardCellId;
     }
+    if ([cardType isEqualToString:@"glance"]) {
+        return kGlanceCardCellId;
+    }
     if ([cardType isEqualToString:@"tile"] || [cardType isEqualToString:@"button"]) {
         return kTileCellId;
     }
     if ([cardType isEqualToString:@"calendar"]) {
         return kCalendarCardCellId;
+    }
+    if ([cardType isEqualToString:@"area"]) {
+        return kAreaCardCellId;
+    }
+    if ([cardType isEqualToString:@"picture-glance"]) {
+        return kPictureGlanceCellId;
+    }
+    if ([cardType isEqualToString:@"map"]) {
+        return kMapCardCellId;
     }
 
     // Fall through to domain-based lookup
