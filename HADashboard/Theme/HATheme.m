@@ -87,6 +87,25 @@ static NSString *const kDeveloperModeKey   = @"HADeveloperModeEnabled";
     return !UIAccessibilityIsReduceTransparencyEnabled();
 }
 
++ (UIView *)frostedBackgroundViewWithCornerRadius:(CGFloat)cornerRadius {
+    if ([self canBlur]) {
+        UIVisualEffectView *blur = [[UIVisualEffectView alloc] initWithEffect:
+            [UIBlurEffect effectWithStyle:[self gradientBlurStyle]]];
+        blur.layer.cornerRadius = cornerRadius;
+        blur.clipsToBounds = YES;
+        return blur;
+    }
+
+    // Reduce Transparency fallback: semi-transparent solid
+    UIView *bg = [[UIView alloc] init];
+    bg.backgroundColor = [self effectiveDarkMode]
+        ? [UIColor colorWithWhite:0.18 alpha:0.75]
+        : [UIColor colorWithWhite:1.0 alpha:0.75];
+    bg.layer.cornerRadius = cornerRadius;
+    bg.clipsToBounds = YES;
+    return bg;
+}
+
 #pragma mark - Gradient Presets
 
 + (HAGradientPreset)gradientPreset {

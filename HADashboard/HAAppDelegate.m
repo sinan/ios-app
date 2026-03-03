@@ -8,6 +8,8 @@
 #import "HAIconMapper.h"
 #import "HAPerfMonitor.h"
 #import "HAStartupLog.h"
+#import "HAEntityStateCache.h"
+#import "HADeviceIntegrationManager.h"
 
 /// Window subclass that detects system appearance changes (iOS 13+) and posts
 /// HAThemeDidChangeNotification so every view/VC refreshes — not just the
@@ -141,6 +143,7 @@
 - (void)applicationDidBecomeActive:(UIApplication *)application {
     if ([[HAAuthManager sharedManager] isConfigured]) {
         [[HAConnectionManager sharedManager] connect];
+        [[HADeviceIntegrationManager sharedManager] start];
     }
 
     // Request Guided Access if kiosk mode is on and not already in Guided Access.
@@ -161,6 +164,9 @@
 
 - (void)applicationWillResignActive:(UIApplication *)application {
     [[HAPerfMonitor sharedMonitor] stop];
+    // Flush entity state cache to disk synchronously before disconnect
+    [[HADeviceIntegrationManager sharedManager] stop];
+    [[HAEntityStateCache sharedCache] flushToDisk];
     [[HAConnectionManager sharedManager] disconnect];
 
     // Exit Guided Access when app goes to background (if we initiated it)

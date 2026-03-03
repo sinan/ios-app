@@ -30,7 +30,15 @@ extern NSString *const HAConnectionManagerDidReceiveRegistriesNotification;    /
 @property (nonatomic, weak) id<HAConnectionManagerDelegate> delegate;
 @property (nonatomic, readonly, getter=isConnected) BOOL connected;
 
+/// YES when the dashboard is rendering from cached data (before first live update).
+@property (nonatomic, readonly) BOOL showingCachedData;
+
 + (instancetype)sharedManager;
+
+/// Load cached entity states and dashboard config from disk into memory.
+/// Call before connect to enable instant launch from cache.
+/// Returns YES if cached data was loaded.
+- (BOOL)loadCachedStateIfAvailable;
 
 /// Configure and connect using stored auth credentials
 - (void)connect;
@@ -92,5 +100,14 @@ extern NSString *const HAConnectionManagerDidReceiveRegistriesNotification;    /
 
 /// Whether area/entity/device registries have been loaded
 @property (nonatomic, readonly) BOOL registriesLoaded;
+
+/// Subscribe to a WebSocket event type. Returns subscription message ID.
+/// The handler is called on the main queue for each matching event.
+/// Call unsubscribeFromEventWithId: to stop.
+- (NSInteger)subscribeToEventType:(NSString *)eventType
+                          handler:(void (^)(NSDictionary *eventData))handler;
+
+/// Unsubscribe from a previously registered event subscription.
+- (void)unsubscribeFromEventWithId:(NSInteger)subscriptionId;
 
 @end

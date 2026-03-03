@@ -7,6 +7,9 @@
 #import "HALovelaceParser.h"
 #import "HAStrategyResolver.h"
 #import "HADemoDataProvider.h"
+#import "HACacheManager.h"
+#import "HAEntityStateCache.h"
+#import "HADashboardConfigCache.h"
 
 NSString *const HAConnectionManagerDidConnectNotification           = @"HAConnectionManagerDidConnect";
 NSString *const HAConnectionManagerDidDisconnectNotification        = @"HAConnectionManagerDidDisconnect";
@@ -49,6 +52,9 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
 @property (nonatomic, strong) id rawEntityRegistry; // stored for reprocessing after device registry
 @property (nonatomic, strong) id rawAreaRegistry;   // stored for floor-area mapping
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, void (^)(id, NSError *)> *pendingCompletions;
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, void (^)(NSDictionary *)> *eventHandlers; // subscriptionId -> handler
+@property (nonatomic, assign, readwrite) BOOL showingCachedData;
+@property (nonatomic, copy) NSString *lastConnectedServerURL; // detect server URL change
 @end
 
 @implementation HAConnectionManager
@@ -67,6 +73,7 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
     if (self) {
         _entityStore = [NSMutableDictionary dictionary];
         _pendingCompletions = [NSMutableDictionary dictionary];
+        _eventHandlers = [NSMutableDictionary dictionary];
     }
     return self;
 }
@@ -87,6 +94,21 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
         return;
     }
 
+    // Configure cache manager with current server URL
+    NSString *serverURL = auth.serverURL;
+    if (serverURL) {
+        // If server URL changed, clear in-memory entity store (stale entities from old server)
+        if (self.lastConnectedServerURL && ![self.lastConnectedServerURL isEqualToString:serverURL]) {
+            NSLog(@"[HAConnection] Server URL changed, clearing stale entity store");
+            @synchronized(self.entityStore) {
+                [self.entityStore removeAllObjects];
+            }
+            self.lovelaceDashboard = nil;
+        }
+        self.lastConnectedServerURL = serverURL;
+        [HACacheManager sharedManager].serverURL = serverURL;
+    }
+
     self.intentionalDisconnect = NO;
     self.reconnectAttempt = 0;
 
@@ -97,6 +119,47 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
     self.wsClient = [[HAWebSocketClient alloc] initWithURL:auth.webSocketURL token:auth.accessToken];
     self.wsClient.delegate = self;
     [self.wsClient connect];
+}
+
+- (BOOL)loadCachedStateIfAvailable {
+    HAAuthManager *auth = [HAAuthManager sharedManager];
+    if (auth.isDemoMode || !auth.isConfigured) return NO;
+
+    NSString *serverURL = auth.serverURL;
+    if (!serverURL) return NO;
+    [HACacheManager sharedManager].serverURL = serverURL;
+    self.lastConnectedServerURL = serverURL;
+
+    BOOL loaded = NO;
+
+    // Load cached entity states
+    NSDictionary<NSString *, NSDictionary *> *cachedStates = [[HAEntityStateCache sharedCache] loadCachedStates];
+    if (cachedStates.count > 0) {
+        @synchronized(self.entityStore) {
+            for (NSString *entityId in cachedStates) {
+                HAEntity *entity = [[HAEntity alloc] initWithDictionary:cachedStates[entityId]];
+                self.entityStore[entityId] = entity;
+            }
+        }
+        NSLog(@"[HAConnection] Loaded %lu cached entities for instant launch", (unsigned long)cachedStates.count);
+        loaded = YES;
+    }
+
+    // Load cached dashboard config
+    NSString *dashboardPath = auth.selectedDashboardPath;
+    NSDictionary *cachedConfig = [[HADashboardConfigCache sharedCache] loadCachedConfigForDashboard:dashboardPath];
+    if (cachedConfig) {
+        self.lovelaceDashboard = [HALovelaceParser parseDashboardFromDictionary:cachedConfig];
+        if (self.lovelaceDashboard) {
+            NSLog(@"[HAConnection] Loaded cached dashboard config for instant launch");
+            loaded = YES;
+        }
+    }
+
+    if (loaded) {
+        self.showingCachedData = YES;
+    }
+    return loaded;
 }
 
 - (void)loadDemoData {
@@ -171,6 +234,9 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
     [self cancelReconnect];
     [self.wsClient disconnect];
 
+    // Clear event subscription handlers (subscriptions invalidated on disconnect)
+    [self.eventHandlers removeAllObjects];
+
     // Fail all pending completion handlers so callers don't hang indefinitely
     NSDictionary<NSNumber *, void (^)(id, NSError *)> *pending = [self.pendingCompletions copy];
     [self.pendingCompletions removeAllObjects];
@@ -184,11 +250,9 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
     self.apiClient = nil;
     self.connected = NO;
 
-    // Clear all cached data so a subsequent connect() starts fresh
-    @synchronized(self.entityStore) {
-        [self.entityStore removeAllObjects];
-    }
-    self.lovelaceDashboard = nil;
+    // Keep entityStore and lovelaceDashboard in memory for cache-first launch.
+    // They'll be replaced by fresh data on next connect. If the server URL
+    // changes, connect() clears them.
     self.pendingStrategyConfig = nil;
     self.availableDashboards = nil;
     self.areaNames = nil;
@@ -275,6 +339,10 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
                                 userInfo:@{@"dashboard": self.lovelaceDashboard}];
             }
         }
+
+        // Cache entity states to disk (debounced)
+        self.showingCachedData = NO;
+        [[HAEntityStateCache sharedCache] entitiesDidUpdate:snapshot];
 
         [self.delegate connectionManager:self didReceiveAllStates:snapshot];
         [[NSNotificationCenter defaultCenter]
@@ -506,6 +574,28 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
     NSInteger msgId = [self.wsClient sendCommand:command];
     if (completion) {
         self.pendingCompletions[@(msgId)] = [completion copy];
+    }
+}
+
+- (NSInteger)subscribeToEventType:(NSString *)eventType
+                          handler:(void (^)(NSDictionary *eventData))handler {
+    if (!self.wsClient.isAuthenticated || !handler) return 0;
+    NSDictionary *command = @{
+        @"type": @"subscribe_events",
+        @"event_type": eventType,
+    };
+    NSInteger msgId = [self.wsClient sendCommand:command];
+    self.eventHandlers[@(msgId)] = [handler copy];
+    return msgId;
+}
+
+- (void)unsubscribeFromEventWithId:(NSInteger)subscriptionId {
+    [self.eventHandlers removeObjectForKey:@(subscriptionId)];
+    if (self.wsClient.isAuthenticated && subscriptionId > 0) {
+        [self.wsClient sendCommand:@{
+            @"type": @"unsubscribe_events",
+            @"subscription": @(subscriptionId),
+        }];
     }
 }
 
@@ -916,6 +1006,10 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
         } else if (msgId == self.lovelaceMessageId && success) {
             NSDictionary *result = message[@"result"];
             if ([result isKindOfClass:[NSDictionary class]]) {
+                // Cache the raw Lovelace config to disk
+                NSString *dashPath = [[HAAuthManager sharedManager] selectedDashboardPath];
+                [[HADashboardConfigCache sharedCache] cacheConfig:result forDashboard:dashPath];
+
                 // Check if this is a strategy-based dashboard
                 NSDictionary *strategy = result[@"strategy"];
                 if ([strategy isKindOfClass:[NSDictionary class]]) {
@@ -1042,6 +1136,16 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
         NSDictionary *event = message[@"event"];
         NSString *eventType = event[@"event_type"];
 
+        // Dispatch to registered event handlers by subscription ID
+        NSInteger subId = [message[@"id"] integerValue];
+        void (^handler)(NSDictionary *) = self.eventHandlers[@(subId)];
+        if (handler) {
+            NSDictionary *eventData = event[@"data"] ?: event;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                handler(eventData);
+            });
+        }
+
         if ([eventType isEqualToString:@"state_changed"]) {
             NSDictionary *eventData = event[@"data"];
             NSDictionary *newState = eventData[@"new_state"];
@@ -1060,6 +1164,9 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
                     self.entityStore[entityId] = entity;
                 }
             }
+
+            // Notify entity state cache (debounced disk write)
+            [[HAEntityStateCache sharedCache] entitiesDidUpdate:[self allEntities]];
 
             [self.delegate connectionManager:self didUpdateEntity:entity];
             [[NSNotificationCenter defaultCenter]

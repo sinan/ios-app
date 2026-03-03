@@ -246,7 +246,20 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
         self.lovelaceLoaded = NO;
         self.lovelaceFetchDone = NO;
         self.selectedViewIndex = savedViewIndex;
-        [self showLoading:YES message:@"Connecting..."];
+
+        // Cache-first: load cached data for instant launch before connecting
+        if ([conn loadCachedStateIfAvailable] && conn.lovelaceDashboard) {
+            self.statesLoaded = YES;
+            self.lovelaceLoaded = YES;
+            self.lovelaceFetchDone = YES;
+            self.lovelaceDashboard = conn.lovelaceDashboard;
+            [self rebuildDashboard];
+            [self showLoading:NO message:nil];
+            // Show subtle "Connecting..." in connection bar while we establish live connection
+            [self showConnectionBar:YES message:@"Connecting..."];
+        } else {
+            [self showLoading:YES message:@"Connecting..."];
+        }
         [conn connect];
     } else if (self.statesLoaded) {
         // Returning from a pushed VC (e.g. Settings) with connection still up.
@@ -317,6 +330,7 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
         self.view.backgroundColor = [HATheme backgroundColor];
         self.backgroundGradient.hidden = YES;
     }
+
     self.connectionBar.backgroundColor = [HATheme connectionBarColor];
     self.statusLabel.textColor = [HATheme secondaryTextColor];
     self.titleButton.tintColor = [HATheme primaryTextColor];
@@ -339,6 +353,14 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
 
 - (void)themeDidChange:(NSNotification *)notification {
     [self applyTheme];
+
+    // Clear all blur backgroundViews — the blur style (light/dark) or
+    // blurred gradient cache has changed. applyBlurBackgroundToCell: will
+    // recreate them with the correct style during reload.
+    for (UICollectionViewCell *cell in self.collectionView.visibleCells) {
+        cell.backgroundView = nil;
+    }
+
     // On iOS 9, reloadData may not call willDisplayCell for already-visible cells.
     // Invalidate the layout to force a full re-display pass.
     [self.collectionView.collectionViewLayout invalidateLayout];
@@ -1480,43 +1502,18 @@ static const CGFloat kRowUnitHeight = 56.0;
 #pragma mark - Visibility-Based Loading
 
 /// Apply frosted-glass blur backgroundView to card cells (cornerRadius > 0).
-/// Idempotent — checks if blur is already applied to avoid double-work.
-/// Called from both cellForItemAtIndexPath (iOS 9 compat) and willDisplayCell (iOS 10+).
+/// Idempotent — safe to call from both cellForItemAtIndexPath and willDisplayCell.
 - (void)applyBlurBackgroundToCell:(UICollectionViewCell *)cell {
     BOOL isCard = (cell.contentView.layer.cornerRadius > 0);
 
     if (isCard) {
-        // Force clear background so the blur backgroundView shows through.
         cell.contentView.backgroundColor = [UIColor clearColor];
         cell.contentView.opaque = NO;
-    }
 
-    if (isCard && [HATheme canBlur]) {
-        UIBlurEffectStyle blurStyle = [HATheme gradientBlurStyle];
-        UIVisualEffectView *existing = [cell.backgroundView isKindOfClass:[UIVisualEffectView class]]
-            ? (UIVisualEffectView *)cell.backgroundView : nil;
-        if (!existing || ![existing.effect isEqual:[UIBlurEffect effectWithStyle:blurStyle]]) {
-            UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:blurStyle]];
-            blurView.layer.cornerRadius = cell.contentView.layer.cornerRadius;
-            blurView.clipsToBounds = YES;
-            cell.backgroundView = blurView;
-        }
-    } else if (isCard) {
-        // Reduce Transparency fallback: solid semi-transparent background.
-        UIView *bg;
-        if ([cell.backgroundView isKindOfClass:[UIVisualEffectView class]] || !cell.backgroundView) {
-            bg = [[UIView alloc] init];
-            bg.layer.cornerRadius = cell.contentView.layer.cornerRadius;
-            bg.clipsToBounds = YES;
-            cell.backgroundView = bg;
-        } else {
-            bg = cell.backgroundView;
-        }
-        bg.backgroundColor = [HATheme effectiveDarkMode]
-            ? [UIColor colorWithWhite:0.18 alpha:0.75]
-            : [UIColor colorWithWhite:1.0 alpha:0.75];
+        // Always set the backgroundView — theme changes alter blur style (light/dark).
+        cell.backgroundView = [HATheme frostedBackgroundViewWithCornerRadius:
+            cell.contentView.layer.cornerRadius];
     } else if ([cell.backgroundView isKindOfClass:[UIVisualEffectView class]]) {
-        // Clear stale blur backgroundView from non-card cells.
         cell.backgroundView = nil;
     }
 }
@@ -2120,7 +2117,11 @@ heightForHeaderInSection:(NSInteger)section {
 
 - (void)connectionManagerDidConnect:(HAConnectionManager *)manager {
     [self showConnectionBar:NO message:nil];
-    [self showLoading:YES message:@"Loading dashboard..."];
+    // If we're already showing cached data, don't show loading spinner —
+    // live data will seamlessly replace cached data in the background
+    if (!manager.showingCachedData && !self.statesLoaded) {
+        [self showLoading:YES message:@"Loading dashboard..."];
+    }
     // Fetch available dashboards for the title switcher
     [manager fetchDashboardList];
 }

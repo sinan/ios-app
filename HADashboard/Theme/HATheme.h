@@ -36,6 +36,11 @@ extern NSString *const HAThemeDidChangeNotification;
 /// Returns NO when Reduce Transparency is enabled in accessibility settings.
 + (BOOL)canBlur;
 
+/// Create a frosted-glass background view suitable for insertion as a subview or backgroundView.
+/// Returns UIVisualEffectView when blur is available, or a semi-transparent solid UIView
+/// when Reduce Transparency is on.
++ (UIView *)frostedBackgroundViewWithCornerRadius:(CGFloat)cornerRadius;
+
 + (HAGradientPreset)gradientPreset;
 + (void)setGradientPreset:(HAGradientPreset)preset;
 + (NSArray<UIColor *> *)gradientColors;

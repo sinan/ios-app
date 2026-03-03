@@ -188,6 +188,7 @@
 		21E3A121CE7F93783A365763 /* HAInputDateTimeEntityCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 86F02E711D9F3C06A26A52A1 /* HAInputDateTimeEntityCell.m */; };
 		222281EFE9FD4B0B6F99487E /* LOTBezierPath.h in Sources */ = {isa = PBXBuildFile; fileRef = 1F33698AAB4041ED812932F3 /* LOTBezierPath.h */; };
 		227012481CC7C677A67FED89 /* testGaugeSeverity__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C28C16E302A4439899013C1E /* testGaugeSeverity__light@2x.png */; };
+		22D12E429523F54D75C9801C /* HARemoteCommandHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = A14802F8505A2382BDB01198 /* HARemoteCommandHandler.m */; };
 		22D51F990B68D9B8DDF629FE /* testCoverScDoor__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 93C302EF73B6205CBCCE1134 /* testCoverScDoor__light@2x.png */; };
 		22DB1747614BCB6083F69E4E /* HAHistoryManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 9CD3CEE209D08615B35F52CB /* HAHistoryManager.m */; };
 		22F8E436FF96F1ADB7A59146 /* testLightTile_brightness__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 5EB409AD56E8C8FFCB5F3382 /* testLightTile_brightness__light@2x.png */; };
@@ -242,6 +243,7 @@
 		2BE5D6E9645C0264C99BA803 /* HAAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 73B069A22C4D8128C1DB7094 /* HAAction.m */; };
 		2BEDD34530AC98FF54B9F692 /* testFanOff__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 16E49B9AD863C5F2B718BAFB /* testFanOff__light@2x.png */; };
 		2C4275DCD5D60B53C580C634 /* HASafeDictTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EC033606331DA18E5D52CE4 /* HASafeDictTests.m */; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* HACacheTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* HACacheTests.m */; };
 		2CE91E195244B473F07EFBB1 /* testLightTile_default__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 35AE9632CA0048E1BDF5D0E0 /* testLightTile_default__dark_gradient@2x.png */; };
 		2CFB0106594372698C42ED5E /* testAttributeRowShortValue_attributeRowShort_light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D480CF8485CD1FBF8B148C0A /* testAttributeRowShortValue_attributeRowShort_light@2x.png */; };
 		2D0802D50C788ACF98F3C5B7 /* testClimateScHeating__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E43DC4B08A0C19934FF76607 /* testClimateScHeating__light@2x.png */; };
@@ -325,6 +327,7 @@
 		3D83196F34993419AFB9E3A1 /* testClimateScAll__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D520B2F8DE45975C4882F8CB /* testClimateScAll__light@2x.png */; };
 		3DBFEDDE3250620417E0AA16 /* testAlarmDisarmed_alarmDisarmed_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D06EBAD0FD1D31E5081BCC4F /* testAlarmDisarmed_alarmDisarmed_gradient@2x.png */; };
 		3DC227A923F09C69E6053DF5 /* testSceneTile_default__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 461DB841C7599C21FFBEDFBD /* testSceneTile_default__dark_gradient@2x.png */; };
+		3DCA54BBEA4A6DB5397BA572 /* HACacheManager.m in Sources */ = {isa = PBXBuildFile; fileRef = B8D4D075B4335EE2883400DB /* HACacheManager.m */; };
 		3DE0F00162A7E906E7361A73 /* testEventSc__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 2BF6A99E3DC51BFE74E2F1F1 /* testEventSc__light@2x.png */; };
 		3DFD5A18D3C3FFFAB738FE32 /* testValveScClosed__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 8A8B421EF4B92F3626D0DA25 /* testValveScClosed__light@2x.png */; };
 		3E003ABEA1EFC46E3302B29A /* testMinimalSection_2Entities_minimal_2entities_light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 59AA62F60A9FB1EAD9BA71F9 /* testMinimalSection_2Entities_minimal_2entities_light@2x.png */; };
@@ -361,6 +364,7 @@
 		4437692CD9FE907DA9FE701B /* testLightScRgb__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 752401B46F108218AC6275A3 /* testLightScRgb__dark_gradient@2x.png */; };
 		4441278A3E6AE903B9DDA561 /* lottie.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 0E96FF56623C2CEF3C47F9DD /* lottie.min.js */; };
 		44807FBAC7C4F21D843ED2F6 /* testWeatherCloudy__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 95E9CEE40715AB81D8E430AE /* testWeatherCloudy__dark_gradient@2x.png */; };
+		44999F9C018DC8F9DD729D0C /* HASensorReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = FB361C9D351DE13A97400B57 /* HASensorReporter.m */; };
 		44C2AB24B87E8A1035D19E99 /* testVacuumButton_default__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = FA47D1714AAF12A4650DB4E3 /* testVacuumButton_default__dark_gradient@2x.png */; };
 		44ED621AB55C56FA10F83059 /* testInputBooleanTile_default__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7C9A00A46EDFFC52771A1FAD /* testInputBooleanTile_default__dark_gradient@2x.png */; };
 		452581CFC4CB1C99CF4DC665 /* testClimateTile_showNameFalse__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E25DDFB865A731A0D95E1CD9 /* testClimateTile_showNameFalse__light@2x.png */; };
@@ -389,6 +393,7 @@
 		4834AAA21255155CDC9E6AC3 /* testThermostatScHeating__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3A0CED2DE5368E2AC659D3C5 /* testThermostatScHeating__light@2x.png */; };
 		483E7C85356FD6451560A5D1 /* testSensorScHumidity__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 778EEFA4C31E08B4EB44EB07 /* testSensorScHumidity__light@2x.png */; };
 		487A36BE26DAE9184315507F /* testThermostatScHeatCool__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 07428F1E75FCF0795F127DC8 /* testThermostatScHeatCool__dark_gradient@2x.png */; };
+		4901E47217BDA81A7663A00F /* HAEntityStateCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 2A1425E9D9D0ACD7C049B801 /* HAEntityStateCache.m */; };
 		490EAD7B55AD1574A19F31B3 /* testFanScOff__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 5230172835825A594C796AD9 /* testFanScOff__dark_gradient@2x.png */; };
 		491CC2EB7F3F60EDEDE2BCFB /* testBinarySensorScSmoke__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 26D6D00B35892F97A1F55218 /* testBinarySensorScSmoke__dark_gradient@2x.png */; };
 		492D98379458EBFC6C811CA4 /* HABadgeRowCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 388FF9D2AF9B7E8CF53EC105 /* HABadgeRowCell.m */; };
@@ -767,7 +772,9 @@
 		93168C6EB69D4DCBFD3F0AC2 /* testVacuumError_vacuumError_dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E657C6C97729DBC7CB1CDF2 /* testVacuumError_vacuumError_dark_gradient@2x.png */; };
 		9382C6E63CA010A315E5E940 /* testCoverScPosTilt__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3AC5B4E5AAF3535EDA8DE343 /* testCoverScPosTilt__light@2x.png */; };
 		93AC4AEE9B1A240698148E8B /* testTileWithCoverFeatures_tileCoverFeatures_dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 5131B9368DF28FD8535F0B0C /* testTileWithCoverFeatures_tileCoverFeatures_dark_gradient@2x.png */; };
+		93ECACFECF4A88B9B652D609 /* HADashboardConfigCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 799724AA70112D3CD654762F /* HADashboardConfigCache.m */; };
 		94041ACD661CDC0EC8B9F02A /* testFanScReverse__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7E3BBD6F5458E020B2CAD5ED /* testFanScReverse__light@2x.png */; };
+		94072381D0D0E2F3DDF8FD31 /* HADeviceIntegrationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A73E5C753823A668AD897C35 /* HADeviceIntegrationManager.m */; };
 		9408B162C614A4E5202E901F /* LOTLayerContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2E13A69C0047C64E57C80242 /* LOTLayerContainer.m */; };
 		9423CEBF4C023742CAD7EED4 /* testSideBySide_6plus6_TwoLights_6plus6_two_lights_light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 40F5DC27662F55949B32D989 /* testSideBySide_6plus6_TwoLights_6plus6_two_lights_light@2x.png */; };
 		9486AB278A90B913E81CDBAE /* HASwitch.m in Sources */ = {isa = PBXBuildFile; fileRef = 50C30C1444C6C5FDE2E02808 /* HASwitch.m */; };
@@ -1273,6 +1280,7 @@
 		F2CD3EE9B2222D9CA8845A05 /* testGlanceNoState_glanceNoState_light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 106FFA9A66A41815181D39F3 /* testGlanceNoState_glanceNoState_light@2x.png */; };
 		F2E9C43DBDBAB39065812AB9 /* testClimateOff__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A46B231714C70442F1E1CCC4 /* testClimateOff__light@2x.png */; };
 		F2FB6310674DC1673392BA8A /* testCoverScShutter__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DAEF452292A3CB4D002D7722 /* testCoverScShutter__dark_gradient@2x.png */; };
+		F30764629F9AD737BD59FA3E /* HADeviceRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = D5673D876251FD6A44980900 /* HADeviceRegistration.m */; };
 		F3A1C3B016CF9EA4F8832D4A /* testCoverScTilt__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 17ACA9C596B7420218A87D08 /* testCoverScTilt__dark_gradient@2x.png */; };
 		F3B054602045EE3583F1950B /* wind.json in Resources */ = {isa = PBXBuildFile; fileRef = 7CD5BB8143EAFFBF96EB3F1F /* wind.json */; };
 		F3E3C3BC8583BFF6AF865CED /* testSwitchButton_default__dark_gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 35238233F3D67E0E284A4523 /* testSwitchButton_default__dark_gradient@2x.png */; };
@@ -1471,6 +1479,7 @@
 		168EC2137328C993A0F88385 /* HAEdgeCaseSnapshotTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HAEdgeCaseSnapshotTests.m; sourceTree = "<group>"; };
 		168F0242A26F1867DB9EA4B3 /* testBinarySensorScMoisture__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testBinarySensorScMoisture__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		16E49B9AD863C5F2B718BAFB /* testFanOff__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testFanOff__light@2x.png"; sourceTree = "<group>"; };
+		16E73D4AC14E0B698B28377C /* HARemoteCommandHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HARemoteCommandHandler.h; sourceTree = "<group>"; };
 		16F9B45C2390A088664DA888 /* testLockScUnlocked__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLockScUnlocked__light@2x.png"; sourceTree = "<group>"; };
 		171065616130B89CA23142D3 /* HATileEntityCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HATileEntityCell.m; sourceTree = "<group>"; };
 		17ACA9C596B7420218A87D08 /* testCoverScTilt__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testCoverScTilt__dark_gradient@2x.png"; sourceTree = "<group>"; };
@@ -1571,6 +1580,7 @@
 		29C48BC8D5DC44F35D04FFF7 /* testDetailViewFan_detailViewFan_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testDetailViewFan_detailViewFan_gradient@2x.png"; sourceTree = "<group>"; };
 		29FC80BBAD99F1ED535A4A17 /* testSensorSectionHumidity_sensorSectionHumidity_dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testSensorSectionHumidity_sensorSectionHumidity_dark_gradient@2x.png"; sourceTree = "<group>"; };
 		2A0C4328462373DA44D18200 /* HADisplayConfigSnapshotTests_Batch2.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HADisplayConfigSnapshotTests_Batch2.m; sourceTree = "<group>"; };
+		2A1425E9D9D0ACD7C049B801 /* HAEntityStateCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HAEntityStateCache.m; sourceTree = "<group>"; };
 		2A6E7637F096D4D9988B4EEA /* LOTAsset.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LOTAsset.h; sourceTree = "<group>"; };
 		2A6FB8231AF7B29E4AB4B6B4 /* UIImage+Snapshot.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+Snapshot.h"; sourceTree = "<group>"; };
 		2A811E1874630FFC4008EFF7 /* testHumidifierTile_showNameFalse__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testHumidifierTile_showNameFalse__light@2x.png"; sourceTree = "<group>"; };
@@ -1649,6 +1659,7 @@
 		3972080E7FD170B7D51B6B28 /* testDeviceTrackerTile_showStateFalse__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testDeviceTrackerTile_showStateFalse__light@2x.png"; sourceTree = "<group>"; };
 		397B549E6DBFA47DCECC5CCE /* testLightGlance_default__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLightGlance_default__light@2x.png"; sourceTree = "<group>"; };
 		398362558D5BC7787F14736C /* cloudy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cloudy.json; sourceTree = "<group>"; };
+		39A4A6068BE7547B02DC84C2 /* HACacheManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HACacheManager.h; sourceTree = "<group>"; };
 		39AE66676AE6EAA9570BDC43 /* HAEntityDetailSection.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HAEntityDetailSection.m; sourceTree = "<group>"; };
 		39BD58CB51AB6404B48EB94D /* testInputDateTimeTile_default__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testInputDateTimeTile_default__light@2x.png"; sourceTree = "<group>"; };
 		39F023313866A7F2B8FC72F7 /* testHumidifierScOff__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testHumidifierScOff__dark_gradient@2x.png"; sourceTree = "<group>"; };
@@ -1872,6 +1883,7 @@
 		5EADEA6211555CCA571723AB /* testSensorScBattery__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testSensorScBattery__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		5EB409AD56E8C8FFCB5F3382 /* testLightTile_brightness__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLightTile_brightness__light@2x.png"; sourceTree = "<group>"; };
 		5EC033606331DA18E5D52CE4 /* HASafeDictTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HASafeDictTests.m; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* HACacheTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HACacheTests.m; sourceTree = "<group>"; };
 		5EF0C0445E68ABAC50E5F808 /* HAEntity+Cover.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "HAEntity+Cover.h"; sourceTree = "<group>"; };
 		5F242742ED67059262C4343F /* testVacuumError_vacuumError_light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testVacuumError_vacuumError_light@2x.png"; sourceTree = "<group>"; };
 		5F3977C0C20957C49DC162F6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -1922,6 +1934,7 @@
 		6783BC2B5280A8D5D85EE7DF /* testSensorGenericText__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testSensorGenericText__light@2x.png"; sourceTree = "<group>"; };
 		67C8CE315DE2067322DA324B /* testCoverScGarage__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testCoverScGarage__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		68069576551C176A1CEE65DC /* testLongNameLight__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLongNameLight__light@2x.png"; sourceTree = "<group>"; };
+		686118554AAFAFE6C0557915 /* HADeviceRegistration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HADeviceRegistration.h; sourceTree = "<group>"; };
 		68AB589C2E7891A655044217 /* LOTTransformInterpolator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LOTTransformInterpolator.h; sourceTree = "<group>"; };
 		68B5C673682A8D7E2BBE1360 /* testVacuumReturning_vacuumReturning_light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testVacuumReturning_vacuumReturning_light@2x.png"; sourceTree = "<group>"; };
 		68BF02DD16FB43C9E325AB14 /* testLightTile_default__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLightTile_default__light@2x.png"; sourceTree = "<group>"; };
@@ -2031,6 +2044,7 @@
 		790C44CADFFF8AC00332767C /* LOTCircleAnimator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LOTCircleAnimator.h; sourceTree = "<group>"; };
 		792F52F0948594D04FCF8030 /* testScriptSc__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testScriptSc__light@2x.png"; sourceTree = "<group>"; };
 		7991C088C3CF9E6A59B5D09C /* testSideBySide_9plus3_Thermostat_Vacuum_9plus3_thermostat_vacuum_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testSideBySide_9plus3_Thermostat_Vacuum_9plus3_thermostat_vacuum_gradient@2x.png"; sourceTree = "<group>"; };
+		799724AA70112D3CD654762F /* HADashboardConfigCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HADashboardConfigCache.m; sourceTree = "<group>"; };
 		7A266A691389688F5FA70541 /* HAEntity+Update.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "HAEntity+Update.h"; sourceTree = "<group>"; };
 		7A4A009FB873F464563A494E /* testLockUnlocked_lockUnlocked_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLockUnlocked_lockUnlocked_gradient@2x.png"; sourceTree = "<group>"; };
 		7A4CB94EEB169DDCFBE05DBD /* FBSnapshotTestCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSnapshotTestCase.h; sourceTree = "<group>"; };
@@ -2149,6 +2163,7 @@
 		8CE1309D6715AA7185FF825E /* HAEntity+Humidifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "HAEntity+Humidifier.m"; sourceTree = "<group>"; };
 		8D52A94DDE9F7BD1AD1C7732 /* testPersonGlance_default__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testPersonGlance_default__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		8D5A98638EC254012765225B /* testSceneActivated_sceneActivated_dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testSceneActivated_sceneActivated_dark_gradient@2x.png"; sourceTree = "<group>"; };
+		8D76A5173454DC50DF024ECD /* HADeviceIntegrationManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HADeviceIntegrationManager.h; sourceTree = "<group>"; };
 		8DAD4C09D33427F52D597583 /* testSensorScEnergy__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testSensorScEnergy__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		8DCAC747A45D392443B8C949 /* thunderstorms-day.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "thunderstorms-day.json"; sourceTree = "<group>"; };
 		8DCC1C7F80258BB8EE58E78B /* HAWeatherHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HAWeatherHelper.h; sourceTree = "<group>"; };
@@ -2238,6 +2253,7 @@
 		9AC5674A5E4DB1290735DC18 /* testClimateTile_targetTemperature__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testClimateTile_targetTemperature__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		9ACEB37638726DF749F20FBF /* testLockScUnlocked__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLockScUnlocked__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		9B2C68033D7D845B2C60149C /* testHumidifierScEco__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testHumidifierScEco__light@2x.png"; sourceTree = "<group>"; };
+		9B4098F3FD4EC0430B5E07EF /* HADashboardConfigCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HADashboardConfigCache.h; sourceTree = "<group>"; };
 		9B60E595CB3EE4FC7F1C0FD1 /* testLightSectionOff_lightSectionOff_dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLightSectionOff_lightSectionOff_dark_gradient@2x.png"; sourceTree = "<group>"; };
 		9B8B99431EB6E311A5275015 /* HASensorEntityCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HASensorEntityCell.m; sourceTree = "<group>"; };
 		9BB581EA0744F168650242C9 /* testMediaPlayerSectionPlaying_mediaPlayerSectionPlaying_light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testMediaPlayerSectionPlaying_mediaPlayerSectionPlaying_light@2x.png"; sourceTree = "<group>"; };
@@ -2274,6 +2290,7 @@
 		A12FED490D0162042C09261B /* testThermostatAuto__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testThermostatAuto__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		A1396CA8E2B2F5FF23BD313D /* testCounterSc__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testCounterSc__light@2x.png"; sourceTree = "<group>"; };
 		A144C78E8FF90795B9BBF80B /* hail.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = hail.json; sourceTree = "<group>"; };
+		A14802F8505A2382BDB01198 /* HARemoteCommandHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HARemoteCommandHandler.m; sourceTree = "<group>"; };
 		A16BE042BDBC9C838E7DD889 /* SocketRocket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SocketRocket.h; sourceTree = "<group>"; };
 		A1B49BC6C1B9796F6A51D137 /* HAInputSnapshotTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HAInputSnapshotTests.m; sourceTree = "<group>"; };
 		A1CA5A2E4F16527B84038CF5 /* testHumidifierOff__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testHumidifierOff__light@2x.png"; sourceTree = "<group>"; };
@@ -2299,6 +2316,7 @@
 		A6A8201C29F6C8AE52D57069 /* testCoverTile_tiltPosition__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testCoverTile_tiltPosition__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		A6D33FE8BD3051481302546C /* HADemoDataProvider.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HADemoDataProvider.h; sourceTree = "<group>"; };
 		A6F696F6D7FE353BAAC282D8 /* testSensorScText__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testSensorScText__light@2x.png"; sourceTree = "<group>"; };
+		A73E5C753823A668AD897C35 /* HADeviceIntegrationManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HADeviceIntegrationManager.m; sourceTree = "<group>"; };
 		A7A45C42BB426E04BF8CEFA3 /* testLightOnBrightness__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLightOnBrightness__light@2x.png"; sourceTree = "<group>"; };
 		A7FEB8214EBEB747BE184811 /* testInputTextEmpty__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testInputTextEmpty__light@2x.png"; sourceTree = "<group>"; };
 		A8072BB3C22561E6A2C4170E /* HAClimateSnapshotTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HAClimateSnapshotTests.m; sourceTree = "<group>"; };
@@ -2337,6 +2355,7 @@
 		AE8F74A851CD575D69397B73 /* UIView+HAUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIView+HAUtilities.h"; sourceTree = "<group>"; };
 		AECF6023D946C73E1A07AE82 /* testDetailViewMediaPlayer_detailViewMediaPlayer_dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testDetailViewMediaPlayer_detailViewMediaPlayer_dark_gradient@2x.png"; sourceTree = "<group>"; };
 		AF042A4EB35E1D433186F818 /* testLightGlance_stateColorFalse__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLightGlance_stateColorFalse__light@2x.png"; sourceTree = "<group>"; };
+		AF9E0A1BEE728609D47E51EA /* HASensorReporter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HASensorReporter.h; sourceTree = "<group>"; };
 		AFC64B862B94C8B9261722EF /* HATheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HATheme.m; sourceTree = "<group>"; };
 		AFD1EB953191CAC12D3EAE0D /* testInputNumberBox__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testInputNumberBox__light@2x.png"; sourceTree = "<group>"; };
 		AFDACEF5B522083363357B81 /* testLockScJammed__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testLockScJammed__dark_gradient@2x.png"; sourceTree = "<group>"; };
@@ -2387,6 +2406,7 @@
 		B7FDED55F89A5EA352438A10 /* HACalendarCardCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HACalendarCardCell.h; sourceTree = "<group>"; };
 		B80F08099BE1CDC401AFFB40 /* testTimerTile_default__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testTimerTile_default__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		B8581FCE95A88CBF4E946FE3 /* testGauge100Percent__gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testGauge100Percent__gradient@2x.png"; sourceTree = "<group>"; };
+		B8D4D075B4335EE2883400DB /* HACacheManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HACacheManager.m; sourceTree = "<group>"; };
 		B948459191CA9574F1BCE2AE /* HASkeletonView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HASkeletonView.h; sourceTree = "<group>"; };
 		B949CA64B6918C8B90225BB8 /* testHumidifierTile_showStateFalse__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testHumidifierTile_showStateFalse__light@2x.png"; sourceTree = "<group>"; };
 		B9CA03E9B8EE30949F5B55D0 /* LOTShapeGradientFill.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LOTShapeGradientFill.h; sourceTree = "<group>"; };
@@ -2484,6 +2504,7 @@
 		CAFF5E2CE07581B30E463E86 /* HACounterEntityCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HACounterEntityCell.h; sourceTree = "<group>"; };
 		CB202B450A9EBD9E273426E3 /* HABaseSnapshotTestCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HABaseSnapshotTestCase.m; sourceTree = "<group>"; };
 		CC1E56E9F5A336BB58D43680 /* testClimateSectionCool_climateSectionCool_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testClimateSectionCool_climateSectionCool_gradient@2x.png"; sourceTree = "<group>"; };
+		CC5FEA2AA1A8C32A1249A2D0 /* HAEntityStateCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HAEntityStateCache.h; sourceTree = "<group>"; };
 		CC7048E617278DB393BEE895 /* HAActionDispatcherTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HAActionDispatcherTests.m; sourceTree = "<group>"; };
 		CCD4EA84802932229A2C404C /* testTimerActive__gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testTimerActive__gradient@2x.png"; sourceTree = "<group>"; };
 		CCE97E2C76ABB84E19B50374 /* testDetailViewDefault_detailViewDefault_light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testDetailViewDefault_detailViewDefault_light@2x.png"; sourceTree = "<group>"; };
@@ -2533,6 +2554,7 @@
 		D542C48387A042C8872EEE59 /* HADashboardConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HADashboardConfig.h; sourceTree = "<group>"; };
 		D54A662686EB3EAEAB161CBC /* LOTRenderNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LOTRenderNode.h; sourceTree = "<group>"; };
 		D5620701EFB4A3E6BA16492E /* testScriptTile_showNameFalse__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testScriptTile_showNameFalse__light@2x.png"; sourceTree = "<group>"; };
+		D5673D876251FD6A44980900 /* HADeviceRegistration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HADeviceRegistration.m; sourceTree = "<group>"; };
 		D56EB303639F62B08BC5A419 /* testCounterHigh__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testCounterHigh__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		D58FFAB770841DB4B7A305A4 /* LOTFillRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LOTFillRenderer.m; sourceTree = "<group>"; };
 		D5B359C671BC1A74F8FD4B91 /* HACoverEntityCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HACoverEntityCell.h; sourceTree = "<group>"; };
@@ -2763,6 +2785,7 @@
 		FA8562AC70FF28676AB84367 /* testAlarmScTriggered__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testAlarmScTriggered__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		FA9E549296F0364233A02A50 /* UIImage+Compare.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+Compare.m"; sourceTree = "<group>"; };
 		FB213C4E67BAB59D56020667 /* testAlarmArmedHome_alarmArmedHome_dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testAlarmArmedHome_alarmArmedHome_dark_gradient@2x.png"; sourceTree = "<group>"; };
+		FB361C9D351DE13A97400B57 /* HASensorReporter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HASensorReporter.m; sourceTree = "<group>"; };
 		FB5AC39CFCF609EAA1F2883B /* HAEntity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HAEntity.h; sourceTree = "<group>"; };
 		FB5C77BDD78A16F60E1CC1F6 /* LOTValueInterpolator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LOTValueInterpolator.m; sourceTree = "<group>"; };
 		FBDA8E1668F06ECF6181E85D /* testTodoSc__light@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testTodoSc__light@2x.png"; sourceTree = "<group>"; };
@@ -3158,8 +3181,10 @@
 			isa = PBXGroup;
 			children = (
 				EC75A7BF5865FBEC141224F0 /* Auth */,
+				7AB9D07F7502F264AE8988E7 /* Cache */,
 				73EE29F0DCE21B757B1C9B80 /* Controllers */,
 				F7313ECEC5480F78DD59AB22 /* Demo */,
+				B8F18EDB5D90807724E04411 /* Integration */,
 				E1D57968CA6A9F084ED526A7 /* Models */,
 				A556514053D652530987DEB3 /* Networking */,
 				46887388C1A18E9AC7CF7300 /* Resources */,
@@ -3852,6 +3877,19 @@
 			);
 			sourceTree = "<group>";
 		};
+		7AB9D07F7502F264AE8988E7 /* Cache */ = {
+			isa = PBXGroup;
+			children = (
+				39A4A6068BE7547B02DC84C2 /* HACacheManager.h */,
+				B8D4D075B4335EE2883400DB /* HACacheManager.m */,
+				9B4098F3FD4EC0430B5E07EF /* HADashboardConfigCache.h */,
+				799724AA70112D3CD654762F /* HADashboardConfigCache.m */,
+				CC5FEA2AA1A8C32A1249A2D0 /* HAEntityStateCache.h */,
+				2A1425E9D9D0ACD7C049B801 /* HAEntityStateCache.m */,
+			);
+			path = Cache;
+			sourceTree = "<group>";
+		};
 		85E0BFABD52354423A64134C /* HAGlanceSnapshotTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -4098,6 +4136,10 @@
 				425C0ABCCCC9ACB1A5264B16 /* HAAPIClient.m */,
 				7376E6E3086B763C5C48BE5A /* HAConnectionManager.h */,
 				D923F28F7F9CA85F2AE6DC64 /* HAConnectionManager.m */,
+				8D76A5173454DC50DF024ECD /* HADeviceIntegrationManager.h */,
+				A73E5C753823A668AD897C35 /* HADeviceIntegrationManager.m */,
+				686118554AAFAFE6C0557915 /* HADeviceRegistration.h */,
+				D5673D876251FD6A44980900 /* HADeviceRegistration.m */,
 				0D90FC832BB51A26ABCF00CF /* HADiscoveryService.h */,
 				D199436AF0F65C8509089B7C /* HADiscoveryService.m */,
 				86821EF1EA2830D58D9D7495 /* HAHistoryManager.h */,
@@ -4308,6 +4350,17 @@
 			path = HADisplayConfigSnapshotTests_Batch3;
 			sourceTree = "<group>";
 		};
+		B8F18EDB5D90807724E04411 /* Integration */ = {
+			isa = PBXGroup;
+			children = (
+				16E73D4AC14E0B698B28377C /* HARemoteCommandHandler.h */,
+				A14802F8505A2382BDB01198 /* HARemoteCommandHandler.m */,
+				AF9E0A1BEE728609D47E51EA /* HASensorReporter.h */,
+				FB361C9D351DE13A97400B57 /* HASensorReporter.m */,
+			);
+			path = Integration;
+			sourceTree = "<group>";
+		};
 		BB8E7A058281712EE32D1FBF /* PublicHeaders */ = {
 			isa = PBXGroup;
 			children = (
@@ -4355,6 +4408,7 @@
 				A1B49BC6C1B9796F6A51D137 /* HAInputSnapshotTests.m */,
 				0A496416F16A6F8B4787A3C2 /* HALayoutSnapshotTests.m */,
 				B515DAD59397BD82D51BE42F /* HALightingSnapshotTests.m */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* HACacheTests.m */,
 				5EC033606331DA18E5D52CE4 /* HASafeDictTests.m */,
 				C432ACD4D867243A79F62F3D /* HASensorSnapshotTests.m */,
 				96430275DA9C1A3D906305F4 /* HASnapshotTestHelpers.h */,
@@ -4704,7 +4758,7 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					0B2DB332E2D264881C0F8202 = {
-						DevelopmentTeam = 3N7576PTNR;
+						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -5818,6 +5872,7 @@
 				AEC9B5BD1030B53269824A28 /* HAInputSnapshotTests.m in Sources */,
 				AE4C3C8556722A3FA9BF0621 /* HALayoutSnapshotTests.m in Sources */,
 				EFF2D03A1A5B6318EECB0750 /* HALightingSnapshotTests.m in Sources */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* HACacheTests.m in Sources */,
 				2C4275DCD5D60B53C580C634 /* HASafeDictTests.m in Sources */,
 				978DD2C57D1B0B5ACDCD1FB5 /* HASensorSnapshotTests.m in Sources */,
 				8001FCCF9601F206DFB000EC /* HASnapshotTestHelpers.m in Sources */,
@@ -5855,6 +5910,7 @@
 				A439E700FA321068B790BC06 /* HABottomSheetTransitioningDelegate.m in Sources */,
 				77D5FFAC55A19A1C2EA80E71 /* HAButtonEntityCell.m in Sources */,
 				6738DB6F25786FF358968C62 /* HAButtonRowFeatureView.m in Sources */,
+				3DCA54BBEA4A6DB5397BA572 /* HACacheManager.m in Sources */,
 				06F39326AFAE0FEEADD37511 /* HACalendarCardCell.m in Sources */,
 				BBB86B24FB7AF6C047C2EBFA /* HACameraEntityCell.m in Sources */,
 				ED1125408B8C1B6A44EA69E9 /* HAClimateEntityCell.m in Sources */,
@@ -5868,8 +5924,11 @@
 				DBE80703E961AE93F94D292C /* HACounterEntityCell.m in Sources */,
 				13C55734761CA75E85224105 /* HACoverEntityCell.m in Sources */,
 				AC79EE2F196228ED2CE37001 /* HADashboardConfig.m in Sources */,
+				93ECACFECF4A88B9B652D609 /* HADashboardConfigCache.m in Sources */,
 				BC44671712B5700EE4B8AF6A /* HADashboardViewController.m in Sources */,
 				A1C49C7DDB5B90DD76E84C1D /* HADemoDataProvider.m in Sources */,
+				94072381D0D0E2F3DDF8FD31 /* HADeviceIntegrationManager.m in Sources */,
+				F30764629F9AD737BD59FA3E /* HADeviceRegistration.m in Sources */,
 				3A30B5DB31468F2130D6E180 /* HADiscoveredServer.m in Sources */,
 				7D6A8CAF8D06004994F21D8E /* HADiscoveryService.m in Sources */,
 				BA0907F0C532BD69D088B14C /* HAEntitiesCardCell.m in Sources */,
@@ -5892,6 +5951,7 @@
 				DD67EF4B0DE6BE37014390C2 /* HAEntityDetailViewController.m in Sources */,
 				6B8AC1573FF113ED885EF362 /* HAEntityDisplayHelper.m in Sources */,
 				802C1095A8F35AA1ECAA3371 /* HAEntityRowView.m in Sources */,
+				4901E47217BDA81A7663A00F /* HAEntityStateCache.m in Sources */,
 				CA09D195B624E6320498B776 /* HAFanEntityCell.m in Sources */,
 				377DA7048B6E5A88A8CE0E2E /* HAFloor.m in Sources */,
 				D6FA3587815DE9F468C81585 /* HAGaugeCardCell.m in Sources */,
@@ -5926,10 +5986,12 @@
 				82B5571CD88681B98ADD49D7 /* HAPerfMonitor.m in Sources */,
 				38F8169FFA64FFA9635128A2 /* HAPersonEntityCell.m in Sources */,
 				75714986505624EA918DDACA /* HAPictureGlanceCardCell.m in Sources */,
+				22D12E429523F54D75C9801C /* HARemoteCommandHandler.m in Sources */,
 				1B67362D07BD8992BBA9EF37 /* HARemoteEntityCell.m in Sources */,
 				82BFD7ACD06BDDC9A662B2EE /* HASceneEntityCell.m in Sources */,
 				F56F285B6236417E142F8670 /* HASectionHeaderView.m in Sources */,
 				F8A3E1EE39BD809E079669BB /* HASensorEntityCell.m in Sources */,
+				44999F9C018DC8F9DD729D0C /* HASensorReporter.m in Sources */,
 				AFAB9EA86E4781A32E2D24FD /* HASettingsViewController.m in Sources */,
 				D4BE3D17E74A8DFFAE07B003 /* HASidebarLayout.m in Sources */,
 				59622F0708EDCA897EAB6670 /* HASkeletonView.m in Sources */,
@@ -6218,7 +6280,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 0;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 3N7576PTNR;
+				DEVELOPMENT_TEAM = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				INFOPLIST_FILE = HADashboard/Info.plist;
@@ -6315,7 +6377,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 0;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 3N7576PTNR;
+				DEVELOPMENT_TEAM = "";
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
