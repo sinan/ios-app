@@ -254,6 +254,15 @@ static NSString *const kDeviceNameOverride   = @"ha_device_name_override";
         @"os_name":              @"iOS",
         @"os_version":           [UIDevice currentDevice].systemVersion,
         @"supports_encryption":  @NO,
+        // push_url + push_token tell HA to create the notify platform for this device.
+        // We use the WebSocket push_notification_channel instead of actual APNs,
+        // so push_url is never called — but both fields are required for HA to
+        // register the notify.mobile_app_<device> service. HA validates them as
+        // an inclusion group ("push_cloud") and rejects if only one is present.
+        @"app_data":             @{
+            @"push_url": @"https://mobile-apps.home-assistant.io/api/sendPush/ios",
+            @"push_token": @"websocket-local-push",
+        },
     };
 }
 
