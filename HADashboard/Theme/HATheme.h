@@ -36,6 +36,7 @@ extern NSString *const HAThemeDidChangeNotification;
 + (UIImage *)blurredGradientImage;
 + (void)updateBlurredGradientFromLayer:(CAGradientLayer *)layer size:(CGSize)size;
 + (UIView *)frostedBackgroundViewWithCornerRadius:(CGFloat)cornerRadius;
++ (void)updateFrostedBackgroundForCell:(UICollectionViewCell *)cell;
 
 + (HAGradientPreset)gradientPreset;
 + (void)setGradientPreset:(HAGradientPreset)preset;
@@ -105,5 +106,9 @@ extern NSString *const HAThemeDidChangeNotification;
 /// Persistent across app restarts via NSUserDefaults.
 + (BOOL)isDeveloperMode;
 + (void)setDeveloperMode:(BOOL)enabled;
+
+/// Developer: disable blur backgrounds (for A/B testing performance).
++ (BOOL)blurDisabled;
++ (void)setBlurDisabled:(BOOL)disabled;
 
 @end

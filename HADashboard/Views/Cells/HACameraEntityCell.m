@@ -480,43 +480,51 @@ static const NSInteger kOverlayButtonTagBase = 9000;
     __weak typeof(self) weakSelf = self;
     self.currentTask = [self.imageSession dataTaskWithRequest:request
         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                __strong typeof(weakSelf) strongSelf = weakSelf;
-                if (!strongSelf) return;
+            // Handle errors on main thread (lightweight)
+            if (error && error.code == NSURLErrorCancelled) return;
 
-                [strongSelf.loadingSpinner stopAnimating];
+            NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+            BOOL fetchFailed = (error != nil) || (httpResponse.statusCode != 200) || !data;
 
-                // Handle cancelled requests silently (e.g. cell reuse)
-                if (error && error.code == NSURLErrorCancelled) {
-                    return;
-                }
-
-                NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-                BOOL fetchFailed = (error != nil) || (httpResponse.statusCode != 200) || !data;
-
-                if (fetchFailed) {
+            if (fetchFailed) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    __strong typeof(weakSelf) strongSelf = weakSelf;
+                    if (!strongSelf) return;
+                    [strongSelf.loadingSpinner stopAnimating];
                     strongSelf.consecutiveFailures++;
                     BOOL hasExistingImage = (strongSelf.snapshotView.image != nil);
-
                     if (!hasExistingImage) {
-                        // No cached frame — show error immediately
                         strongSelf.errorLabel.text = @"No signal";
                         strongSelf.errorLabel.hidden = NO;
                     } else if (strongSelf.consecutiveFailures >= kMaxConsecutiveFailuresBeforeClear) {
-                        // Persistent failure — show error over stale frame
                         strongSelf.errorLabel.text = @"No signal";
                         strongSelf.errorLabel.hidden = NO;
                     }
-                    // Otherwise: keep last good frame visible, no error shown
-                    return;
-                }
+                });
+                return;
+            }
 
-                UIImage *image = [UIImage imageWithData:data];
+            // Force-decode JPEG on this background thread. UIImage imageWithData:
+            // creates a lazily-decoded image — actual pixel decode happens on first
+            // render (main thread). Drawing into a throwaway context forces immediate
+            // decode here, so the main thread just blits pre-decoded pixels.
+            UIImage *lazyImage = [UIImage imageWithData:data];
+            UIImage *image = nil;
+            if (lazyImage) {
+                UIGraphicsBeginImageContextWithOptions(lazyImage.size, YES, lazyImage.scale);
+                [lazyImage drawAtPoint:CGPointZero];
+                image = UIGraphicsGetImageFromCurrentImageContext();
+                UIGraphicsEndImageContext();
+            }
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong typeof(weakSelf) strongSelf = weakSelf;
+                if (!strongSelf) return;
+                [strongSelf.loadingSpinner stopAnimating];
                 if (image) {
                     strongSelf.consecutiveFailures = 0;
                     strongSelf.snapshotView.image = image;
                     strongSelf.errorLabel.hidden = YES;
-                    // Re-layout overlay bar now that snapshot has content
                     [strongSelf layoutOverlayBar];
                 }
             });

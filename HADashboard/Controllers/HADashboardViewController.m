@@ -330,12 +330,15 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
         self.view.backgroundColor = [HATheme backgroundColor];
         self.backgroundGradient.hidden = YES;
     }
-    // vImage blur cache for non-Metal devices
-    if (![HATheme canBlur] && !self.backgroundGradient.hidden) {
-        self.backgroundGradient.frame = self.view.bounds;
-        [HATheme updateBlurredGradientFromLayer:self.backgroundGradient size:self.view.bounds.size];
-    } else if (![HATheme canBlur]) {
-        [HATheme updateBlurredGradientFromLayer:nil size:CGSizeZero];
+    // vImage blur cache for non-Metal devices — capture background for frosted effect
+    if (![HATheme canBlur]) {
+        if (!self.backgroundGradient.hidden) {
+            self.backgroundGradient.frame = self.view.bounds;
+            [HATheme updateBlurredGradientFromLayer:self.backgroundGradient size:self.view.bounds.size];
+        } else {
+            // No gradient — solid fallback will be used (nothing to blur)
+            [HATheme updateBlurredGradientFromLayer:nil size:CGSizeZero];
+        }
     }
     self.connectionBar.backgroundColor = [HATheme connectionBarColor];
     self.statusLabel.textColor = [HATheme secondaryTextColor];
@@ -1506,8 +1509,10 @@ static const CGFloat kRowUnitHeight = 56.0;
 
     cell.contentView.backgroundColor = [UIColor clearColor];
     cell.contentView.opaque = NO;
-    cell.backgroundView = [HATheme frostedBackgroundViewWithCornerRadius:
-        cell.contentView.layer.cornerRadius];
+
+    // Update existing backgroundView in-place when possible (avoids alloc on A5).
+    // Only allocate a new view when the type doesn't match the current blur mode.
+    [HATheme updateFrostedBackgroundForCell:cell];
 
     if ([cell.backgroundView isKindOfClass:[UIImageView class]]) {
         CGSize viewSize = self.view.bounds.size;
@@ -2060,9 +2065,10 @@ heightForHeaderInSection:(NSInteger)section {
     [self.pendingReloadPaths addObjectsFromArray:paths];
 
     // Coalesce: batch rapid-fire entity updates into a single reload pass.
-    // 100ms is enough to batch automation bursts while keeping optimistic updates snappy.
+    // 300ms batches more updates together (reduces flush frequency on A5 devices)
+    // while still feeling responsive for user-triggered changes.
     [self.reloadCoalesceTimer invalidate];
-    self.reloadCoalesceTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
+    self.reloadCoalesceTimer = [NSTimer scheduledTimerWithTimeInterval:0.3
                                                                target:self
                                                              selector:@selector(flushPendingReloads)
                                                              userInfo:nil
@@ -2072,18 +2078,21 @@ heightForHeaderInSection:(NSInteger)section {
 - (void)flushPendingReloads {
     if (self.pendingReloadPaths.count == 0) return;
 
-    NSSet<NSIndexPath *> *visible = [NSSet setWithArray:self.collectionView.indexPathsForVisibleItems];
-    HAConnectionManager *conn = [HAConnectionManager sharedManager];
-
-    // Take a snapshot and clear before iterating (avoids mutating during enumeration)
+    // Take a snapshot and clear before iterating
     NSSet<NSIndexPath *> *pending = [self.pendingReloadPaths copy];
     [self.pendingReloadPaths removeAllObjects];
 
-    // Reconfigure visible cells in-place (no dequeue/destroy flash).
-    // Non-visible cells will pick up new state when they're dequeued on scroll.
+    // Early exit: check if ANY pending path intersects with visible cells.
+    // On iPad 2, this saves ~40ms when many entities update but none are visible.
+    NSSet<NSIndexPath *> *visible = [NSSet setWithArray:self.collectionView.indexPathsForVisibleItems];
+    NSMutableSet *intersection = [pending mutableCopy];
+    [intersection intersectSet:visible];
+    if (intersection.count == 0) return;
+
+    [[HAPerfMonitor sharedMonitor] markRebuildStart];
+    HAConnectionManager *conn = [HAConnectionManager sharedManager];
     NSDictionary *allEntities = [conn allEntities];
-    for (NSIndexPath *ip in pending) {
-        if (![visible containsObject:ip]) continue;
+    for (NSIndexPath *ip in intersection) {
 
         UICollectionViewCell *cell = [self.collectionView cellForItemAtIndexPath:ip];
         if (!cell) continue;
@@ -2115,6 +2124,7 @@ heightForHeaderInSection:(NSInteger)section {
             [(HABaseEntityCell *)cell configureWithEntity:entity configItem:item];
         }
     }
+    [[HAPerfMonitor sharedMonitor] markRebuildEnd];
 }
 
 #pragma mark - HAConnectionManagerDelegate

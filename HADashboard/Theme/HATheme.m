@@ -14,6 +14,7 @@ static NSString *const kCustomHex2Key      = @"ha_grad_custom_hex2";
 static NSString *const kMigratedV2Key      = @"ha_theme_migrated_v2";
 static NSString *const kForceSunEntityKey  = @"ha_force_sun_entity";
 static NSString *const kDeveloperModeKey   = @"HADeveloperModeEnabled";
+static NSString *const kBlurDisabledKey    = @"HABlurDisabled";
 
 @implementation HATheme
 
@@ -136,6 +137,16 @@ static UIImage *_blurredGradientCache = nil;
 }
 
 + (UIView *)frostedBackgroundViewWithCornerRadius:(CGFloat)cornerRadius {
+    // Developer toggle: disable blur, use semi-transparent fallback instead
+    if ([self blurDisabled]) {
+        UIView *bg = [[UIView alloc] init];
+        bg.backgroundColor = [self effectiveDarkMode]
+            ? [UIColor colorWithWhite:0.18 alpha:0.75]
+            : [UIColor colorWithWhite:1.0 alpha:0.75];
+        bg.layer.cornerRadius = cornerRadius;
+        bg.clipsToBounds = YES;
+        return bg;
+    }
     if ([self canBlur]) {
         UIVisualEffectView *blur = [[UIVisualEffectView alloc] initWithEffect:
             [UIBlurEffect effectWithStyle:[self gradientBlurStyle]]];
@@ -160,6 +171,42 @@ static UIImage *_blurredGradientCache = nil;
     bg.layer.cornerRadius = cornerRadius;
     bg.clipsToBounds = YES;
     return bg;
+}
+
++ (void)updateFrostedBackgroundForCell:(UICollectionViewCell *)cell {
+    CGFloat cr = cell.contentView.layer.cornerRadius;
+    UIView *existing = cell.backgroundView;
+
+    if ([self blurDisabled]) {
+        // Developer toggle: semi-transparent solid
+        if ([existing isKindOfClass:[UIVisualEffectView class]] || [existing isKindOfClass:[UIImageView class]] || !existing) {
+            cell.backgroundView = [self frostedBackgroundViewWithCornerRadius:cr];
+        } else {
+            // Already a plain UIView — just update color
+            existing.backgroundColor = [self effectiveDarkMode]
+                ? [UIColor colorWithWhite:0.18 alpha:0.75]
+                : [UIColor colorWithWhite:1.0 alpha:0.75];
+        }
+        return;
+    }
+
+    if ([self canBlur]) {
+        // Native blur path — update effect in-place (no alloc)
+        if ([existing isKindOfClass:[UIVisualEffectView class]]) {
+            UIVisualEffectView *ev = (UIVisualEffectView *)existing;
+            ev.effect = [UIBlurEffect effectWithStyle:[self gradientBlurStyle]];
+        } else {
+            cell.backgroundView = [self frostedBackgroundViewWithCornerRadius:cr];
+        }
+    } else {
+        // vImage path — update image in-place
+        UIImage *blurred = [self blurredGradientImage];
+        if (blurred && [existing isKindOfClass:[UIImageView class]]) {
+            ((UIImageView *)existing).image = blurred;
+        } else {
+            cell.backgroundView = [self frostedBackgroundViewWithCornerRadius:cr];
+        }
+    }
 }
 
 #pragma mark - Gradient Presets
@@ -540,6 +587,16 @@ static UIImage *_blurredGradientCache = nil;
 
 + (void)setDeveloperMode:(BOOL)enabled {
     [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:kDeveloperModeKey];
+}
+
++ (BOOL)blurDisabled {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:kBlurDisabledKey];
+}
+
++ (void)setBlurDisabled:(BOOL)disabled {
+    [[NSUserDefaults standardUserDefaults] setBool:disabled forKey:kBlurDisabledKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    [[NSNotificationCenter defaultCenter] postNotificationName:HAThemeDidChangeNotification object:nil];
 }
 
 @end

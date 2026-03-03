@@ -1,5 +1,6 @@
 #import "HAAppDelegate.h"
 #import "HAAuthManager.h"
+#import "HAPerfMonitor.h"
 #import "HAConnectionManager.h"
 #import "HADashboardViewController.h"
 #import "HASettingsViewController.h"
@@ -53,6 +54,13 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     [HAStartupLog log:@"didFinishLaunching START"];
+
+    // Performance monitor — opt-in via developer settings toggle or launch arg.
+    // Default OFF to avoid CADisplayLink + timer overhead on production devices.
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"HAPerfMonitorEnabled"] ||
+        [[[NSProcessInfo processInfo] arguments] containsObject:@"-HAEnablePerfMonitor"]) {
+        [[HAPerfMonitor sharedMonitor] start];
+    }
 
     // Preload fonts before any UI is created — shifts ~350ms of first-cell
     // font loading cost out of the render path on iPad 2.

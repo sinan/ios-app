@@ -133,9 +133,40 @@ static const NSTimeInterval kFlushInterval = 10.0;
     [self.flushTimer invalidate];
     self.flushTimer = nil;
 
-    [self flush]; // final flush
-    [self.logHandle closeFile];
-    self.logHandle = nil;
+    // Final flush — write synchronously since we're about to close the handle.
+    // Can't use the async flush path because logHandle will be closed immediately after.
+    if (self.logHandle) {
+        NSUInteger count = MIN(_frameWriteIndex, (NSUInteger)kFrameRingSize);
+        if (count > 0) {
+            double totalInterval = 0, maxInterval = 0;
+            NSUInteger start = (_frameWriteIndex > kFrameRingSize) ? (_frameWriteIndex - kFrameRingSize) : 0;
+            for (NSUInteger i = 0; i < count; i++) {
+                double dt = _frameTimes[(start + i) % kFrameRingSize];
+                totalInterval += dt;
+                if (dt > maxInterval) maxInterval = dt;
+            }
+            double fpsAvg = (totalInterval > 0) ? (1.0 / (totalInterval / count)) : 0;
+            double fpsMin = (maxInterval > 0) ? (1.0 / maxInterval) : 0;
+            double cellAvgMs = (_cellCount > 0) ? (_cellTotalMs / _cellCount) : 0;
+            NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
+            NSString *line = [NSString stringWithFormat:@"%.0f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.2f,%@\n",
+                ts, fpsAvg, fpsMin, fpsMin, [self residentMemoryMB],
+                _lastRebuildMs, cellAvgMs, _cellMaxMs, _cellMaxType ?: @"-"];
+            [self.logHandle writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
+            [self.logHandle synchronizeFile];
+        }
+        [self.logHandle closeFile];
+        self.logHandle = nil;
+    }
+
+    // Reset counters
+    _frameWriteIndex = 0;
+    _frameCount = 0;
+    _lastRebuildMs = 0;
+    _cellTotalMs = 0;
+    _cellCount = 0;
+    _cellMaxMs = 0;
+    _cellMaxType = nil;
 
     NSLog(@"[Perf] Stopped — log at %@", self.logPath);
 }
@@ -210,62 +241,23 @@ static const NSTimeInterval kFlushInterval = 10.0;
 - (void)flush {
     if (!self.logHandle) return;
 
-    // Compute FPS stats from ring buffer
+    // Snapshot frame data on main thread (fast — just memcpy)
     NSUInteger count = MIN(_frameWriteIndex, (NSUInteger)kFrameRingSize);
-    double fpsAvg = 0, fpsMin = 999, fpsP1 = 999;
-
+    double *snapshotFrames = (double *)malloc(count * sizeof(double));
+    if (!snapshotFrames) return;
     if (count > 0) {
-        double totalInterval = 0;
-        double maxInterval = 0; // longest frame = lowest FPS
-        // Collect all intervals for percentile
-        double intervals[kFrameRingSize];
         NSUInteger start = (_frameWriteIndex > kFrameRingSize) ? (_frameWriteIndex - kFrameRingSize) : 0;
         for (NSUInteger i = 0; i < count; i++) {
-            double dt = _frameTimes[(start + i) % kFrameRingSize];
-            intervals[i] = dt;
-            totalInterval += dt;
-            if (dt > maxInterval) maxInterval = dt;
+            snapshotFrames[i] = _frameTimes[(start + i) % kFrameRingSize];
         }
-
-        double avgInterval = totalInterval / count;
-        fpsAvg = (avgInterval > 0) ? (1.0 / avgInterval) : 0;
-        fpsMin = (maxInterval > 0) ? (1.0 / maxInterval) : 0;
-
-        // P1 (99th percentile worst frame) — simple sort, small array
-        // Insertion sort for C array
-        for (NSUInteger i = 1; i < count; i++) {
-            double key = intervals[i];
-            NSInteger j = (NSInteger)i - 1;
-            while (j >= 0 && intervals[j] > key) {
-                intervals[j + 1] = intervals[j];
-                j--;
-            }
-            intervals[j + 1] = key;
-        }
-        NSUInteger p1Index = (NSUInteger)(count * 0.99);
-        if (p1Index >= count) p1Index = count - 1;
-        double p1Interval = intervals[p1Index];
-        fpsP1 = (p1Interval > 0) ? (1.0 / p1Interval) : 0;
     }
+    double rebuildMs = _lastRebuildMs;
+    double cellTotal = _cellTotalMs;
+    NSUInteger cellCount = _cellCount;
+    double cellMax = _cellMaxMs;
+    NSString *cellType = _cellMaxType ?: @"-";
 
-    // Memory
-    double memMB = [self residentMemoryMB];
-
-    // Cell stats
-    double cellAvgMs = (_cellCount > 0) ? (_cellTotalMs / _cellCount) : 0;
-
-    // Format CSV line
-    NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
-    NSString *line = [NSString stringWithFormat:@"%.0f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.2f,%@\n",
-        ts, fpsAvg, fpsMin, fpsP1, memMB,
-        _lastRebuildMs,
-        cellAvgMs, _cellMaxMs,
-        _cellMaxType ?: @"-"];
-
-    [self.logHandle writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
-    [self.logHandle synchronizeFile];
-
-    // Reset per-interval counters
+    // Reset counters immediately (main thread)
     _frameWriteIndex = 0;
     _frameCount = 0;
     _lastRebuildMs = 0;
@@ -273,6 +265,47 @@ static const NSTimeInterval kFlushInterval = 10.0;
     _cellCount = 0;
     _cellMaxMs = 0;
     _cellMaxType = nil;
+
+    // Compute stats + write on background queue (sort, format, file I/O)
+    NSFileHandle *handle = self.logHandle;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        double fpsAvg = 0, fpsMin = 999, fpsP1 = 999;
+        if (count > 0) {
+            double totalInterval = 0, maxInterval = 0;
+            for (NSUInteger i = 0; i < count; i++) {
+                totalInterval += snapshotFrames[i];
+                if (snapshotFrames[i] > maxInterval) maxInterval = snapshotFrames[i];
+            }
+            double avgInterval = totalInterval / count;
+            fpsAvg = (avgInterval > 0) ? (1.0 / avgInterval) : 0;
+            fpsMin = (maxInterval > 0) ? (1.0 / maxInterval) : 0;
+
+            // P1 — copy to mutable for sort
+            double sorted[kFrameRingSize];
+            memcpy(sorted, snapshotFrames, count * sizeof(double));
+            for (NSUInteger i = 1; i < count; i++) {
+                double key = sorted[i];
+                NSInteger j = (NSInteger)i - 1;
+                while (j >= 0 && sorted[j] > key) { sorted[j + 1] = sorted[j]; j--; }
+                sorted[j + 1] = key;
+            }
+            NSUInteger p1Index = (NSUInteger)(count * 0.99);
+            if (p1Index >= count) p1Index = count - 1;
+            fpsP1 = (sorted[p1Index] > 0) ? (1.0 / sorted[p1Index]) : 0;
+        }
+
+        double memMB = [self residentMemoryMB];
+        double cellAvgMs = (cellCount > 0) ? (cellTotal / cellCount) : 0;
+        NSTimeInterval ts = [[NSDate date] timeIntervalSince1970];
+
+        NSString *line = [NSString stringWithFormat:@"%.0f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.2f,%@\n",
+            ts, fpsAvg, fpsMin, fpsP1, memMB, rebuildMs, cellAvgMs, cellMax, cellType];
+        @synchronized(handle) {
+            [handle writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
+            [handle synchronizeFile];
+        }
+        free(snapshotFrames);
+    });
 }
 
 - (double)residentMemoryMB {

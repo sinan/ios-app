@@ -20,6 +20,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
 @property (nonatomic, strong) UILabel *headingLabel;
 @property (nonatomic, strong) UISwitch *headerToggle;
 @property (nonatomic, strong) NSMutableArray<HAEntityRowView *> *rowViews;
+@property (nonatomic, weak) HADashboardConfigSection *lastConfiguredSection;
 @property (nonatomic, strong) UIStackView *stackView;
 @property (nonatomic, strong) NSLayoutConstraint *stackTopWithTitle;
 @property (nonatomic, strong) NSLayoutConstraint *stackTopNoTitle;
@@ -167,6 +168,35 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
 - (void)configureWithSection:(HADashboardConfigSection *)section
                     entities:(NSDictionary *)entityDict
                   configItem:(HADashboardConfigItem *)configItem {
+    // Fast-path: if same section and row count matches, just update entity states
+    // without rebuilding the entire cell structure (saves ~160ms on A5).
+    NSArray<NSString *> *entityIds = section.entityIds ?: @[];
+    if (self.lastConfiguredSection == section &&
+        self.rowViews.count == (NSUInteger)entityIds.count &&
+        self.rowViews.count > 0) {
+        for (NSUInteger i = 0; i < self.rowViews.count && i < entityIds.count; i++) {
+            HAEntity *entity = entityDict[entityIds[i]];
+            HAEntityRowView *rowView = self.rowViews[i];
+            NSString *nameOverride = section.nameOverrides[entityIds[i]];
+            if (nameOverride) {
+                [rowView configureWithEntity:entity nameOverride:nameOverride];
+            } else {
+                [rowView configureWithEntity:entity];
+            }
+        }
+        // Update header toggle state
+        if (self.headerToggle && !self.headerToggle.hidden) {
+            BOOL allOn = YES;
+            for (NSString *eid in entityIds) {
+                HAEntity *e = entityDict[eid];
+                if (e && ![e isOn]) { allOn = NO; break; }
+            }
+            [self.headerToggle setOn:allOn animated:NO];
+        }
+        return;
+    }
+    self.lastConfiguredSection = section;
+
     // Configure heading (above card, from grid heading)
     NSString *headingIcon = configItem.customProperties[@"headingIcon"];
     BOOL hasHeading = (configItem.displayName.length > 0 && headingIcon != nil);
@@ -208,7 +238,6 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
     // Header toggle: when explicitly configured, use that value.
     // When absent, default to YES if card has title AND ≥2 toggleable entities
     // (matches HA frontend's computeShowHeaderToggle behavior).
-    NSArray<NSString *> *entityIds = section.entityIds ?: @[];
 
     // Entity-filter card: filter entities by state at render time
     NSArray *stateFilter = section.customProperties[@"state_filter"];
@@ -657,6 +686,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
     self.headerToggle.hidden = YES;
     self.headerToggle.on = NO;
     self.toggleEntityIds = nil;
+    self.lastConfiguredSection = nil;
 
     // Clear scene chips
     for (UIView *v in self.sceneChipScrollView.subviews) [v removeFromSuperview];

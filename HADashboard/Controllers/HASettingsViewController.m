@@ -1,5 +1,6 @@
 #import "HASettingsViewController.h"
 #import "HAAuthManager.h"
+#import "HAPerfMonitor.h"
 #import "HAConnectionManager.h"
 #import "HAConnectionSettingsViewController.h"
 #import "HADashboardViewController.h"
@@ -333,10 +334,29 @@ static NSString *const kSensorActiveDashboard  = @"ha_sensor_active_dashboard_en
     self.developerSectionHeader = [self createSectionHeaderWithText:@"DEVELOPER"];
     self.developerSectionHeader.hidden = ![HATheme isDeveloperMode];
     [container addSubview:self.developerSectionHeader];
-    self.developerSection = [[UIView alloc] init];
-    self.developerSection.translatesAutoresizingMaskIntoConstraints = NO;
-    self.developerSection.hidden = ![HATheme isDeveloperMode];
-    [container addSubview:self.developerSection];
+    {
+        // Developer section: vertical stack of toggle rows
+        UISwitch *blurSw, *perfSw;
+        UIView *blurRow = [self createToggleSection:@"Disable Blur"
+            helpText:@"Turn off frosted-glass card backgrounds for A/B perf testing"
+            isOn:[HATheme blurDisabled]
+            target:self action:@selector(blurDisabledToggled:)
+            switchOut:&blurSw];
+        UIView *perfRow = [self createToggleSection:@"Performance Monitor"
+            helpText:@"Log FPS + timing to /tmp/perf.log (restart app to apply)"
+            isOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"HAPerfMonitorEnabled"]
+            target:self action:@selector(perfMonitorToggled:)
+            switchOut:&perfSw];
+
+        UIStackView *devStack = [[UIStackView alloc] initWithArrangedSubviews:@[blurRow, perfRow]];
+        devStack.axis = UILayoutConstraintAxisVertical;
+        devStack.spacing = 12;
+        devStack.translatesAutoresizingMaskIntoConstraints = NO;
+
+        self.developerSection = devStack;
+        self.developerSection.hidden = ![HATheme isDeveloperMode];
+        [container addSubview:self.developerSection];
+    }
 
     // ── Log Out & Reset ───────────────────────────────────────────────
     self.logoutButton = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -864,6 +884,20 @@ static NSString *const kSensorActiveDashboard  = @"ha_sensor_active_dashboard_en
 
 - (void)autoReloadSwitchToggled:(UISwitch *)sender {
     [[HAAuthManager sharedManager] setAutoReloadDashboard:sender.isOn];
+}
+
+- (void)blurDisabledToggled:(UISwitch *)sender {
+    [HATheme setBlurDisabled:sender.isOn];
+}
+
+- (void)perfMonitorToggled:(UISwitch *)sender {
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"HAPerfMonitorEnabled"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    if (sender.isOn) {
+        [[HAPerfMonitor sharedMonitor] start];
+    } else {
+        [[HAPerfMonitor sharedMonitor] stop];
+    }
 }
 
 - (void)demoSwitchToggled:(UISwitch *)sender {

@@ -63,8 +63,17 @@ static const CGFloat kArcNameLabelHeight = 16.0;
 #pragma mark - Configuration
 
 - (void)configureWithSection:(HADashboardConfigSection *)section entities:(NSDictionary *)entityDict {
+    // Skip full rebuild if same section + same entity count — just update text/icons
+    BOOL canUpdateInPlace = (self.lastSection == section &&
+                             self.badgeViews.count == section.entityIds.count &&
+                             self.badgeViews.count > 0);
     self.lastSection = section;
     self.lastEntities = entityDict;
+
+    if (canUpdateInPlace) {
+        [self updateBadgeContentsWithSection:section entities:entityDict];
+        return;
+    }
 
     // Clear old badges
     for (UIView *v in self.badgeViews) {
@@ -466,6 +475,34 @@ static const CGFloat kArcNameLabelHeight = 16.0;
 
     // Default: use entity icon color
     return [HAEntityDisplayHelper iconColorForEntity:entity];
+}
+
+/// Update existing badge pill contents in-place (avoids full teardown/recreate).
+/// Only updates text and colors — layout/structure stays the same.
+- (void)updateBadgeContentsWithSection:(HADashboardConfigSection *)section entities:(NSDictionary *)entityDict {
+    [self.badgeEntities removeAllObjects];
+    for (NSUInteger i = 0; i < section.entityIds.count && i < self.badgeViews.count; i++) {
+        NSString *entityId = section.entityIds[i];
+        HAEntity *entity = entityDict[entityId];
+        if (entity) [self.badgeEntities addObject:entity];
+
+        UIView *badge = self.badgeViews[i];
+        // Badge subview order: [blurBg(0), iconLabel(1), nameLabel(2), valueLabel(3)]
+        if (badge.subviews.count < 4) continue;
+        UILabel *iconLabel = (UILabel *)badge.subviews[1];
+        UILabel *nameLabel = (UILabel *)badge.subviews[2];
+        UILabel *valueLabel = (UILabel *)badge.subviews[3];
+        if (![iconLabel isKindOfClass:[UILabel class]]) continue;
+
+        NSString *name = [HAEntityDisplayHelper displayNameForEntity:entity entityId:entityId section:section];
+        NSString *nameOverride = section.nameOverrides[entityId];
+        if (nameOverride.length > 0) name = nameOverride;
+
+        iconLabel.text = [HAEntityDisplayHelper iconGlyphForEntity:entity] ?: @"";
+        iconLabel.textColor = [HAEntityDisplayHelper iconColorForEntity:entity];
+        nameLabel.text = name;
+        valueLabel.text = [HAEntityDisplayHelper stateWithUnitForEntity:entity decimals:1];
+    }
 }
 
 /// Insert a frosted-glass background as the bottom-most subview of a badge pill.

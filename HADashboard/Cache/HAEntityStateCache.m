@@ -75,13 +75,17 @@ static const NSTimeInterval kDebounceInterval = 5.0;
     if (!entities || entities.count == 0) return;
     self.pendingEntities = nil;
 
-    // Serialize entities to raw dicts (same format HA sends)
-    NSDictionary *serialized = [self serializeEntities:entities];
-    [[HACacheManager sharedManager] writeJSON:serialized toFile:kEntityStatesFile completion:^(BOOL success) {
-        if (success) {
-            NSLog(@"[HACache] Wrote %lu entity states to disk", (unsigned long)serialized.count);
-        }
-    }];
+    // Serialize + write entirely off main thread.
+    // serializeEntities: iterates all entities and NSJSONSerialization can take
+    // 50-100ms on A5 with 100+ entities — must not block main.
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        NSDictionary *serialized = [self serializeEntities:entities];
+        [[HACacheManager sharedManager] writeJSON:serialized toFile:kEntityStatesFile completion:^(BOOL success) {
+            if (success) {
+                NSLog(@"[HACache] Wrote %lu entity states to disk", (unsigned long)serialized.count);
+            }
+        }];
+    });
 }
 
 /// Synchronous version for flushToDisk when we need immediate persistence
