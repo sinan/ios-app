@@ -191,9 +191,9 @@ if [[ "$TARGET" == "all" ]]; then
     }
 
     deploy_bg "sim"         sim         --no-build ${OPTS[@]+"${OPTS[@]}"}
-    deploy_bg "sim-iphone"  sim iphone  --no-build ${OPTS[@]+"${OPTS[@]}"}
-    deploy_bg "sim-ios93"   sim-ios93   --no-build ${OPTS[@]+"${OPTS[@]}"}
-    deploy_bg "sim-ios103"  sim-ios103  --no-build ${OPTS[@]+"${OPTS[@]}"}
+    # deploy_bg "sim-iphone"  sim iphone  --no-build ${OPTS[@]+"${OPTS[@]}"}
+    # deploy_bg "sim-ios93"   sim-ios93   --no-build ${OPTS[@]+"${OPTS[@]}"}
+    # deploy_bg "sim-ios103"  sim-ios103  --no-build ${OPTS[@]+"${OPTS[@]}"}
     deploy_bg "iphone"      iphone      --no-build ${OPTS[@]+"${OPTS[@]}"}
     deploy_bg "mini5"       mini5       --no-build ${OPTS[@]+"${OPTS[@]}"}
     deploy_bg "mini4"       mini4       --no-build ${OPTS[@]+"${OPTS[@]}"}
@@ -456,31 +456,24 @@ case "$TARGET" in
         ;;
 
     mini4)
-        if ! command -v ios-deploy &>/dev/null; then
-            echo "❌ ios-deploy not found. Install: brew install ios-deploy"
+        if ! command -v pymobiledevice3 &>/dev/null; then
+            echo "❌ pymobiledevice3 not found. Install: pip install pymobiledevice3"
             exit 1
         fi
 
-        echo "📱 Deploying to iPad Mini 4 (ios-deploy + pymobiledevice3)..."
-        export DEVELOPER_DIR="$XCODE26/Contents/Developer"
+        echo "📱 Deploying to iPad Mini 4 (pymobiledevice3)..."
 
-        echo "   Installing (30s timeout)..."
-        if ! timeout 30 ios-deploy --bundle "$APP" --id "$IPAD_MINI4_UDID" --nostart 2>&1 | tail -5; then
-            echo "❌ iPad Mini 4 install failed or timed out (WiFi connectivity issue)"
+        echo "   Installing..."
+        if ! pymobiledevice3 apps install --udid "$IPAD_MINI4_UDID" "$APP" 2>&1; then
+            echo "❌ iPad Mini 4 install failed"
             exit 1
         fi
 
-        # Launch via pymobiledevice3 DVT (bypasses debugserver breakpoint issue)
-        if command -v pymobiledevice3 &>/dev/null; then
-            echo "   Launching with dashboard: ${HA_DASHBOARD:-default}..."
-            pymobiledevice3 developer dvt launch --kill-existing \
-                --udid "$IPAD_MINI4_UDID" \
-                "$BUNDLE_ID ${LAUNCH_ARGS[*]}" 2>&1
-            echo "✅ Running on iPad Mini 4"
-        else
-            echo "⚠️  pymobiledevice3 not found — install with: pip install pymobiledevice3"
-            echo "✅ Installed on iPad Mini 4 (tap app icon to launch)"
-        fi
+        echo "   Launching with dashboard: ${HA_DASHBOARD:-default}..."
+        pymobiledevice3 developer dvt launch --kill-existing \
+            --udid "$IPAD_MINI4_UDID" \
+            "$BUNDLE_ID ${LAUNCH_ARGS[*]}" 2>&1
+        echo "✅ Running on iPad Mini 4"
         ;;
 
     ipad2)
