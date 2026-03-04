@@ -3,6 +3,7 @@
 #import "HASensorReporter.h"
 #import "HARemoteCommandHandler.h"
 #import "HADeviceIntegrationManager.h"
+#import "HANotificationPresenter.h"
 #import "HATheme.h"
 #import "HAAuthManager.h"
 
@@ -94,10 +95,10 @@
 }
 
 - (void)testAllSensorsHaveValues {
-    // After the per-sensor toggle removal, all sensors always report.
-    // Verify every sensor ID returns a non-nil value.
     NSArray *sensorIds = @[@"battery_level", @"battery_state", @"screen_brightness",
-                           @"storage_available", @"app_state", @"active_dashboard"];
+                           @"storage_available", @"app_state", @"active_dashboard",
+                           @"wifi_ssid", @"wifi_bssid", @"connection_type",
+                           @"last_update_trigger", @"device_model"];
     for (NSString *sensorId in sensorIds) {
         id value = [self.reporter currentValueForSensor:sensorId];
         XCTAssertNotNil(value, @"Sensor '%@' should return a non-nil value", sensorId);
@@ -106,7 +107,9 @@
 
 - (void)testAllSensorsHaveIcons {
     NSArray *sensorIds = @[@"battery_level", @"battery_state", @"screen_brightness",
-                           @"storage_available", @"app_state", @"active_dashboard"];
+                           @"storage_available", @"app_state", @"active_dashboard",
+                           @"wifi_ssid", @"wifi_bssid", @"connection_type",
+                           @"last_update_trigger", @"device_model"];
     for (NSString *sensorId in sensorIds) {
         NSString *icon = [self.reporter iconForSensor:sensorId];
         XCTAssertTrue([icon hasPrefix:@"mdi:"], @"Sensor '%@' icon should start with mdi:, got '%@'", sensorId, icon);
@@ -162,6 +165,54 @@
 - (void)testUnknownSensorReturnsUnknown {
     id value = [self.reporter currentValueForSensor:@"nonexistent_sensor"];
     XCTAssertEqualObjects(value, @"unknown");
+}
+
+- (void)testWifiSSIDIsString {
+    id value = [self.reporter currentValueForSensor:@"wifi_ssid"];
+    XCTAssertTrue([value isKindOfClass:[NSString class]],
+                  @"WiFi SSID should be a string, got %@", [value class]);
+    // On simulator without entitlement, returns "Unknown"
+}
+
+- (void)testWifiBSSIDIsString {
+    id value = [self.reporter currentValueForSensor:@"wifi_bssid"];
+    XCTAssertTrue([value isKindOfClass:[NSString class]],
+                  @"WiFi BSSID should be a string, got %@", [value class]);
+}
+
+- (void)testConnectionTypeIsValidString {
+    id value = [self.reporter currentValueForSensor:@"connection_type"];
+    XCTAssertTrue([value isKindOfClass:[NSString class]],
+                  @"Connection type should be a string, got %@", [value class]);
+    NSArray *validTypes = @[@"WiFi", @"Cellular", @"No Connection"];
+    XCTAssertTrue([validTypes containsObject:value],
+                  @"Connection type '%@' should be one of %@", value, validTypes);
+}
+
+- (void)testLastUpdateTriggerIsString {
+    id value = [self.reporter currentValueForSensor:@"last_update_trigger"];
+    XCTAssertTrue([value isKindOfClass:[NSString class]],
+                  @"Last update trigger should be a string, got %@", [value class]);
+}
+
+- (void)testDeviceModelIsNonEmptyString {
+    id value = [self.reporter currentValueForSensor:@"device_model"];
+    XCTAssertTrue([value isKindOfClass:[NSString class]],
+                  @"Device model should be a string, got %@", [value class]);
+    XCTAssertTrue([value length] > 0, @"Device model should not be empty");
+    // On simulator, returns something like "arm64" or "x86_64"
+}
+
+- (void)testAllElevenSensorsHaveValues {
+    NSArray *sensorIds = @[@"battery_level", @"battery_state", @"screen_brightness",
+                           @"storage_available", @"app_state", @"active_dashboard",
+                           @"wifi_ssid", @"wifi_bssid", @"connection_type",
+                           @"last_update_trigger", @"device_model"];
+    XCTAssertEqual(sensorIds.count, 11u, @"Should have 11 sensors");
+    for (NSString *sensorId in sensorIds) {
+        id value = [self.reporter currentValueForSensor:sensorId];
+        XCTAssertNotNil(value, @"Sensor '%@' should return a non-nil value", sensorId);
+    }
 }
 
 - (void)testReportAllSensorsNowDoesNotCrashWhenNotRegistered {
@@ -339,6 +390,67 @@
     [[NSNotificationCenter defaultCenter] removeObserver:observer];
 }
 
+- (void)testCommandNotificationDoesNotTriggerDisplayNotification {
+    // A "command_" prefixed message should NOT post HADisplayNotificationReceivedNotification
+    XCTestExpectation *notCalled = [self expectationWithDescription:@"display NOT posted"];
+    notCalled.inverted = YES; // Expect this NOT to be fulfilled
+
+    id observer = [[NSNotificationCenter defaultCenter]
+        addObserverForName:HADisplayNotificationReceivedNotification object:nil queue:nil
+                usingBlock:^(NSNotification *note) {
+        [notCalled fulfill]; // This should NOT happen
+    }];
+
+    [self.handler handleNotificationEvent:@{
+        @"message": @"command_screen_brightness_level",
+        @"data": @{@"level": @50}
+    }];
+
+    [self waitForExpectationsWithTimeout:0.5 handler:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
+- (void)testNonCommandNotificationTriggersDisplayNotification {
+    // A plain message (not command) should post HADisplayNotificationReceivedNotification
+    XCTestExpectation *exp = [self expectationWithDescription:@"display posted"];
+
+    id observer = [[NSNotificationCenter defaultCenter]
+        addObserverForName:HADisplayNotificationReceivedNotification object:nil queue:nil
+                usingBlock:^(NSNotification *note) {
+        XCTAssertEqualObjects(note.userInfo[@"title"], @"Test Alert");
+        XCTAssertEqualObjects(note.userInfo[@"message"], @"Hello from HA");
+        [exp fulfill];
+    }];
+
+    [self.handler handleNotificationEvent:@{
+        @"title": @"Test Alert",
+        @"message": @"Hello from HA"
+    }];
+
+    [self waitForExpectationsWithTimeout:2 handler:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
+- (void)testDataCommandDoesNotTriggerDisplayNotification {
+    // A notification with data.command should dispatch as command, NOT display
+    XCTestExpectation *notCalled = [self expectationWithDescription:@"display NOT posted"];
+    notCalled.inverted = YES;
+
+    id observer = [[NSNotificationCenter defaultCenter]
+        addObserverForName:HADisplayNotificationReceivedNotification object:nil queue:nil
+                usingBlock:^(NSNotification *note) {
+        [notCalled fulfill];
+    }];
+
+    [self.handler handleNotificationEvent:@{
+        @"message": @"remote_command",
+        @"data": @{@"command": @"set_theme", @"mode": @"dark"}
+    }];
+
+    [self waitForExpectationsWithTimeout:0.5 handler:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
 @end
 
 #pragma mark - HADeviceIntegrationManager Tests
@@ -395,6 +507,45 @@
     XCTAssertFalse([[NSUserDefaults standardUserDefaults] boolForKey:@"HADeviceIntegration_enabled"]);
 
     mgr.enabled = before;
+}
+
+@end
+
+#pragma mark - HANotificationPresenter Tests
+
+@interface HANotificationPresenterTests : XCTestCase
+@end
+
+@implementation HANotificationPresenterTests
+
+- (void)testSingletonExists {
+    HANotificationPresenter *p = [HANotificationPresenter sharedPresenter];
+    XCTAssertNotNil(p);
+    XCTAssertEqual(p, [HANotificationPresenter sharedPresenter]);
+}
+
+- (void)testStartStopDoesNotCrash {
+    HANotificationPresenter *p = [HANotificationPresenter sharedPresenter];
+    XCTAssertNoThrow([p start]);
+    XCTAssertNoThrow([p stop]);
+    // Double stop safe
+    XCTAssertNoThrow([p stop]);
+    // Start after stop safe
+    XCTAssertNoThrow([p start]);
+    [p stop]; // cleanup
+}
+
+- (void)testPostingNotificationQueues {
+    HANotificationPresenter *p = [HANotificationPresenter sharedPresenter];
+    [p start];
+
+    // Post a display notification — presenter should receive it without crash
+    // (no keyWindow in test environment, so it won't actually display, but shouldn't crash)
+    [[NSNotificationCenter defaultCenter] postNotificationName:HADisplayNotificationReceivedNotification
+                                                        object:nil
+                                                      userInfo:@{@"title": @"Test", @"message": @"Body"}];
+
+    [p stop];
 }
 
 @end

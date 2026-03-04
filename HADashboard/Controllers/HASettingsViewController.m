@@ -333,7 +333,28 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
             target:self action:@selector(perfMonitorToggled:)
             switchOut:&perfSw];
 
-        UIStackView *devStack = [[UIStackView alloc] initWithArrangedSubviews:@[blurRow, perfRow]];
+        // Camera stream mode selector
+        UILabel *streamLabel = [[UILabel alloc] init];
+        streamLabel.text = @"Camera Stream Mode";
+        streamLabel.font = [UIFont systemFontOfSize:16];
+        streamLabel.textColor = [HATheme primaryTextColor];
+        streamLabel.translatesAutoresizingMaskIntoConstraints = NO;
+
+        UISegmentedControl *streamSeg = [[UISegmentedControl alloc] initWithItems:@[@"Auto", @"MJPEG", @"HLS", @"Snapshot"]];
+        streamSeg.translatesAutoresizingMaskIntoConstraints = NO;
+        NSString *savedMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"HADevStreamMode"];
+        if ([savedMode isEqualToString:@"mjpeg"])    streamSeg.selectedSegmentIndex = 1;
+        else if ([savedMode isEqualToString:@"hls"]) streamSeg.selectedSegmentIndex = 2;
+        else if ([savedMode isEqualToString:@"snapshot"]) streamSeg.selectedSegmentIndex = 3;
+        else streamSeg.selectedSegmentIndex = 0;
+        [streamSeg addTarget:self action:@selector(streamModeChanged:) forControlEvents:UIControlEventValueChanged];
+
+        UIStackView *streamRow = [[UIStackView alloc] initWithArrangedSubviews:@[streamLabel, streamSeg]];
+        streamRow.axis = UILayoutConstraintAxisVertical;
+        streamRow.spacing = 6;
+        streamRow.translatesAutoresizingMaskIntoConstraints = NO;
+
+        UIStackView *devStack = [[UIStackView alloc] initWithArrangedSubviews:@[blurRow, perfRow, streamRow]];
         devStack.axis = UILayoutConstraintAxisVertical;
         devStack.spacing = 12;
         devStack.translatesAutoresizingMaskIntoConstraints = NO;
@@ -796,6 +817,13 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
     } else {
         [[HAPerfMonitor sharedMonitor] stop];
     }
+}
+
+- (void)streamModeChanged:(UISegmentedControl *)seg {
+    NSArray *modes = @[@"auto", @"mjpeg", @"hls", @"snapshot"];
+    NSString *mode = modes[seg.selectedSegmentIndex];
+    [[NSUserDefaults standardUserDefaults] setObject:mode forKey:@"HADevStreamMode"];
+    NSLog(@"[HASettings] Camera stream mode: %@", mode);
 }
 
 - (void)demoSwitchToggled:(UISwitch *)sender {

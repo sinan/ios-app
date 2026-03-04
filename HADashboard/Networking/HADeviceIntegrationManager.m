@@ -1,6 +1,7 @@
 #import "HADeviceIntegrationManager.h"
 #import "HASensorReporter.h"
 #import "HARemoteCommandHandler.h"
+#import "HANotificationPresenter.h"
 #import "HADeviceRegistration.h"
 #import "HAConnectionManager.h"
 
@@ -82,6 +83,9 @@ static NSString *const kEnabledKey = @"HADeviceIntegration_enabled";
     self.commandHandler = [[HARemoteCommandHandler alloc] init];
     [self.commandHandler startListening];
     NSLog(@"[HADeviceIntegration] Command handler started");
+
+    // Start notification presenter (displays non-command notifications as banners)
+    [[HANotificationPresenter sharedPresenter] start];
 }
 
 - (void)stop {
@@ -92,6 +96,7 @@ static NSString *const kEnabledKey = @"HADeviceIntegration_enabled";
     self.sensorReporter = nil;
     [self.commandHandler stopListening];
     self.commandHandler = nil;
+    [[HANotificationPresenter sharedPresenter] stop];
     NSLog(@"[HADeviceIntegration] Stopped");
 }
 

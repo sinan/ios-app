@@ -1,5 +1,9 @@
 #import "HASensorReporter.h"
 #import <UIKit/UIKit.h>
+#import <SystemConfiguration/CaptiveNetwork.h>
+#import <SystemConfiguration/SCNetworkReachability.h>
+#import <sys/sysctl.h>
+#import <netinet/in.h>
 #import "HADeviceRegistration.h"
 #import "HAAuthManager.h"
 
@@ -10,17 +14,25 @@ static NSString *const kSensorScreenBrightness  = @"screen_brightness";
 static NSString *const kSensorStorage           = @"storage_available";
 static NSString *const kSensorAppState          = @"app_state";
 static NSString *const kSensorActiveDashboard   = @"active_dashboard";
+static NSString *const kSensorWifiSSID          = @"wifi_ssid";
+static NSString *const kSensorWifiBSSID         = @"wifi_bssid";
+static NSString *const kSensorConnectionType    = @"connection_type";
+static NSString *const kSensorLastUpdateTrigger = @"last_update_trigger";
+static NSString *const kSensorDeviceModel       = @"device_model";
 
 extern NSString *const HAConnectionManagerDidReceiveLovelaceNotification;
 
 static NSArray *allSensorIds(void) {
     return @[kSensorBatteryLevel, kSensorBatteryState, kSensorScreenBrightness,
-             kSensorStorage, kSensorAppState, kSensorActiveDashboard];
+             kSensorStorage, kSensorAppState, kSensorActiveDashboard,
+             kSensorWifiSSID, kSensorWifiBSSID, kSensorConnectionType,
+             kSensorLastUpdateTrigger, kSensorDeviceModel];
 }
 
 @interface HASensorReporter ()
 @property (nonatomic, assign) BOOL reporting;
 @property (nonatomic, strong) NSTimer *storageTimer;
+@property (nonatomic, copy) NSString *lastUpdateTrigger;
 @end
 
 @implementation HASensorReporter
@@ -41,6 +53,11 @@ static NSArray *allSensorIds(void) {
     [self registerSensorWithId:kSensorStorage          name:@"Storage Available" deviceClass:nil        unit:@"GB" stateClass:@"measurement" icon:@"mdi:harddisk"];
     [self registerSensorWithId:kSensorAppState         name:@"App State"         deviceClass:nil        unit:nil  stateClass:nil            icon:@"mdi:application"];
     [self registerSensorWithId:kSensorActiveDashboard  name:@"Active Dashboard"  deviceClass:nil        unit:nil  stateClass:nil            icon:@"mdi:view-dashboard"];
+    [self registerSensorWithId:kSensorWifiSSID          name:@"WiFi SSID"         deviceClass:nil        unit:nil  stateClass:nil            icon:@"mdi:wifi"];
+    [self registerSensorWithId:kSensorWifiBSSID         name:@"WiFi BSSID"        deviceClass:nil        unit:nil  stateClass:nil            icon:@"mdi:wifi"];
+    [self registerSensorWithId:kSensorConnectionType    name:@"Connection Type"   deviceClass:nil        unit:nil  stateClass:nil            icon:@"mdi:network"];
+    [self registerSensorWithId:kSensorLastUpdateTrigger name:@"Last Update Trigger" deviceClass:nil      unit:nil  stateClass:nil            icon:@"mdi:update"];
+    [self registerSensorWithId:kSensorDeviceModel       name:@"Device Model"      deviceClass:nil        unit:nil  stateClass:nil            icon:@"mdi:cellphone"];
 }
 
 - (void)registerSensorWithId:(NSString *)uniqueId name:(NSString *)name
@@ -71,6 +88,7 @@ static NSArray *allSensorIds(void) {
 - (void)startReporting {
     if (self.reporting) return;
     self.reporting = YES;
+    self.lastUpdateTrigger = @"launch";
 
     [UIDevice currentDevice].batteryMonitoringEnabled = YES;
 
@@ -114,7 +132,20 @@ static NSArray *allSensorIds(void) {
 - (void)batteryLevelDidChange:(NSNotification *)note     { [self reportSensor:kSensorBatteryLevel]; }
 - (void)batteryStateDidChange:(NSNotification *)note     { [self reportSensor:kSensorBatteryState]; }
 - (void)brightnessDidChange:(NSNotification *)note       { [self reportSensor:kSensorScreenBrightness]; }
-- (void)appStateDidChange:(NSNotification *)note         { [self reportSensor:kSensorAppState]; }
+- (void)appStateDidChange:(NSNotification *)note {
+    // Update trigger based on notification
+    if ([note.name isEqualToString:UIApplicationDidBecomeActiveNotification]) {
+        self.lastUpdateTrigger = @"foreground";
+    } else if ([note.name isEqualToString:UIApplicationDidEnterBackgroundNotification]) {
+        self.lastUpdateTrigger = @"background";
+    }
+    [self reportSensor:kSensorAppState];
+    [self reportSensor:kSensorLastUpdateTrigger];
+    // WiFi/connection may change when returning to foreground
+    [self reportSensor:kSensorWifiSSID];
+    [self reportSensor:kSensorWifiBSSID];
+    [self reportSensor:kSensorConnectionType];
+}
 - (void)dashboardDidChange:(NSNotification *)note        { [self reportSensor:kSensorActiveDashboard]; }
 - (void)storageTimerFired:(NSTimer *)timer               { [self reportSensor:kSensorStorage]; }
 
@@ -164,12 +195,17 @@ static NSArray *allSensorIds(void) {
 #pragma mark - Sensor Values
 
 - (NSString *)iconForSensor:(NSString *)sensorId {
-    if ([sensorId isEqualToString:kSensorBatteryLevel])     return @"mdi:battery";
-    if ([sensorId isEqualToString:kSensorBatteryState])     return @"mdi:battery-charging";
-    if ([sensorId isEqualToString:kSensorScreenBrightness]) return @"mdi:brightness-6";
-    if ([sensorId isEqualToString:kSensorStorage])          return @"mdi:harddisk";
-    if ([sensorId isEqualToString:kSensorAppState])         return @"mdi:application";
-    if ([sensorId isEqualToString:kSensorActiveDashboard])  return @"mdi:view-dashboard";
+    if ([sensorId isEqualToString:kSensorBatteryLevel])      return @"mdi:battery";
+    if ([sensorId isEqualToString:kSensorBatteryState])      return @"mdi:battery-charging";
+    if ([sensorId isEqualToString:kSensorScreenBrightness])  return @"mdi:brightness-6";
+    if ([sensorId isEqualToString:kSensorStorage])           return @"mdi:harddisk";
+    if ([sensorId isEqualToString:kSensorAppState])          return @"mdi:application";
+    if ([sensorId isEqualToString:kSensorActiveDashboard])   return @"mdi:view-dashboard";
+    if ([sensorId isEqualToString:kSensorWifiSSID])          return @"mdi:wifi";
+    if ([sensorId isEqualToString:kSensorWifiBSSID])         return @"mdi:wifi";
+    if ([sensorId isEqualToString:kSensorConnectionType])    return @"mdi:network";
+    if ([sensorId isEqualToString:kSensorLastUpdateTrigger]) return @"mdi:update";
+    if ([sensorId isEqualToString:kSensorDeviceModel])       return @"mdi:cellphone";
     return @"mdi:cellphone";
 }
 
@@ -211,7 +247,88 @@ static NSArray *allSensorIds(void) {
         NSString *path = [[HAAuthManager sharedManager] selectedDashboardPath];
         return path.length > 0 ? path : @"default";
     }
+    if ([sensorId isEqualToString:kSensorWifiSSID]) {
+        return [self currentWiFiSSID] ?: @"Unknown";
+    }
+    if ([sensorId isEqualToString:kSensorWifiBSSID]) {
+        return [self currentWiFiBSSID] ?: @"Unknown";
+    }
+    if ([sensorId isEqualToString:kSensorConnectionType]) {
+        return [self currentConnectionType];
+    }
+    if ([sensorId isEqualToString:kSensorLastUpdateTrigger]) {
+        return self.lastUpdateTrigger ?: @"unknown";
+    }
+    if ([sensorId isEqualToString:kSensorDeviceModel]) {
+        return [self machineModel];
+    }
     return @"unknown";
+}
+
+#pragma mark - WiFi Info
+
+- (NSString *)currentWiFiSSID {
+    return [self currentWiFiInfoForKey:@"SSID"];
+}
+
+- (NSString *)currentWiFiBSSID {
+    return [self currentWiFiInfoForKey:@"BSSID"];
+}
+
+- (NSString *)currentWiFiInfoForKey:(NSString *)key {
+    // CNCopyCurrentNetworkInfo requires Access WiFi Information entitlement on iOS 12+
+    // and location authorization on iOS 13+. Returns nil if unavailable.
+    NSArray *interfaces = (__bridge_transfer NSArray *)CNCopySupportedInterfaces();
+    for (NSString *iface in interfaces) {
+        NSDictionary *info = (__bridge_transfer NSDictionary *)CNCopyCurrentNetworkInfo((__bridge CFStringRef)iface);
+        if (info[key]) return info[key];
+    }
+    return nil;
+}
+
+#pragma mark - Connection Type
+
+- (NSString *)currentConnectionType {
+    struct sockaddr_in zeroAddress;
+    memset(&zeroAddress, 0, sizeof(zeroAddress));
+    zeroAddress.sin_len = sizeof(zeroAddress);
+    zeroAddress.sin_family = AF_INET;
+
+    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithAddress(
+        kCFAllocatorDefault, (const struct sockaddr *)&zeroAddress);
+    if (!reachability) return @"No Connection";
+
+    SCNetworkReachabilityFlags flags;
+    BOOL success = SCNetworkReachabilityGetFlags(reachability, &flags);
+    CFRelease(reachability);
+
+    if (!success || !(flags & kSCNetworkReachabilityFlagsReachable)) {
+        return @"No Connection";
+    }
+    if (flags & kSCNetworkReachabilityFlagsIsWWAN) {
+        return @"Cellular";
+    }
+    return @"WiFi";
+}
+
+#pragma mark - Device Model
+
+- (NSString *)machineModel {
+    static NSString *model;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        size_t size;
+        sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+        if (size > 0) {
+            char *machine = malloc(size);
+            if (sysctlbyname("hw.machine", machine, &size, NULL, 0) == 0) {
+                model = [NSString stringWithUTF8String:machine];
+            }
+            free(machine);
+        }
+        if (!model) model = @"Unknown";
+    });
+    return model;
 }
 
 @end

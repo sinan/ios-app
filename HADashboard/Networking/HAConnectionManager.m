@@ -579,11 +579,15 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
 
 - (NSInteger)subscribeToEventType:(NSString *)eventType
                           handler:(void (^)(NSDictionary *eventData))handler {
-    if (!self.wsClient.isAuthenticated || !handler) return 0;
-    NSDictionary *command = @{
+    return [self subscribeWithCommand:@{
         @"type": @"subscribe_events",
         @"event_type": eventType,
-    };
+    } handler:handler];
+}
+
+- (NSInteger)subscribeWithCommand:(NSDictionary *)command
+                          handler:(void (^)(NSDictionary *eventData))handler {
+    if (!self.wsClient.isAuthenticated || !handler) return 0;
     NSInteger msgId = [self.wsClient sendCommand:command];
     self.eventHandlers[@(msgId)] = [handler copy];
     return msgId;

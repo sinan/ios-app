@@ -1,7 +1,9 @@
 #import "HARemoteCommandHandler.h"
 #import <UIKit/UIKit.h>
 #import "HAConnectionManager.h"
+#import "HADeviceRegistration.h"
 #import "HAAuthManager.h"
+#import "HANotificationPresenter.h"
 #import "HATheme.h"
 
 /// We reuse the existing navigate notification for view switching.
@@ -26,19 +28,32 @@ NSString *const HARemoteCommandReloadNotification = @"HARemoteCommandReloadNotif
 - (void)startListening {
     if (self.subscriptionId > 0) return; // Already listening
 
-    // Subscribe to mobile_app_notification events.
-    // HA fires these when the notify.mobile_app_<device> service is called.
+    NSString *webhookId = [HADeviceRegistration sharedManager].webhookId;
+    if (!webhookId) {
+        NSLog(@"[HARemoteCommandHandler] Cannot subscribe — no webhook_id (not registered)");
+        return;
+    }
+
+    // Use the HA mobile_app local push notification channel.
+    // This sends notifications as direct WebSocket messages — no APNs required.
+    // HA checks for this channel FIRST when notify.mobile_app_<device> is called.
+    HAConnectionManager *cm = [HAConnectionManager sharedManager];
+    NSDictionary *command = @{
+        @"type": @"mobile_app/push_notification_channel",
+        @"webhook_id": webhookId,
+        @"support_confirm": @YES,
+    };
     __weak typeof(self) weakSelf = self;
-    self.subscriptionId = [[HAConnectionManager sharedManager]
-        subscribeToEventType:@"mobile_app_notification"
-                     handler:^(NSDictionary *eventData) {
+    self.subscriptionId = [cm subscribeWithCommand:command
+                                           handler:^(NSDictionary *eventData) {
         [weakSelf handleNotificationEvent:eventData];
     }];
 
     if (self.subscriptionId == 0) {
-        NSLog(@"[HARemoteCommandHandler] Failed to subscribe (not connected)");
+        NSLog(@"[HARemoteCommandHandler] Failed to open push channel (not connected)");
     } else {
-        NSLog(@"[HARemoteCommandHandler] Subscribed to mobile_app_notification (id=%ld)", (long)self.subscriptionId);
+        NSLog(@"[HARemoteCommandHandler] Push notification channel open (id=%ld, webhook=%@)",
+              (long)self.subscriptionId, webhookId);
     }
 }
 
@@ -52,6 +67,9 @@ NSString *const HARemoteCommandReloadNotification = @"HARemoteCommandReloadNotif
 #pragma mark - Event Processing
 
 - (void)handleNotificationEvent:(NSDictionary *)eventData {
+    // Confirm receipt so HA doesn't tear down the channel or fall back to push.
+    [self confirmNotification:eventData];
+
     // HA notification payloads can contain commands in the "message" field
     // with "command_" prefix (Companion app convention), or in a
     // "homeassistant" dict with a "command" key.
@@ -80,7 +98,31 @@ NSString *const HARemoteCommandReloadNotification = @"HARemoteCommandReloadNotif
     NSString *command = data[@"command"];
     if ([command isKindOfClass:[NSString class]]) {
         [self dispatchCommand:command data:data];
+        return;
     }
+
+    // Not a command — display as an in-app notification banner
+    if ([message isKindOfClass:[NSString class]] && message.length > 0) {
+        NSLog(@"[HARemoteCommandHandler] Display notification: %@", message);
+        [[NSNotificationCenter defaultCenter] postNotificationName:HADisplayNotificationReceivedNotification
+                                                            object:self
+                                                          userInfo:eventData];
+    }
+}
+
+- (void)confirmNotification:(NSDictionary *)eventData {
+    NSString *confirmId = eventData[@"hass_confirm_id"];
+    if (![confirmId isKindOfClass:[NSString class]]) return;
+
+    NSString *webhookId = [HADeviceRegistration sharedManager].webhookId;
+    if (!webhookId) return;
+
+    [[HAConnectionManager sharedManager] sendCommand:@{
+        @"type": @"mobile_app/push_notification_confirm",
+        @"webhook_id": webhookId,
+        @"confirm_id": confirmId,
+    } completion:nil];
+    NSLog(@"[HARemoteCommandHandler] Confirmed notification: %@", confirmId);
 }
 
 - (void)dispatchCommand:(NSString *)command data:(NSDictionary *)data {
