@@ -1042,6 +1042,17 @@ static HACameraStreamMode currentStreamMode(void) {
         [self beginLoading];
         return;
     }
+    // Skip HLS on iOS 9 — AVPlayer HLS crashes on iPad 2 (armv7, iOS 9.3.5).
+    // HA's ffmpeg transcoder output is incompatible with iOS 9's AVFoundation.
+    // MJPEG works fine on these devices.
+    if ([[[UIDevice currentDevice] systemVersion] compare:@"10.0" options:NSNumericSearch] == NSOrderedAscending) {
+        NSLog(@"[HACameraEntityCell] Skipping HLS on iOS %@ — using MJPEG only",
+              [[UIDevice currentDevice] systemVersion]);
+        self.hlsFailed = YES;
+        self.needsSnapshotLoad = YES;
+        [self beginLoading];
+        return;
+    }
     if (self.hlsRequestInFlight) return; // Already requesting
 
     self.hlsRequestInFlight = YES;
