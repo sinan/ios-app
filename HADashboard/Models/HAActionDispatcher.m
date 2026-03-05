@@ -141,7 +141,11 @@ NSString *const HAActionNavigateNotification = @"HAActionNavigateNotification";
     NSURL *url = [NSURL URLWithString:urlString];
     if (!url) return;
     [HAHaptics lightImpact];
-    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+    // iOS 9 compatible — openURL:options:completionHandler: is iOS 10+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    [[UIApplication sharedApplication] openURL:url];
+#pragma clang diagnostic pop
 }
 
 - (void)executeServiceCall:(HAAction *)action entity:(HAEntity *)entity {

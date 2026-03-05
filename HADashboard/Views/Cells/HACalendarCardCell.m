@@ -108,20 +108,32 @@ static UIColor *sDefaultEventColor;
     self.todayButton.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.todayButton];
 
-    // Prev/Next arrows
-    UIImage *chevLeft = [UIImage systemImageNamed:@"chevron.left"
-                         withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:12 weight:UIImageSymbolWeightMedium]];
-    UIImage *chevRight = [UIImage systemImageNamed:@"chevron.right"
-                          withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:12 weight:UIImageSymbolWeightMedium]];
+    // Prev/Next arrows — SF Symbols (iOS 13+), fallback to text for iOS 9
+    UIImage *chevLeft = nil;
+    UIImage *chevRight = nil;
+    if (@available(iOS 13.0, *)) {
+        chevLeft = [UIImage systemImageNamed:@"chevron.left"
+                     withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:12 weight:UIImageSymbolWeightMedium]];
+        chevRight = [UIImage systemImageNamed:@"chevron.right"
+                      withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:12 weight:UIImageSymbolWeightMedium]];
+    }
 
     self.prevButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.prevButton setImage:chevLeft forState:UIControlStateNormal];
+    if (chevLeft) {
+        [self.prevButton setImage:chevLeft forState:UIControlStateNormal];
+    } else {
+        [self.prevButton setTitle:@"◀" forState:UIControlStateNormal];
+    }
     [self.prevButton addTarget:self action:@selector(prevTapped) forControlEvents:UIControlEventTouchUpInside];
     self.prevButton.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.prevButton];
 
     self.nextButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.nextButton setImage:chevRight forState:UIControlStateNormal];
+    if (chevRight) {
+        [self.nextButton setImage:chevRight forState:UIControlStateNormal];
+    } else {
+        [self.nextButton setTitle:@"▶" forState:UIControlStateNormal];
+    }
     [self.nextButton addTarget:self action:@selector(nextTapped) forControlEvents:UIControlEventTouchUpInside];
     self.nextButton.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.nextButton];
@@ -133,20 +145,32 @@ static UIColor *sDefaultEventColor;
     self.dateRangeLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.dateRangeLabel];
 
-    // View mode icon buttons
-    UIImage *calIcon = [UIImage systemImageNamed:@"calendar"
-                        withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightRegular]];
-    UIImage *listIcon = [UIImage systemImageNamed:@"list.bullet"
-                         withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightRegular]];
+    // View mode icon buttons — SF Symbols (iOS 13+), fallback to text
+    UIImage *calIcon = nil;
+    UIImage *listIcon = nil;
+    if (@available(iOS 13.0, *)) {
+        calIcon = [UIImage systemImageNamed:@"calendar"
+                    withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightRegular]];
+        listIcon = [UIImage systemImageNamed:@"list.bullet"
+                     withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightRegular]];
+    }
 
     self.monthViewBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.monthViewBtn setImage:calIcon forState:UIControlStateNormal];
+    if (calIcon) {
+        [self.monthViewBtn setImage:calIcon forState:UIControlStateNormal];
+    } else {
+        [self.monthViewBtn setTitle:@"📅" forState:UIControlStateNormal];
+    }
     [self.monthViewBtn addTarget:self action:@selector(switchToMonth) forControlEvents:UIControlEventTouchUpInside];
     self.monthViewBtn.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.monthViewBtn];
 
     self.listViewBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.listViewBtn setImage:listIcon forState:UIControlStateNormal];
+    if (listIcon) {
+        [self.listViewBtn setImage:listIcon forState:UIControlStateNormal];
+    } else {
+        [self.listViewBtn setTitle:@"☰" forState:UIControlStateNormal];
+    }
     [self.listViewBtn addTarget:self action:@selector(switchToList) forControlEvents:UIControlEventTouchUpInside];
     self.listViewBtn.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.listViewBtn];

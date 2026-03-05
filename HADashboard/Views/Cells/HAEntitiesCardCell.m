@@ -690,7 +690,11 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
     if (!urlStr) return;
     NSURL *url = [NSURL URLWithString:urlStr];
     if (url) {
-        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+        // iOS 9 compatible — openURL:options:completionHandler: is iOS 10+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        [[UIApplication sharedApplication] openURL:url];
+#pragma clang diagnostic pop
     }
 }
 
