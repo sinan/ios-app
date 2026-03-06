@@ -77,6 +77,7 @@
 		09D8C7808AC508BBE02555A0 /* testGraphSingle__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 552D266316B4B0FBE8E39BF6 /* testGraphSingle__light@2x.png */; };
 		0A4C81F2E37EB6639DFA0EEF /* testEntitiesCard5Rows__gradient@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D1226B8BE48CEBB4B01DFEA6 /* testEntitiesCard5Rows__gradient@2x.png */; };
 		0A545760E10B96EDA3871C0A /* HAEntity+Humidifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 8CE1309D6715AA7185FF825E /* HAEntity+Humidifier.m */; };
+		F1A0AUTH0002TEST0002 /* HAOAuthClientTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A0AUTH0001TEST0001 /* HAOAuthClientTests.m */; };
 		0ABD799AC8AFA8C64D8F29E4 /* HACacheTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6A4ADBBFFA9D4D28AD62F59F /* HACacheTests.m */; };
 		0B3364612241E7CB9F7389DF /* testInputDateTimeBoth__light@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D72B4B8027BFC32A6F59E78D /* testInputDateTimeBoth__light@2x.png */; };
 		0BBB184B59BC16481A144018 /* HAEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = 89DA3E5DCC67522C94EC97CF /* HAEntity.m */; };
@@ -1951,6 +1952,7 @@
 		69ABBA48E4280135FE1E1797 /* testThermostatScOff__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testThermostatScOff__dark_gradient@2x.png"; sourceTree = "<group>"; };
 		69F8063786032B0E3F5C2B70 /* LOTShapeRectangle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LOTShapeRectangle.h; sourceTree = "<group>"; };
 		6A3F5BEBDC9B0C4F3785691D /* LOTShapeRepeater.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LOTShapeRepeater.m; sourceTree = "<group>"; };
+		F1A0AUTH0001TEST0001 /* HAOAuthClientTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HAOAuthClientTests.m; sourceTree = "<group>"; };
 		6A4ADBBFFA9D4D28AD62F59F /* HACacheTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HACacheTests.m; sourceTree = "<group>"; };
 		6A4DADF93038CE6608773E89 /* LOTKeyframe.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LOTKeyframe.m; sourceTree = "<group>"; };
 		6A66414DFCC74C4F08092FA9 /* testThermostatCool__dark_gradient@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "testThermostatCool__dark_gradient@2x.png"; sourceTree = "<group>"; };
@@ -4416,6 +4418,7 @@
 				328789DB337D0797BCDCDD9D /* HABaseSnapshotTestCase.h */,
 				CB202B450A9EBD9E273426E3 /* HABaseSnapshotTestCase.m */,
 				6A4ADBBFFA9D4D28AD62F59F /* HACacheTests.m */,
+				F1A0AUTH0001TEST0001 /* HAOAuthClientTests.m */,
 				2943BB830FEC55FCCEDF66F3 /* HAClassicLayoutTests.m */,
 				A8072BB3C22561E6A2C4170E /* HAClimateSnapshotTests.m */,
 				6F1BA5152B815D413B721C0B /* HACompositeSnapshotTests.m */,
@@ -5884,6 +5887,7 @@
 				DC457D1CDDC0847559276600 /* HAActionTests.m in Sources */,
 				DA435C75D5CFF7853B085407 /* HABaseSnapshotTestCase.m in Sources */,
 				0ABD799AC8AFA8C64D8F29E4 /* HACacheTests.m in Sources */,
+				F1A0AUTH0002TEST0002 /* HAOAuthClientTests.m in Sources */,
 				D1159FB81724A845F116D1BE /* HAClassicLayoutTests.m in Sources */,
 				A324B257636E2DBD3E48BBCA /* HAClimateSnapshotTests.m in Sources */,
 				10EF3E7F400D8073D7E48296 /* HACompositeSnapshotTests.m in Sources */,
