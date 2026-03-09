@@ -79,7 +79,13 @@ static const NSTimeInterval kDebounceInterval = 5.0;
     // Serialize + write entirely off main thread.
     // serializeEntities: iterates all entities and NSJSONSerialization can take
     // 50-100ms on A5 with 100+ entities — must not block main.
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+    long queueId;
+    if (@available(iOS 8.0, *)) {
+        queueId = QOS_CLASS_UTILITY;
+    } else {
+        queueId = DISPATCH_QUEUE_PRIORITY_LOW;
+    }
+    dispatch_async(dispatch_get_global_queue(queueId, 0), ^{
         NSDictionary *serialized = [self serializeEntities:entities];
         [[HACacheManager sharedManager] writeJSON:serialized toFile:kEntityStatesFile completion:^(BOOL success) {
             if (success) {

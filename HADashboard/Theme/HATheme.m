@@ -88,6 +88,7 @@ static NSString *const kBlurDisabledKey    = @"HABlurDisabled";
 }
 
 + (BOOL)canBlur {
+    if (![UIVisualEffectView class]) return NO;  // iOS 5-7: no native blur
     if (UIAccessibilityIsReduceTransparencyEnabled()) return NO;
     static BOOL checked = NO;
     static BOOL hardwareCanBlur = YES;
