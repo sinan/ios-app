@@ -735,6 +735,10 @@
     return CGSizeMake(UIViewNoIntrinsicMetric, 48.0);
 }
 
+- (CGSize)sizeThatFits:(CGSize)size {
+    return CGSizeMake(size.width, 48.0);
+}
+
 // Clip touch events to this row's bounds. UISwitch touch targets extend beyond
 // their visual size (~51×31pt even when scaled to 0.8x). With 0pt spacing
 // between rows in the stack view, this causes taps on one row's control to

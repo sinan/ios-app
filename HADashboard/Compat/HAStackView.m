@@ -1,14 +1,5 @@
 #import "HAStackView.h"
-
-/// Whether UIStackView is available at runtime (iOS 9+).
-static BOOL HAStackViewNativeAvailable(void) {
-    static BOOL checked = NO, available = NO;
-    if (!checked) {
-        available = (NSClassFromString(@"UIStackView") != nil);
-        checked = YES;
-    }
-    return available;
-}
+#import "HAAutoLayout.h"
 
 @interface HAStackView ()
 @property (nonatomic, strong) NSMutableArray<UIView *> *mutableArrangedSubviews;
@@ -44,7 +35,7 @@ static BOOL HAStackViewNativeAvailable(void) {
 }
 
 - (void)setupNativeStackIfAvailable {
-    if (!HAStackViewNativeAvailable()) return;
+    if (!HAAutoLayoutAvailable()) return;
 
     UIStackView *native = [[UIStackView alloc] init];
     native.translatesAutoresizingMaskIntoConstraints = NO;
