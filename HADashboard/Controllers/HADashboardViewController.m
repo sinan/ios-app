@@ -317,10 +317,13 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
     if (!HAAutoLayoutAvailable()) {
         CGRect bounds = self.view.bounds;
 
-        // Connection bar: full width, below nav bar (≈64pt), 0 or 24pt tall
+        // Connection bar: full width, below nav bar (≈64pt)
+        // Frame height is managed by showConnectionBar:, just read current value
         CGFloat connY = 64.0;
-        CGFloat connH = self.connectionBarHeight.constant;
-        self.connectionBar.frame = CGRectMake(0, connY, bounds.size.width, connH);
+        CGFloat connH = self.connectionBar.frame.size.height;
+        if (self.connectionBar.frame.size.width != bounds.size.width) {
+            self.connectionBar.frame = CGRectMake(0, connY, bounds.size.width, connH);
+        }
         self.connectionLabel.frame = self.connectionBar.bounds;
 
         // View picker: below safe area / nav bar
@@ -422,6 +425,9 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
     self.connectionBar.backgroundColor = [HATheme connectionBarColor];
     self.connectionBar.translatesAutoresizingMaskIntoConstraints = NO;
     self.connectionBar.clipsToBounds = YES;
+    if (!HAAutoLayoutAvailable()) {
+        self.connectionBar.frame = CGRectMake(0, 64, 0, 0);  // hidden initially
+    }
     [self.view addSubview:self.connectionBar];
 
     self.connectionLabel = [[UILabel alloc] init];
@@ -462,6 +468,17 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
 - (void)showConnectionBar:(BOOL)show message:(NSString *)message {
     self.connectionLabel.text = message;
     CGFloat targetHeight = show ? 24.0 : 0.0;
+
+    if (!HAAutoLayoutAvailable()) {
+        // Frame-based: directly set frame and trigger re-layout
+        [UIView animateWithDuration:0.3 animations:^{
+            self.connectionBar.frame = CGRectMake(0, 64.0, self.view.bounds.size.width, targetHeight);
+            self.connectionLabel.frame = self.connectionBar.bounds;
+            [self.view setNeedsLayout];
+            [self.view layoutIfNeeded];
+        }];
+        return;
+    }
 
     if (self.connectionBarHeight.constant == targetHeight) return;
 
