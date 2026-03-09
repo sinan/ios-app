@@ -1471,6 +1471,7 @@ static const CGFloat kRowUnitHeight = 56.0;
                          actionTitles:titles
                            sourceView:self.titleButton
                               handler:^(NSInteger index) {
+        if (index < 0 || (NSUInteger)index >= self.availableDashboards.count) return;
         NSDictionary *dashboard = self.availableDashboards[(NSUInteger)index];
         [self switchToDashboard:dashboard[@"url_path"] title:dashboard[@"title"] ?: @"Untitled"];
     }];
