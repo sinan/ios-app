@@ -176,7 +176,7 @@
 - (PSTGridLayoutSection *)snapshot {
     PSTGridLayoutSection *snapshotSection = [PSTGridLayoutSection new];
     snapshotSection.items = [self.items copy];
-    snapshotSection.rows = [self.items copy];
+    snapshotSection.rows = [self.rows copy];
     snapshotSection.verticalInterstice = self.verticalInterstice;
     snapshotSection.horizontalInterstice = self.horizontalInterstice;
     snapshotSection.sectionMargins = self.sectionMargins;
