@@ -852,6 +852,11 @@ static HACameraStreamMode currentStreamMode(void) {
         CGFloat padding = 10.0;
 
         // Snapshot view: full bleed or below name
+        // Ensure translatesAutoresizingMaskIntoConstraints=YES so UIKit honours
+        // our explicit frame and contentMode centers the scaled image correctly.
+        // Without this, the view may have TAMIC=NO with no constraints, causing
+        // the layer content gravity to anchor top-left instead of center.
+        self.snapshotView.translatesAutoresizingMaskIntoConstraints = YES;
         CGFloat snapTop = self.nameLabel.hidden ? 0 : CGRectGetMaxY(self.nameLabel.frame) + 4;
         self.snapshotView.frame = CGRectMake(0, snapTop, w, h - snapTop);
 
