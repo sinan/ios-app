@@ -3,7 +3,7 @@
 #import <CommonCrypto/CommonDigest.h>
 
 @interface HACacheManager ()
-@property (nonatomic, strong) dispatch_queue_t writeQueue;
+@property (nonatomic, assign) dispatch_queue_t writeQueue;
 @property (nonatomic, copy) NSString *cachedServerHash;
 @end
 
