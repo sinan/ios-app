@@ -6,6 +6,7 @@
 #import "HAHaptics.h"
 #import "HAEntityDisplayHelper.h"
 #import "HAIconMapper.h"
+#import "UIFont+HACompat.h"
 
 @interface HAButtonRowFeatureView ()
 @property (nonatomic, strong) HAStackView *buttonStack;
@@ -208,7 +209,7 @@
 
     self.tempValueLabel = [[UILabel alloc] init];
     self.tempValueLabel.textAlignment = NSTextAlignmentCenter;
-    self.tempValueLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+    self.tempValueLabel.font = [UIFont ha_systemFontOfSize:14 weight:UIFontWeightMedium];
     self.tempValueLabel.textColor = [HATheme primaryTextColor];
     NSNumber *target = [entity targetTemperature];
     NSString *unit = [entity weatherTemperatureUnit] ?: @"\u00B0C";
@@ -248,7 +249,7 @@
 - (UIButton *)makeButtonWithTitle:(NSString *)title tag:(NSInteger)tag {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
     [btn setTitle:title forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+    btn.titleLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium];
     [btn setTitleColor:[HATheme primaryTextColor] forState:UIControlStateNormal];
     [btn setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateDisabled];
     btn.backgroundColor = [HATheme cellBackgroundColor];

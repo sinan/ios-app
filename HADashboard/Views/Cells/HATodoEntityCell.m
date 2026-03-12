@@ -4,6 +4,7 @@
 #import "HADashboardConfig.h"
 #import "HATheme.h"
 #import "HAIconMapper.h"
+#import "UIFont+HACompat.h"
 
 @interface HATodoEntityCell ()
 @property (nonatomic, strong) UILabel *iconLabel;
@@ -24,7 +25,7 @@
     self.iconLabel.textAlignment = NSTextAlignmentCenter;
 
     // Item count (large number)
-    self.countLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:24 weight:UIFontWeightBold] color:[HATheme primaryTextColor] lines:1];
+    self.countLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:24 weight:UIFontWeightBold] color:[HATheme primaryTextColor] lines:1];
     self.countLabel.textAlignment = NSTextAlignmentRight;
 
     // Description label

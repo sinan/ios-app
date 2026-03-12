@@ -5,6 +5,7 @@
 #import "HADashboardConfig.h"
 #import "HATheme.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 @interface HAClimateEntityCell ()
 @property (nonatomic, strong) UILabel *currentTempLabel;
@@ -21,7 +22,7 @@
 
     // Current temperature: large display
     self.currentTempLabel = [[UILabel alloc] init];
-    self.currentTempLabel.font = [UIFont monospacedDigitSystemFontOfSize:26 weight:UIFontWeightMedium];
+    self.currentTempLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:26 weight:UIFontWeightMedium];
     self.currentTempLabel.textColor = [HATheme primaryTextColor];
     self.currentTempLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.currentTempLabel];
@@ -35,7 +36,7 @@
 
     // Target temperature label
     self.targetTempLabel = [[UILabel alloc] init];
-    self.targetTempLabel.font = [UIFont monospacedDigitSystemFontOfSize:14 weight:UIFontWeightRegular];
+    self.targetTempLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:14 weight:UIFontWeightRegular];
     self.targetTempLabel.textColor = [HATheme primaryTextColor];
     self.targetTempLabel.textAlignment = NSTextAlignmentRight;
     self.targetTempLabel.translatesAutoresizingMaskIntoConstraints = NO;

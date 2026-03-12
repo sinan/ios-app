@@ -10,6 +10,7 @@
 #import "HAHaptics.h"
 #import "HAIconMapper.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 @interface HAPictureGlanceCardCell ()
 @property (nonatomic, strong) UIImageView *bgImageView;
@@ -35,7 +36,7 @@
     [self.contentView insertSubview:self.bgImageView atIndex:0];
 
     self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
+    self.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:UIFontWeightBold];
     self.titleLabel.textColor = [UIColor whiteColor];
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.titleLabel];

@@ -5,6 +5,7 @@
 #import "HATheme.h"
 #import "HAIconMapper.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 @interface HAStatisticCardCell ()
 @property (nonatomic, strong) UILabel *statIconLabel;
@@ -33,7 +34,7 @@
 
     // Large value (centered)
     self.statValueLabel = [[UILabel alloc] init];
-    self.statValueLabel.font = [UIFont monospacedDigitSystemFontOfSize:32 weight:UIFontWeightLight];
+    self.statValueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:32 weight:UIFontWeightLight];
     self.statValueLabel.textColor = [HATheme primaryTextColor];
     self.statValueLabel.textAlignment = NSTextAlignmentCenter;
     self.statValueLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -41,7 +42,7 @@
 
     // Stat type label (e.g. "Mean", "Max")
     self.statTypeLabel = [[UILabel alloc] init];
-    self.statTypeLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.statTypeLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     self.statTypeLabel.textColor = [HATheme secondaryTextColor];
     self.statTypeLabel.textAlignment = NSTextAlignmentCenter;
     self.statTypeLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -49,7 +50,7 @@
 
     // Entity name (below stat type)
     self.statNameLabel = [[UILabel alloc] init];
-    self.statNameLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightRegular];
+    self.statNameLabel.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightRegular];
     self.statNameLabel.textColor = [HATheme secondaryTextColor];
     self.statNameLabel.textAlignment = NSTextAlignmentCenter;
     self.statNameLabel.numberOfLines = 1;

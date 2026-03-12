@@ -5,6 +5,7 @@
 #import "HAEntity.h"
 #import "HALogbookManager.h"
 #import "HATheme.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kRowHeight = 32.0;
 static const CGFloat kPadding = 10.0;
@@ -30,7 +31,7 @@ static const NSInteger kMaxEntries = 10;
         self.contentView.backgroundColor = [HATheme cellBackgroundColor];
 
         self.titleLabel = [[UILabel alloc] init];
-        self.titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+        self.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:UIFontWeightSemibold];
         self.titleLabel.textColor = [HATheme primaryTextColor];
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [self.contentView addSubview:self.titleLabel];
@@ -176,7 +177,7 @@ static const NSInteger kMaxEntries = 10;
 
     // Time label
     UILabel *timeLabel = [[UILabel alloc] init];
-    timeLabel.font = [UIFont monospacedDigitSystemFontOfSize:10 weight:UIFontWeightRegular];
+    timeLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:10 weight:UIFontWeightRegular];
     timeLabel.textColor = [HATheme secondaryTextColor];
     timeLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [row addSubview:timeLabel];

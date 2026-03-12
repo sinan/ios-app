@@ -2,6 +2,7 @@
 #import "HAMarkdownCardCell.h"
 #import "HADashboardConfig.h"
 #import "HATheme.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kPadding = 12.0;
 static const CGFloat kTitleHeight = 24.0;
@@ -21,7 +22,7 @@ static const CGFloat kTitleHeight = 24.0;
         self.contentView.clipsToBounds = YES;
 
         self.titleLabel = [[UILabel alloc] init];
-        self.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+        self.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:UIFontWeightSemibold];
         self.titleLabel.textColor = [HATheme primaryTextColor];
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
         self.titleLabel.hidden = YES;

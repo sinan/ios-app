@@ -10,6 +10,7 @@
 #import "HALog.h"
 #import <AVFoundation/AVFoundation.h>
 #import <objc/runtime.h>
+#import "UIFont+HACompat.h"
 
 static const NSTimeInterval kSnapshotRefreshInterval = 5.0;
 static const NSInteger kMaxConsecutiveFailuresBeforeClear = 3;
@@ -200,7 +201,7 @@ static HACameraStreamMode currentStreamMode(void) {
 
     // State badge (recording/streaming indicator, top-right corner)
     self.stateBadge = [[UILabel alloc] init];
-    self.stateBadge.font = [UIFont systemFontOfSize:9 weight:UIFontWeightBold];
+    self.stateBadge.font = [UIFont ha_systemFontOfSize:9 weight:UIFontWeightBold];
     self.stateBadge.textColor = [UIColor whiteColor];
     self.stateBadge.textAlignment = NSTextAlignmentCenter;
     self.stateBadge.backgroundColor = [[UIColor redColor] colorWithAlphaComponent:0.8];
@@ -487,7 +488,7 @@ static HACameraStreamMode currentStreamMode(void) {
     // Camera name — bottom-left
     UILabel *nameLabel = [[UILabel alloc] init];
     nameLabel.text = [self.entity friendlyName] ?: self.currentEntityId;
-    nameLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    nameLabel.font = [UIFont ha_systemFontOfSize:16 weight:UIFontWeightMedium];
     nameLabel.textColor = [UIColor whiteColor];
     nameLabel.frame = CGRectMake(16, fullscreen.view.bounds.size.height - 50, fullscreen.view.bounds.size.width - 100, 30);
     nameLabel.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;

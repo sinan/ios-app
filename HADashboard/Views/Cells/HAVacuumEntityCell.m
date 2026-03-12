@@ -8,6 +8,7 @@
 #import "HAIconMapper.h"
 #import "HAEntityDisplayHelper.h"
 #import "UIView+HAUtilities.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kIconCircleSize = 60.0;
 static const CGFloat kIconFontSize   = 32.0;
@@ -51,7 +52,7 @@ static const CGFloat kButtonSpacing  = 12.0;
     [self.iconCircle addSubview:self.iconLabel];
 
     // -- Status label --
-    self.statusLabel2 = [self labelWithFont:[UIFont systemFontOfSize:13 weight:UIFontWeightMedium] color:[HATheme secondaryTextColor] lines:1];
+    self.statusLabel2 = [self labelWithFont:[UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium] color:[HATheme secondaryTextColor] lines:1];
     self.statusLabel2.textAlignment = NSTextAlignmentCenter;
 
     // -- Command buttons --
@@ -316,7 +317,7 @@ static const CGFloat kButtonSpacing  = 12.0;
     if (fanSpeed) {
         [self.fanSpeedButton setAttributedTitle:nil forState:UIControlStateNormal];
         [self.fanSpeedButton setTitle:fanSpeed forState:UIControlStateNormal];
-        self.fanSpeedButton.titleLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
+        self.fanSpeedButton.titleLabel.font = [UIFont ha_systemFontOfSize:10 weight:UIFontWeightMedium];
         [self.fanSpeedButton setTitleColor:[HATheme primaryTextColor] forState:UIControlStateNormal];
     } else {
         [self setButton:self.fanSpeedButton iconName:@"fan"];

@@ -2,6 +2,7 @@
 #import "HAGraphView.h"
 #import "HATheme.h"
 #import <sys/utsname.h>
+#import "UIFont+HACompat.h"
 
 // Cached date formatters used by axis labels, tooltip, and gesture handlers.
 // Format is set per-use since it depends on the visible time range.
@@ -150,7 +151,7 @@ static NSDateFormatter *sCachedTimeFmt(void) {
     _tooltipView.userInteractionEnabled = NO;
 
     _tooltipValueLabel = [[UILabel alloc] init];
-    _tooltipValueLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold];
+    _tooltipValueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold];
     _tooltipValueLabel.textColor = [UIColor whiteColor];
     _tooltipValueLabel.textAlignment = NSTextAlignmentCenter;
     _tooltipValueLabel.numberOfLines = 0; // Support multi-line
@@ -440,7 +441,7 @@ static NSDateFormatter *sCachedTimeFmt(void) {
     CGFloat labelPad = 6.0; // Gap between label and bar
 
     // Compute label width from longest entity name
-    UIFont *labelFont = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    UIFont *labelFont = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     for (NSDictionary *entity in self.timelineData) {
         NSString *label = entity[@"label"] ?: @"";
         CGSize sz = [label sizeWithAttributes:@{NSFontAttributeName: labelFont}];
@@ -612,7 +613,7 @@ static NSDateFormatter *sCachedTimeFmt(void) {
         // Measure label width
         UILabel *measureLabel = [[UILabel alloc] init];
         measureLabel.text = label;
-        measureLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
+        measureLabel.font = [UIFont ha_systemFontOfSize:10 weight:UIFontWeightMedium];
         [measureLabel sizeToFit];
         CGFloat entryWidth = 12 + measureLabel.frame.size.width + 10; // dot(8) + gap(4) + label + spacing
 
@@ -635,7 +636,7 @@ static NSDateFormatter *sCachedTimeFmt(void) {
         // Label
         UILabel *lbl = [[UILabel alloc] init];
         lbl.text = label;
-        lbl.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
+        lbl.font = [UIFont ha_systemFontOfSize:10 weight:UIFontWeightMedium];
         lbl.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
         lbl.alpha = alpha;
         [lbl sizeToFit];
@@ -1088,7 +1089,7 @@ static NSDateFormatter *sCachedTimeFmt(void) {
                 if (unit.length > 0) {
                     UILabel *unitLabel = [[UILabel alloc] init];
                     unitLabel.text = unit;
-                    unitLabel.font = [UIFont systemFontOfSize:8 weight:UIFontWeightMedium];
+                    unitLabel.font = [UIFont ha_systemFontOfSize:8 weight:UIFontWeightMedium];
                     unitLabel.textColor = [axisColor colorWithAlphaComponent:0.7];
                     unitLabel.textAlignment = alignment;
                     unitLabel.frame = CGRectMake(axisX, insetY - 2, axisWidth, 10);
@@ -1154,7 +1155,7 @@ static NSDateFormatter *sCachedTimeFmt(void) {
     if (isTimeline) {
         // Recompute barAreaX/W for timeline to align time labels with bars
         CGFloat labelWidth = 0;
-        UIFont *labelFont = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+        UIFont *labelFont = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
         for (NSDictionary *entity in self.timelineData) {
             NSString *label = entity[@"label"] ?: @"";
             CGSize sz = [label sizeWithAttributes:@{NSFontAttributeName: labelFont}];
@@ -1308,13 +1309,13 @@ static NSDateFormatter *sCachedTimeFmt(void) {
                 if (dotRange.location != NSNotFound) {
                     [lineAttr addAttribute:NSForegroundColorAttributeName value:color range:dotRange];
                 }
-                [lineAttr addAttribute:NSFontAttributeName value:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold] range:NSMakeRange(0, lineAttr.length)];
+                [lineAttr addAttribute:NSFontAttributeName value:[UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold] range:NSMakeRange(0, lineAttr.length)];
                 [lineAttr addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:NSMakeRange(0, lineAttr.length)];
 
                 [attrStr appendAttributedString:lineAttr];
 
                 // Track width for sizing
-                CGSize lineSize = [line sizeWithAttributes:@{NSFontAttributeName: [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold]}];
+                CGSize lineSize = [line sizeWithAttributes:@{NSFontAttributeName: [UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold]}];
                 if (lineSize.width > maxWidth) maxWidth = lineSize.width;
 
                 visibleCount++;
@@ -1536,13 +1537,13 @@ static NSDateFormatter *sCachedTimeFmt(void) {
                     if (dotRange.location != NSNotFound) {
                         [lineAttr addAttribute:NSForegroundColorAttributeName value:color range:dotRange];
                     }
-                    [lineAttr addAttribute:NSFontAttributeName value:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold] range:NSMakeRange(0, lineAttr.length)];
+                    [lineAttr addAttribute:NSFontAttributeName value:[UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold] range:NSMakeRange(0, lineAttr.length)];
                     [lineAttr addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:NSMakeRange(0, lineAttr.length)];
 
                     [attrStr appendAttributedString:lineAttr];
 
                     // Track width for sizing
-                    CGSize lineSize = [line sizeWithAttributes:@{NSFontAttributeName: [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold]}];
+                    CGSize lineSize = [line sizeWithAttributes:@{NSFontAttributeName: [UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightBold]}];
                     if (lineSize.width > maxWidth) maxWidth = lineSize.width;
 
                     visibleCount++;

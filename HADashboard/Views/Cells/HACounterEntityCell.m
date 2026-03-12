@@ -5,6 +5,7 @@
 #import "HADashboardConfig.h"
 #import "HATheme.h"
 #import "HAHaptics.h"
+#import "UIFont+HACompat.h"
 
 @interface HACounterEntityCell ()
 @property (nonatomic, strong) UILabel *valueLabel;
@@ -22,7 +23,7 @@
     CGFloat padding = 10.0;
 
     // Value label (large, prominent)
-    self.valueLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightBold]
+    self.valueLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:28 weight:UIFontWeightBold]
                                     color:[HATheme primaryTextColor] lines:1];
     self.valueLabel.textAlignment = NSTextAlignmentRight;
 

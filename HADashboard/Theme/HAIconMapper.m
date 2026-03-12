@@ -123,9 +123,15 @@ static NSDictionary<NSString *, NSString *> *_domainIconMap = nil;
     // font descriptor caches so the first cell render doesn't pay the full cost.
     (void)[self mdiFontOfSize:16];
     // Warm the monospaced digit system font used by thermostat gauge (57pt primary)
-    (void)[UIFont monospacedDigitSystemFontOfSize:57 weight:UIFontWeightRegular];
+    if ([UIFont respondsToSelector:@selector(monospacedDigitSystemFontOfSize:weight:)]) {
+        (void)[UIFont monospacedDigitSystemFontOfSize:57 weight:UIFontWeightRegular];
+    }
     // Warm the medium-weight system font used by labels
-    (void)[UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    if ([UIFont respondsToSelector:@selector(systemFontOfSize:weight:)]) {
+        (void)[UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    } else {
+        (void)[UIFont boldSystemFontOfSize:16]; // iOS 5 fallback
+    }
 }
 
 + (NSString *)mdiFontName { return _mdiFontName; }

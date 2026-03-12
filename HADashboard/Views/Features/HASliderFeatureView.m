@@ -4,6 +4,7 @@
 #import "HATheme.h"
 #import "HAHaptics.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 @interface HASliderFeatureView ()
 @property (nonatomic, strong) UISlider *slider;
@@ -40,7 +41,7 @@
 
     self.valueLabel = [[UILabel alloc] init];
     self.valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    self.valueLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.valueLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     self.valueLabel.textColor = [HATheme secondaryTextColor];
     self.valueLabel.textAlignment = NSTextAlignmentRight;
     if (HAAutoLayoutAvailable()) {

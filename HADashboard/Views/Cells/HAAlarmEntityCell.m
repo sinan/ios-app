@@ -7,6 +7,7 @@
 #import "HADashboardConfig.h"
 #import "HATheme.h"
 #import "HAHaptics.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kPadding = 10.0;
 static const CGFloat kActionButtonWidth = 70.0;
@@ -63,7 +64,7 @@ static const NSInteger kKeypadTagEnter = 11;
 
     // Alarm state badge (pill-shaped label with tinted background)
     self.alarmStateLabel = [[UILabel alloc] init];
-    self.alarmStateLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    self.alarmStateLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightSemibold];
     self.alarmStateLabel.textColor = [UIColor whiteColor];
     self.alarmStateLabel.textAlignment = NSTextAlignmentCenter;
     self.alarmStateLabel.layer.cornerRadius = 12;
@@ -93,7 +94,7 @@ static const NSInteger kKeypadTagEnter = 11;
 
     // Code text field (secure entry, monospaced, centered)
     self.codeTextField = [[UITextField alloc] init];
-    self.codeTextField.font = [UIFont monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
+    self.codeTextField.font = [UIFont ha_monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
     self.codeTextField.textColor = [HATheme primaryTextColor];
     self.codeTextField.textAlignment = NSTextAlignmentCenter;
     self.codeTextField.secureTextEntry = YES;
@@ -124,7 +125,7 @@ static const NSInteger kKeypadTagEnter = 11;
 - (UIButton *)createActionButtonWithTitle:(NSString *)title color:(UIColor *)color action:(SEL)action {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     [button setTitle:title forState:UIControlStateNormal];
-    button.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    button.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     // Pill-shaped with tinted background instead of solid color blocks
     button.backgroundColor = [color colorWithAlphaComponent:0.15];
     [button setTitleColor:color forState:UIControlStateNormal];
@@ -162,7 +163,7 @@ static const NSInteger kKeypadTagEnter = 11;
             NSString *label = rows[row][col];
             UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
             [btn setTitle:label forState:UIControlStateNormal];
-            btn.titleLabel.font = [UIFont monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
+            btn.titleLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
             btn.translatesAutoresizingMaskIntoConstraints = NO;
             btn.layer.cornerRadius = kKeypadButtonSize / 2.0;
             btn.clipsToBounds = YES;
@@ -173,13 +174,13 @@ static const NSInteger kKeypadTagEnter = 11;
                 btn.tag = kKeypadTagClear;
                 btn.backgroundColor = [HATheme controlBackgroundColor];
                 [btn setTitleColor:[HATheme destructiveColor] forState:UIControlStateNormal];
-                btn.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightBold];
+                btn.titleLabel.font = [UIFont ha_systemFontOfSize:18 weight:UIFontWeightBold];
             } else if (row == 3 && col == 2) {
                 // Enter button
                 btn.tag = kKeypadTagEnter;
                 btn.backgroundColor = [HATheme accentColor];
                 [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-                btn.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightBold];
+                btn.titleLabel.font = [UIFont ha_systemFontOfSize:18 weight:UIFontWeightBold];
             } else {
                 // Digit button
                 btn.tag = [label integerValue];

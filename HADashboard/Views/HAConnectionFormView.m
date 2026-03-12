@@ -10,6 +10,7 @@
 #import "HATheme.h"
 #import "UIView+HAUtilities.h"
 #import "UIViewController+HAAlert.h"
+#import "UIFont+HACompat.h"
 
 static NSString *const kModeTrusted = @"trusted";
 static NSString *const kModeLogin   = @"login";
@@ -86,7 +87,7 @@ static NSString *const kModeToken   = @"token";
 
     UILabel *discoveryTitle = [[UILabel alloc] init];
     discoveryTitle.text = @"Servers found on your network";
-    discoveryTitle.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+    discoveryTitle.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightMedium];
     discoveryTitle.textColor = [HATheme secondaryTextColor];
     discoveryTitle.translatesAutoresizingMaskIntoConstraints = NO;
     [self.discoverySection addSubview:discoveryTitle];
@@ -583,7 +584,7 @@ static NSString *const kModeToken   = @"token";
 
     UILabel *nameLabel = [[UILabel alloc] init];
     nameLabel.text = server.name ?: @"Home Assistant";
-    nameLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+    nameLabel.font = [UIFont ha_systemFontOfSize:15 weight:UIFontWeightMedium];
     nameLabel.textColor = [HATheme primaryTextColor];
     nameLabel.translatesAutoresizingMaskIntoConstraints = NO;
     nameLabel.userInteractionEnabled = NO;

@@ -4,6 +4,7 @@
 #import "HADashboardConfig.h"
 #import "HATheme.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 @interface HASensorEntityCell ()
 @property (nonatomic, strong) UILabel *valueLabel;
@@ -18,7 +19,7 @@
     // Override: use a large value display
     self.stateLabel.hidden = YES;
 
-    self.valueLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightMedium]
+    self.valueLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:28 weight:UIFontWeightMedium]
                                      color:[HATheme primaryTextColor] lines:1];
     self.valueLabel.textAlignment = NSTextAlignmentLeft;
     self.valueLabel.adjustsFontSizeToFitWidth = YES;

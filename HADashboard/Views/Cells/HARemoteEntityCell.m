@@ -6,6 +6,7 @@
 #import "HASwitch.h"
 #import "HAHaptics.h"
 #import "UIView+HAUtilities.h"
+#import "UIFont+HACompat.h"
 
 @interface HARemoteEntityCell ()
 @property (nonatomic, strong) UISwitch *toggleSwitch;
@@ -26,7 +27,7 @@
     [self.contentView addSubview:self.toggleSwitch];
 
     self.activityButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.activityButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.activityButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     [self.activityButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
     self.activityButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.activityButton.hidden = YES;

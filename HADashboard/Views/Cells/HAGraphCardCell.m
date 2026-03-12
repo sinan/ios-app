@@ -8,6 +8,7 @@
 #import "HAEntityDisplayHelper.h"
 #import "HAIconMapper.h"
 #import <objc/runtime.h>
+#import "UIFont+HACompat.h"
 
 /// Default color palette for multi-entity graphs (matches HA web ordering)
 static NSArray<UIColor *> *sColorPalette;
@@ -80,14 +81,14 @@ static NSArray<UIColor *> *sColorPalette;
 
     // Name label (top, after icon)
     self.nameLabel = [[UILabel alloc] init];
-    self.nameLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+    self.nameLabel.font = [UIFont ha_systemFontOfSize:14 weight:UIFontWeightMedium];
     self.nameLabel.textColor = [HATheme secondaryTextColor];
     self.nameLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.nameLabel];
 
     // Value label (top-left, below name)
     self.valueLabel = [[UILabel alloc] init];
-    self.valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:24 weight:UIFontWeightBold];
+    self.valueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:24 weight:UIFontWeightBold];
     self.valueLabel.textColor = [HATheme primaryTextColor];
     self.valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.valueLabel];
@@ -117,7 +118,7 @@ static NSArray<UIColor *> *sColorPalette;
 
     // Stats label (below graph: Min / Avg / Max)
     self.statsLabel = [[UILabel alloc] init];
-    self.statsLabel.font = [UIFont monospacedDigitSystemFontOfSize:11 weight:UIFontWeightRegular];
+    self.statsLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:11 weight:UIFontWeightRegular];
     self.statsLabel.textColor = [HATheme secondaryTextColor];
     self.statsLabel.textAlignment = NSTextAlignmentCenter;
     self.statsLabel.translatesAutoresizingMaskIntoConstraints = NO;

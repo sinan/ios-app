@@ -11,6 +11,7 @@
 #import "HAEntityDisplayHelper.h"
 #import "UIView+HAUtilities.h"
 #import "UIViewController+HAAlert.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kIconCircleSize = 36.0;
 static const CGFloat kIconFontSize   = 20.0;
@@ -81,14 +82,14 @@ static const CGFloat kPadding        = 12.0;
     }
 
     // ── Name label (right of icon) ──
-    self.mpNameLabel = [self labelWithFont:[UIFont systemFontOfSize:13 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
+    self.mpNameLabel = [self labelWithFont:[UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
     self.mpNameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
 
     // ── State label (below name, right of icon) ──
-    self.mpStateLabel = [self labelWithFont:[UIFont systemFontOfSize:11 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
+    self.mpStateLabel = [self labelWithFont:[UIFont ha_systemFontOfSize:11 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
 
     // ── Media info (artist - title) ──
-    self.mediaInfoLabel = [self labelWithFont:[UIFont systemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
+    self.mediaInfoLabel = [self labelWithFont:[UIFont ha_systemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
     self.mediaInfoLabel.lineBreakMode = NSLineBreakByTruncatingTail;
 
     // ── Transport buttons (prev | play/pause | next) ──
@@ -175,7 +176,7 @@ static const CGFloat kPadding        = 12.0;
     [self.contentView addSubview:self.volumeSlider];
 
     self.volumeLabel = [[UILabel alloc] init];
-    self.volumeLabel.font = [UIFont monospacedDigitSystemFontOfSize:11 weight:UIFontWeightMedium];
+    self.volumeLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:11 weight:UIFontWeightMedium];
     self.volumeLabel.textColor = [HATheme secondaryTextColor];
     self.volumeLabel.textAlignment = NSTextAlignmentRight;
     self.volumeLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -227,7 +228,7 @@ static const CGFloat kPadding        = 12.0;
 
     // ── Source + shuffle + repeat row (below progress) ──
     self.sourceButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.sourceButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.sourceButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     self.sourceButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     self.sourceButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.sourceButton.hidden = YES;

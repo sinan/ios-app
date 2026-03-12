@@ -6,6 +6,7 @@
 #import "HATheme.h"
 #import "HASwitch.h"
 #import "HAHaptics.h"
+#import "UIFont+HACompat.h"
 
 @interface HAFanEntityCell ()
 @property (nonatomic, strong) UISwitch *toggleSwitch;
@@ -33,12 +34,12 @@
     [self.contentView addSubview:self.toggleSwitch];
 
     // Speed percentage label
-    self.speedLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
+    self.speedLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
     self.speedLabel.textAlignment = NSTextAlignmentRight;
 
     // Preset mode button (below name, tappable for action sheet)
     self.presetButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.presetButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.presetButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     [self.presetButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
     self.presetButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.presetButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
@@ -48,7 +49,7 @@
 
     // Oscillate button (small icon toggle)
     self.oscillateButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.oscillateButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.oscillateButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     self.oscillateButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.oscillateButton.hidden = YES;
     [self.oscillateButton addTarget:self action:@selector(oscillateTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -56,7 +57,7 @@
 
     // Direction button
     self.directionButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.directionButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.directionButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     self.directionButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.directionButton.hidden = YES;
     [self.directionButton addTarget:self action:@selector(directionTapped) forControlEvents:UIControlEventTouchUpInside];

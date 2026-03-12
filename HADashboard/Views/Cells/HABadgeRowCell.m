@@ -5,6 +5,7 @@
 #import "HATheme.h"
 #import "HAIconMapper.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 // HA web badge constants (from ha-badge.ts)
 static const CGFloat kBadgeHeight = 36.0;   // --ha-badge-size: 36px
@@ -162,7 +163,7 @@ static const CGFloat kArcNameLabelHeight = 16.0;
 
         UILabel *valueLabel = [[UILabel alloc] init];
         valueLabel.text = valueText;
-        valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
+        valueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
         valueLabel.textColor = [HATheme primaryTextColor];
         valueLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -175,7 +176,7 @@ static const CGFloat kArcNameLabelHeight = 16.0;
             // Info column: label (name) on top, content (state) below
             UILabel *nameLabel = [[UILabel alloc] init];
             nameLabel.text = name;
-            nameLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
+            nameLabel.font = [UIFont ha_systemFontOfSize:10 weight:UIFontWeightMedium];
             nameLabel.textColor = [HATheme secondaryTextColor];
             nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
             nameLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -438,7 +439,7 @@ static const CGFloat kArcNameLabelHeight = 16.0;
     NSString *valueText = stateText;
     UILabel *valueLabel = [[UILabel alloc] init];
     valueLabel.text = valueText;
-    valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:11.0 weight:UIFontWeightBold];
+    valueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:11.0 weight:UIFontWeightBold];
     valueLabel.textColor = [HATheme primaryTextColor];
     valueLabel.textAlignment = NSTextAlignmentCenter;
 
@@ -457,7 +458,7 @@ static const CGFloat kArcNameLabelHeight = 16.0;
     NSString *name = [HAEntityDisplayHelper displayNameForEntity:entity entityId:entityId section:section];
     UILabel *nameLabel = [[UILabel alloc] init];
     nameLabel.text = name;
-    nameLabel.font = [UIFont systemFontOfSize:10.0 weight:UIFontWeightRegular];
+    nameLabel.font = [UIFont ha_systemFontOfSize:10.0 weight:UIFontWeightRegular];
     nameLabel.textColor = [HATheme secondaryTextColor];
     nameLabel.textAlignment = NSTextAlignmentCenter;
     nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
@@ -549,14 +550,14 @@ static const CGFloat kArcNameLabelHeight = 16.0;
 
     UILabel *nameLabel = [[UILabel alloc] init];
     nameLabel.text = name;
-    nameLabel.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
+    nameLabel.font = [UIFont ha_systemFontOfSize:10 weight:UIFontWeightMedium];
     nameLabel.textColor = [HATheme secondaryTextColor];
     nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
     nameLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
     UILabel *valueLabel = [[UILabel alloc] init];
     valueLabel.text = valueText;
-    valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
+    valueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
     valueLabel.textColor = [HATheme primaryTextColor];
     valueLabel.lineBreakMode = NSLineBreakByTruncatingTail;
     valueLabel.translatesAutoresizingMaskIntoConstraints = NO;

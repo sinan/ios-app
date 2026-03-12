@@ -6,6 +6,7 @@
 #import "HATheme.h"
 #import "HASwitch.h"
 #import "HAHaptics.h"
+#import "UIFont+HACompat.h"
 
 @interface HALightEntityCell ()
 @property (nonatomic, strong) UISwitch *toggleSwitch;
@@ -49,7 +50,7 @@
     [self.contentView addSubview:self.brightnessSlider];
 
     // Brightness percentage label
-    self.brightnessLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
+    self.brightnessLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
     self.brightnessLabel.textAlignment = NSTextAlignmentRight;
 
     // Color mode label (secondary text below name, e.g. "Color Temp · 3000K")
@@ -58,7 +59,7 @@
 
     // Effect button (shown when entity has effect_list)
     self.effectButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.effectButton.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    self.effectButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     [self.effectButton setTitleColor:[HATheme accentColor] forState:UIControlStateNormal];
     self.effectButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.effectButton.hidden = YES;
@@ -107,7 +108,7 @@
     [self.contentView addSubview:self.colorTempSlider];
 
     // Color temp label (e.g. "3000K")
-    self.colorTempLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
+    self.colorTempLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightRegular] color:[HATheme secondaryTextColor] lines:1];
     self.colorTempLabel.textAlignment = NSTextAlignmentRight;
     self.colorTempLabel.hidden = YES;
 

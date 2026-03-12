@@ -10,6 +10,7 @@
 #import "HAEntityDisplayHelper.h"
 #import "UIView+HAUtilities.h"
 #import "UIViewController+HAAlert.h"
+#import "UIFont+HACompat.h"
 
 // Gauge geometry -- proportions matched to HA web's ha-control-circular-slider:
 // SVG viewBox 320x320, center (160,160), RADIUS=145, stroke=24
@@ -318,7 +319,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     // Mode/action label -- centered inside the arc, above the temperature
     // HA web: 16px, weight 500 (medium)
     self.modeLabel = [[UILabel alloc] init];
-    self.modeLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    self.modeLabel.font = [UIFont ha_systemFontOfSize:16 weight:UIFontWeightMedium];
     self.modeLabel.textColor = [HATheme secondaryTextColor];
     self.modeLabel.textAlignment = NSTextAlignmentCenter;
     self.modeLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -327,7 +328,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     // Temperature label (centered in gauge arc)
     // HA web: 57px (lg), 44px (md), 36px (sm), weight 400 (regular)
     self.tempLabel = [[UILabel alloc] init];
-    self.tempLabel.font = [UIFont monospacedDigitSystemFontOfSize:57 weight:UIFontWeightRegular];
+    self.tempLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:57 weight:UIFontWeightRegular];
     self.tempLabel.textColor = [HATheme primaryTextColor];
     self.tempLabel.textAlignment = NSTextAlignmentCenter;
     self.tempLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -336,7 +337,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     // Target/current label below temp (with icon)
     // HA web: 16px, weight 500 (medium)
     self.targetLabel = [[UILabel alloc] init];
-    self.targetLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    self.targetLabel.font = [UIFont ha_systemFontOfSize:16 weight:UIFontWeightMedium];
     self.targetLabel.textColor = [HATheme secondaryTextColor];
     self.targetLabel.textAlignment = NSTextAlignmentCenter;
     self.targetLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -419,7 +420,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 - (UIButton *)makeOutlinedButtonWithTitle:(NSString *)title action:(SEL)action {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
     [btn setTitle:title forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont systemFontOfSize:24 weight:UIFontWeightLight];
+    btn.titleLabel.font = [UIFont ha_systemFontOfSize:24 weight:UIFontWeightLight];
     btn.backgroundColor = [UIColor clearColor];
     btn.layer.borderWidth = 1.5;
     btn.layer.borderColor = [HATheme tertiaryTextColor].CGColor;
@@ -531,7 +532,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
         primaryFontSize = 36.0;
         secondaryFontSize = 14.0;
     }
-    self.tempLabel.font = [UIFont monospacedDigitSystemFontOfSize:primaryFontSize weight:UIFontWeightRegular];
+    self.tempLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:primaryFontSize weight:UIFontWeightRegular];
 
     // Hide +/- buttons for md/sm/xs size classes (HA web: .container.md .buttons { display: none })
     BOOL sizeAllowsButtons = isLg;
@@ -544,7 +545,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     self.modeLabel.hidden = (slider < 130.0);
     self.targetLabel.hidden = self.targetLabel.hidden || (slider < 130.0);
 
-    self.modeLabel.font = [UIFont systemFontOfSize:secondaryFontSize weight:UIFontWeightMedium];
+    self.modeLabel.font = [UIFont ha_systemFontOfSize:secondaryFontSize weight:UIFontWeightMedium];
 
     // Measure label sizes for manual centering
     CGFloat labelAreaWidth = slider * 0.6; // HA web .label { width: 60% }
@@ -992,7 +993,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
                                  NSForegroundColorAttributeName: [HATheme secondaryTextColor]}];
                 [targetAttr appendAttributedString:[[NSAttributedString alloc]
                     initWithString:[NSString stringWithFormat:@" %.1f %@", targetTemp.doubleValue, self.tempUnitString]
-                    attributes:@{NSFontAttributeName: [UIFont systemFontOfSize:secondarySize weight:UIFontWeightMedium],
+                    attributes:@{NSFontAttributeName: [UIFont ha_systemFontOfSize:secondarySize weight:UIFontWeightMedium],
                                  NSForegroundColorAttributeName: [HATheme secondaryTextColor]}]];
                 self.targetLabel.attributedText = targetAttr;
                 self.targetLabel.hidden = NO;
@@ -1016,7 +1017,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
                                  NSForegroundColorAttributeName: [HATheme secondaryTextColor]}];
                 [currentAttr appendAttributedString:[[NSAttributedString alloc]
                     initWithString:[NSString stringWithFormat:@" %.1f %@", currentTemp.doubleValue, self.tempUnitString]
-                    attributes:@{NSFontAttributeName: [UIFont systemFontOfSize:secondarySize weight:UIFontWeightMedium],
+                    attributes:@{NSFontAttributeName: [UIFont ha_systemFontOfSize:secondarySize weight:UIFontWeightMedium],
                                  NSForegroundColorAttributeName: [HATheme secondaryTextColor]}]];
                 self.targetLabel.attributedText = currentAttr;
                 self.targetLabel.hidden = NO;
@@ -1215,7 +1216,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 - (UIButton *)makeExtraModeButton:(NSString *)title tag:(NSInteger)tag {
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
     [btn setTitle:title forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightMedium];
+    btn.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:UIFontWeightMedium];
     [btn setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
     btn.tag = tag;
     [btn addTarget:self action:@selector(extraModeTapped:) forControlEvents:UIControlEventTouchUpInside];

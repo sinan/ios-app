@@ -8,6 +8,7 @@
 #import "HATheme.h"
 #import "HASwitch.h"
 #import "HALog.h"
+#import "UIFont+HACompat.h"
 
 @interface HALoginViewController () <HAConnectionFormDelegate>
 @property (nonatomic, strong) HAConnectionFormView *connectionForm;
@@ -192,7 +193,7 @@
     UILabel *cardTitle = [[UILabel alloc] init];
     cardTitle.tag = 103;
     cardTitle.text = @"Connect to your server";
-    cardTitle.font = [UIFont systemFontOfSize:20 weight:UIFontWeightSemibold];
+    cardTitle.font = [UIFont ha_systemFontOfSize:20 weight:UIFontWeightSemibold];
     cardTitle.textColor = [HATheme primaryTextColor];
     cardTitle.textAlignment = NSTextAlignmentCenter;
     cardTitle.translatesAutoresizingMaskIntoConstraints = NO;

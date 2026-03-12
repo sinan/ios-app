@@ -4,6 +4,7 @@
 #import "HADashboardConfig.h"
 #import "HATheme.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 // Gauge geometry
 static const CGFloat kGaugeArcLineWidth = 10.0;
@@ -55,7 +56,7 @@ static const CGFloat kGaugeEndAngle   = 2.0 * M_PI; // 3 o'clock (right)
 
         // Value label (centered inside arc, auto-sizes for narrow cards)
         self.valueLabel = [[UILabel alloc] init];
-        self.valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:20 weight:UIFontWeightBold];
+        self.valueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:20 weight:UIFontWeightBold];
         self.valueLabel.textColor = [HATheme primaryTextColor];
         self.valueLabel.textAlignment = NSTextAlignmentCenter;
         self.valueLabel.adjustsFontSizeToFitWidth = YES;
@@ -65,7 +66,7 @@ static const CGFloat kGaugeEndAngle   = 2.0 * M_PI; // 3 o'clock (right)
 
         // Name label (smaller, below value)
         self.nameLabel = [[UILabel alloc] init];
-        self.nameLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightRegular];
+        self.nameLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightRegular];
         self.nameLabel.textColor = [HATheme secondaryTextColor];
         self.nameLabel.textAlignment = NSTextAlignmentCenter;
         self.nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;

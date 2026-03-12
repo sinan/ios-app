@@ -9,6 +9,7 @@
 #import "HAEntityDisplayHelper.h"
 #import "UIView+HAUtilities.h"
 #import "UIViewController+HAAlert.h"
+#import "UIFont+HACompat.h"
 
 @interface HAEntityRowView ()
 @property (nonatomic, strong) UILabel *iconLabel;
@@ -100,7 +101,7 @@
     // Compact "Press" button for button / input_button entities
     self.pressButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.pressButton setTitle:@"Press" forState:UIControlStateNormal];
-    self.pressButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+    self.pressButton.titleLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium];
     self.pressButton.layer.cornerRadius = 14;
     self.pressButton.layer.borderWidth = 1.0;
     self.pressButton.layer.borderColor = [UIColor systemBlueColor].CGColor;
@@ -112,7 +113,7 @@
 
     // Inline slider for input_number / number entities (compact, fits 36pt row)
     self.sliderValueLabel = [[UILabel alloc] init];
-    self.sliderValueLabel.font = [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
+    self.sliderValueLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium];
     self.sliderValueLabel.textColor = [HATheme secondaryTextColor];
     self.sliderValueLabel.textAlignment = NSTextAlignmentRight;
     self.sliderValueLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -543,11 +544,11 @@
             [btn setImage:symbol forState:UIControlStateNormal];
         } else {
             [btn setTitle:fallbackTitle forState:UIControlStateNormal];
-            btn.titleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+            btn.titleLabel.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightMedium];
         }
     } else {
         [btn setTitle:fallbackTitle forState:UIControlStateNormal];
-        btn.titleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+        btn.titleLabel.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightMedium];
     }
 
     [btn addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];

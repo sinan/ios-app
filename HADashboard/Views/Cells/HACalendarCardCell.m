@@ -5,6 +5,7 @@
 #import "HAHTTPClient.h"
 #import "HATheme.h"
 #import "HAIconMapper.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kListHeight  = 280.0;
 static const CGFloat kMonthHeight = 380.0;
@@ -101,7 +102,7 @@ static UIColor *sDefaultEventColor;
     // Today button
     self.todayButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.todayButton setTitle:@"Today" forState:UIControlStateNormal];
-    self.todayButton.titleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+    self.todayButton.titleLabel.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightMedium];
     self.todayButton.layer.cornerRadius = 4;
     self.todayButton.layer.borderWidth = 0.5;
     self.todayButton.layer.borderColor = [[HATheme tertiaryTextColor] colorWithAlphaComponent:0.4].CGColor;
@@ -142,7 +143,7 @@ static UIColor *sDefaultEventColor;
 
     // Date range label
     self.dateRangeLabel = [[UILabel alloc] init];
-    self.dateRangeLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    self.dateRangeLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightSemibold];
     self.dateRangeLabel.textColor = [HATheme primaryTextColor];
     self.dateRangeLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.dateRangeLabel];
@@ -625,7 +626,7 @@ static UIColor *sDefaultEventColor;
 
     // Day name on left (e.g. "Monday" or "Today")
     UILabel *dayName = [[UILabel alloc] init];
-    dayName.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    dayName.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightSemibold];
     dayName.textColor = [HATheme primaryTextColor];
     dayName.text = [self dayNameForDate:date];
     dayName.frame = CGRectMake(kPadding, 4, 120, kDayHeaderHeight - 4);
@@ -656,7 +657,7 @@ static UIColor *sDefaultEventColor;
 
     // Time label — show range "17:30 - 18:00" or "All day"
     UILabel *timeLabel = [[UILabel alloc] init];
-    timeLabel.font = [UIFont monospacedDigitSystemFontOfSize:11 weight:UIFontWeightRegular];
+    timeLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:11 weight:UIFontWeightRegular];
     timeLabel.textColor = [HATheme secondaryTextColor];
 
     if (event.allDay) {
@@ -705,7 +706,7 @@ static UIColor *sDefaultEventColor;
     for (NSInteger i = 0; i < 7; i++) {
         NSInteger symbolIndex = ((firstWeekday - 1) + i) % 7;
         UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(kPadding + i * dayWidth, 0, dayWidth, 20)];
-        label.font = [UIFont systemFontOfSize:10 weight:UIFontWeightMedium];
+        label.font = [UIFont ha_systemFontOfSize:10 weight:UIFontWeightMedium];
         label.textColor = [HATheme secondaryTextColor];
         label.textAlignment = NSTextAlignmentCenter;
         label.text = weekdaySymbols[symbolIndex];

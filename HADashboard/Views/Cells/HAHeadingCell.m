@@ -3,6 +3,7 @@
 #import "HADashboardConfig.h"
 #import "HATheme.h"
 #import "HAIconMapper.h"
+#import "UIFont+HACompat.h"
 
 @interface HAHeadingCell ()
 @property (nonatomic, strong) UILabel *iconLabel;
@@ -22,7 +23,7 @@
         [self.contentView addSubview:self.iconLabel];
 
         self.titleLabel = [[UILabel alloc] init];
-        self.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
+        self.titleLabel.font = [UIFont ha_systemFontOfSize:17 weight:UIFontWeightSemibold];
         self.titleLabel.textColor = [HATheme sectionHeaderColor];
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [self.contentView addSubview:self.titleLabel];

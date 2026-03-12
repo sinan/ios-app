@@ -5,6 +5,7 @@
 #import "HADashboardConfig.h"
 #import <objc/runtime.h>
 #import "UIView+HAUtilities.h"
+#import "UIFont+HACompat.h"
 
 @interface HAInputDateTimeEntityCell ()
 @property (nonatomic, strong) UIButton *valueButton;
@@ -21,7 +22,7 @@
     CGFloat padding = 10.0;
 
     self.valueButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.valueButton.titleLabel.font = [UIFont monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
+    self.valueButton.titleLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
     self.valueButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     self.valueButton.translatesAutoresizingMaskIntoConstraints = NO;
     [self.valueButton addTarget:self action:@selector(valueTapped) forControlEvents:UIControlEventTouchUpInside];

@@ -13,6 +13,7 @@
 #import "HASwitch.h"
 #import "HALog.h"
 #import "UIViewController+HAAlert.h"
+#import "UIFont+HACompat.h"
 
 
 // NSUserDefaults keys for device integration
@@ -215,7 +216,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
     self.hex1Field.borderStyle = UITextBorderStyleRoundedRect;
     self.hex1Field.autocapitalizationType = UITextAutocapitalizationTypeNone;
     self.hex1Field.autocorrectionType = UITextAutocorrectionTypeNo;
-    self.hex1Field.font = [UIFont monospacedDigitSystemFontOfSize:14 weight:UIFontWeightRegular];
+    self.hex1Field.font = [UIFont ha_monospacedDigitSystemFontOfSize:14 weight:UIFontWeightRegular];
     self.hex1Field.translatesAutoresizingMaskIntoConstraints = NO;
     [self.hex1Field addTarget:self action:@selector(hexFieldChanged:) forControlEvents:UIControlEventEditingDidEnd];
     [self.customHexContainer addSubview:self.hex1Field];
@@ -232,7 +233,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
     self.hex2Field.borderStyle = UITextBorderStyleRoundedRect;
     self.hex2Field.autocapitalizationType = UITextAutocapitalizationTypeNone;
     self.hex2Field.autocorrectionType = UITextAutocorrectionTypeNo;
-    self.hex2Field.font = [UIFont monospacedDigitSystemFontOfSize:14 weight:UIFontWeightRegular];
+    self.hex2Field.font = [UIFont ha_monospacedDigitSystemFontOfSize:14 weight:UIFontWeightRegular];
     self.hex2Field.translatesAutoresizingMaskIntoConstraints = NO;
     [self.hex2Field addTarget:self action:@selector(hexFieldChanged:) forControlEvents:UIControlEventEditingDidEnd];
     [self.customHexContainer addSubview:self.hex2Field];
@@ -418,7 +419,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
     // ── Log Out & Reset ───────────────────────────────────────────────
     self.logoutButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.logoutButton setTitle:@"Log Out & Reset" forState:UIControlStateNormal];
-    self.logoutButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    self.logoutButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:UIFontWeightMedium];
     [self.logoutButton setTitleColor:[HATheme destructiveColor] forState:UIControlStateNormal];
     self.logoutButton.translatesAutoresizingMaskIntoConstraints = NO;
     [self.logoutButton addTarget:self action:@selector(logoutTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -497,7 +498,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
 - (UILabel *)createSectionHeaderWithText:(NSString *)text {
     UILabel *label = [[UILabel alloc] init];
     label.text = text;
-    label.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+    label.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium];
     label.textColor = [HATheme secondaryTextColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
     return label;
@@ -805,7 +806,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
 
     // Server URL label
     self.connectionServerLabel = [[UILabel alloc] init];
-    self.connectionServerLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+    self.connectionServerLabel.font = [UIFont ha_systemFontOfSize:15 weight:UIFontWeightMedium];
     self.connectionServerLabel.textColor = [HATheme primaryTextColor];
     self.connectionServerLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.connectionServerLabel.userInteractionEnabled = NO;

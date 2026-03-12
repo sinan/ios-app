@@ -8,6 +8,7 @@
 #import "HAHaptics.h"
 #import "UIView+HAUtilities.h"
 #import "UIViewController+HAAlert.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kHeadingHeight = 28.0;
 static const CGFloat kHeadingGap = 2.0;
@@ -29,7 +30,7 @@ static const CGFloat kHeadingGap = 2.0;
         // Heading label: added to the CELL (self), not contentView.
         // When visible, layoutSubviews pushes contentView down below it.
         self.headingLabel = [[UILabel alloc] init];
-        self.headingLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
+        self.headingLabel.font = [UIFont ha_systemFontOfSize:17 weight:UIFontWeightSemibold];
         self.headingLabel.textColor = [HATheme sectionHeaderColor];
         self.headingLabel.numberOfLines = 1;
         self.headingLabel.hidden = YES;
@@ -121,7 +122,7 @@ static const CGFloat kHeadingGap = 2.0;
                              NSForegroundColorAttributeName: [HATheme secondaryTextColor]}];
             [heading appendAttributedString:[[NSAttributedString alloc] initWithString:
                 [NSString stringWithFormat:@"  %@", configItem.displayName]
-                attributes:@{NSFontAttributeName: [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold],
+                attributes:@{NSFontAttributeName: [UIFont ha_systemFontOfSize:17 weight:UIFontWeightSemibold],
                              NSForegroundColorAttributeName: [HATheme sectionHeaderColor]}]];
             self.headingLabel.attributedText = heading;
         } else {

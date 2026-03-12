@@ -12,6 +12,7 @@
 #import "HAGraphView.h"
 #import "HAAttributeRowView.h"
 #import "HAEntityDetailSection.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kGrabberWidth = 36.0;
 static const CGFloat kGrabberHeight = 5.0;
@@ -138,7 +139,7 @@ static const CGFloat kGraphHeight = 160.0;
 
     // Name
     self.nameLabel = [[UILabel alloc] init];
-    self.nameLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
+    self.nameLabel.font = [UIFont ha_systemFontOfSize:18 weight:UIFontWeightSemibold];
     self.nameLabel.textColor = [HATheme primaryTextColor];
     self.nameLabel.numberOfLines = 2;
     self.nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
@@ -155,7 +156,7 @@ static const CGFloat kGraphHeight = 160.0;
     // Close button
     self.closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.closeButton setTitle:@"\u2715" forState:UIControlStateNormal];
-    self.closeButton.titleLabel.font = [UIFont systemFontOfSize:20 weight:UIFontWeightMedium];
+    self.closeButton.titleLabel.font = [UIFont ha_systemFontOfSize:20 weight:UIFontWeightMedium];
     [self.closeButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
     [self.closeButton addTarget:self action:@selector(closeTapped) forControlEvents:UIControlEventTouchUpInside];
     self.closeButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -662,14 +663,14 @@ static const CGFloat kGraphHeight = 160.0;
 
     UILabel *fromLabel = [[UILabel alloc] init];
     fromLabel.text = @"From:";
-    fromLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+    fromLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium];
     fromLabel.textColor = [HATheme secondaryTextColor];
     fromLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [container addSubview:fromLabel];
 
     UILabel *toLabel = [[UILabel alloc] init];
     toLabel.text = @"To:";
-    toLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+    toLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium];
     toLabel.textColor = [HATheme secondaryTextColor];
     toLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [container addSubview:toLabel];
@@ -677,7 +678,7 @@ static const CGFloat kGraphHeight = 160.0;
     UIButton *applyBtn = [UIButton buttonWithType:UIButtonTypeSystem];
     [applyBtn setTitle:@"Apply" forState:UIControlStateNormal];
     [applyBtn setTitleColor:[UIColor colorWithRed:0.30 green:0.60 blue:1.00 alpha:1.0] forState:UIControlStateNormal];
-    applyBtn.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    applyBtn.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:UIFontWeightSemibold];
     applyBtn.translatesAutoresizingMaskIntoConstraints = NO;
     [applyBtn addTarget:self action:@selector(applyCustomRange) forControlEvents:UIControlEventTouchUpInside];
     [container addSubview:applyBtn];

@@ -10,6 +10,7 @@
 #import "HAHaptics.h"
 #import "HAIconMapper.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 @interface HAAreaCardCell ()
 @property (nonatomic, strong) UIImageView *bgImageView;
@@ -46,14 +47,14 @@
 
     // Area name (large, white over image)
     self.areaNameLabel = [[UILabel alloc] init];
-    self.areaNameLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightBold];
+    self.areaNameLabel.font = [UIFont ha_systemFontOfSize:18 weight:UIFontWeightBold];
     self.areaNameLabel.textColor = [UIColor whiteColor];
     self.areaNameLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.areaNameLabel];
 
     // Sensor summary (temp, humidity — below area name)
     self.sensorSummaryLabel = [[UILabel alloc] init];
-    self.sensorSummaryLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+    self.sensorSummaryLabel.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightMedium];
     self.sensorSummaryLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.85];
     self.sensorSummaryLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.sensorSummaryLabel];

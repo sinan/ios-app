@@ -5,6 +5,7 @@
 #import "HATheme.h"
 #import "HAIconMapper.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 @interface HAEntityCardCell ()
 @property (nonatomic, strong) UILabel *entityIconLabel;
@@ -32,7 +33,7 @@
 
     // Entity name (below icon)
     self.entityNameLabel = [[UILabel alloc] init];
-    self.entityNameLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+    self.entityNameLabel.font = [UIFont ha_systemFontOfSize:14 weight:UIFontWeightMedium];
     self.entityNameLabel.textColor = [HATheme primaryTextColor];
     self.entityNameLabel.textAlignment = NSTextAlignmentCenter;
     self.entityNameLabel.numberOfLines = 1;
@@ -41,7 +42,7 @@
 
     // Large state/attribute value
     self.entityStateLabel = [[UILabel alloc] init];
-    self.entityStateLabel.font = [UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightLight];
+    self.entityStateLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:28 weight:UIFontWeightLight];
     self.entityStateLabel.textColor = [HATheme primaryTextColor];
     self.entityStateLabel.textAlignment = NSTextAlignmentCenter;
     self.entityStateLabel.numberOfLines = 1;

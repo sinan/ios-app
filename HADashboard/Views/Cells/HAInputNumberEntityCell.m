@@ -5,6 +5,7 @@
 #import "HADashboardConfig.h"
 #import "HAHaptics.h"
 #import "HATheme.h"
+#import "UIFont+HACompat.h"
 
 @interface HAInputNumberEntityCell () <UITextFieldDelegate>
 @property (nonatomic, strong) UISlider *valueSlider;
@@ -26,7 +27,7 @@
     CGFloat padding = 10.0;
 
     // Value label (right side, shows current number)
-    self.valueLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:20 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
+    self.valueLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:20 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
     self.valueLabel.textAlignment = NSTextAlignmentRight;
 
     // Slider (shown in slider mode)
@@ -40,7 +41,7 @@
 
     // Box text field (shown in box mode)
     self.boxTextField = [[UITextField alloc] init];
-    self.boxTextField.font = [UIFont monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
+    self.boxTextField.font = [UIFont ha_monospacedDigitSystemFontOfSize:18 weight:UIFontWeightMedium];
     self.boxTextField.textColor = [HATheme primaryTextColor];
     self.boxTextField.textAlignment = NSTextAlignmentCenter;
     self.boxTextField.keyboardType = UIKeyboardTypeDecimalPad;

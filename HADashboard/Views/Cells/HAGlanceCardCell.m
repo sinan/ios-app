@@ -4,6 +4,7 @@
 #import "HADashboardConfig.h"
 #import "HAEntity.h"
 #import "HATheme.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kTitleHeight = 28.0;
 static const CGFloat kTitleFontSize = 14.0;
@@ -28,7 +29,7 @@ static const CGFloat kMinColumnWidth = 70.0; // auto column calculation threshol
         self.itemViews = [NSMutableArray array];
 
         self.titleLabel = [[UILabel alloc] init];
-        self.titleLabel.font = [UIFont systemFontOfSize:kTitleFontSize weight:UIFontWeightSemibold];
+        self.titleLabel.font = [UIFont ha_systemFontOfSize:kTitleFontSize weight:UIFontWeightSemibold];
         self.titleLabel.textColor = [HATheme primaryTextColor];
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
         self.titleLabel.hidden = YES;

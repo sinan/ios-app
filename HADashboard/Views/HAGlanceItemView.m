@@ -5,6 +5,7 @@
 #import "HATheme.h"
 #import "HAIconMapper.h"
 #import "HAEntityDisplayHelper.h"
+#import "UIFont+HACompat.h"
 
 static const CGFloat kIconSize = 24.0;
 static const CGFloat kNameFontSize = 11.0;
@@ -38,14 +39,14 @@ static const CGFloat kVerticalPadding = 6.0;
     self.iconLabel.textColor = [HATheme secondaryTextColor];
 
     self.nameLabel = [[UILabel alloc] init];
-    self.nameLabel.font = [UIFont systemFontOfSize:kNameFontSize weight:UIFontWeightMedium];
+    self.nameLabel.font = [UIFont ha_systemFontOfSize:kNameFontSize weight:UIFontWeightMedium];
     self.nameLabel.textAlignment = NSTextAlignmentCenter;
     self.nameLabel.textColor = [HATheme primaryTextColor];
     self.nameLabel.numberOfLines = 1;
     self.nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
 
     self.stateLabel = [[UILabel alloc] init];
-    self.stateLabel.font = [UIFont systemFontOfSize:kStateFontSize weight:UIFontWeightRegular];
+    self.stateLabel.font = [UIFont ha_systemFontOfSize:kStateFontSize weight:UIFontWeightRegular];
     self.stateLabel.textAlignment = NSTextAlignmentCenter;
     self.stateLabel.textColor = [HATheme secondaryTextColor];
     self.stateLabel.numberOfLines = 1;

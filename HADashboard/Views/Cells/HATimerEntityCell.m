@@ -6,6 +6,7 @@
 #import "HATheme.h"
 #import "UIView+HAUtilities.h"
 #import "UIViewController+HAAlert.h"
+#import "UIFont+HACompat.h"
 
 @interface HATimerEntityCell ()
 @property (nonatomic, strong) UILabel *timeLabel;
@@ -25,7 +26,7 @@
     CGFloat padding = 10.0;
 
     // Time display
-    self.timeLabel = [self labelWithFont:[UIFont monospacedDigitSystemFontOfSize:20 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
+    self.timeLabel = [self labelWithFont:[UIFont ha_monospacedDigitSystemFontOfSize:20 weight:UIFontWeightMedium] color:[HATheme primaryTextColor] lines:1];
 
     CGFloat buttonWidth = 56.0;
     CGFloat buttonHeight = 28.0;

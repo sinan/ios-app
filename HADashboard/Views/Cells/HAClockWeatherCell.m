@@ -7,6 +7,7 @@
 #import "HAConnectionManager.h"
 #import "LOTAnimationView.h"
 #import "HAWeatherHelper.h"
+#import "UIFont+HACompat.h"
 
 /// Top content height: padding(12) + max(icon 80, text chain ~96) = ~110pt
 static const CGFloat kTopContentHeight = 110.0;
@@ -73,7 +74,7 @@ static const CGFloat kBottomPadding = 12.0;
 
     // Condition text (top-right): "Rainy, 7C"
     self.conditionLabel = [[UILabel alloc] init];
-    self.conditionLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+    self.conditionLabel.font = [UIFont ha_systemFontOfSize:15 weight:UIFontWeightMedium];
     self.conditionLabel.textColor = [HATheme primaryTextColor];
     self.conditionLabel.numberOfLines = 1;
     self.conditionLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -89,7 +90,7 @@ static const CGFloat kBottomPadding = 12.0;
 
     // Clock (large digital)
     self.clockLabel = [[UILabel alloc] init];
-    self.clockLabel.font = [UIFont monospacedDigitSystemFontOfSize:44 weight:UIFontWeightLight];
+    self.clockLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:44 weight:UIFontWeightLight];
     self.clockLabel.textColor = [HATheme primaryTextColor];
     self.clockLabel.textAlignment = NSTextAlignmentLeft;
     self.clockLabel.translatesAutoresizingMaskIntoConstraints = NO;

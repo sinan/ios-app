@@ -6,6 +6,7 @@
 #import "HAIconMapper.h"
 #import "HAConnectionManager.h"
 #import "HAWeatherHelper.h"
+#import "UIFont+HACompat.h"
 
 /// Height for the top section: name + condition symbol + temp + details
 static const CGFloat kTopContentHeight = 90.0;
@@ -50,7 +51,7 @@ static const NSInteger kDefaultForecastRows = 5;
 
     // Temperature
     self.tempLabel = [[UILabel alloc] init];
-    self.tempLabel.font = [UIFont monospacedDigitSystemFontOfSize:28 weight:UIFontWeightLight];
+    self.tempLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:28 weight:UIFontWeightLight];
     self.tempLabel.textColor = [HATheme primaryTextColor];
     self.tempLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:self.tempLabel];

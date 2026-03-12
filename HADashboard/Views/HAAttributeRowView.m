@@ -1,6 +1,7 @@
 #import "HAAutoLayout.h"
 #import "HAAttributeRowView.h"
 #import "HATheme.h"
+#import "UIFont+HACompat.h"
 
 @interface HAAttributeRowView ()
 @property (nonatomic, strong) UILabel *keyLabel;
@@ -26,7 +27,7 @@
     [self addSubview:self.keyLabel];
 
     self.valueLabel = [[UILabel alloc] init];
-    self.valueLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+    self.valueLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium];
     self.valueLabel.textColor = [HATheme primaryTextColor];
     self.valueLabel.textAlignment = NSTextAlignmentRight;
     self.valueLabel.numberOfLines = 2;

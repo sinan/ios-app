@@ -12,6 +12,7 @@
 #import "HAAction.h"
 #import "HAActionDispatcher.h"
 #import <objc/runtime.h>
+#import "UIFont+HACompat.h"
 
 static const void *kButtonActionKey = &kButtonActionKey;
 static const void *kButtonEntityIdKey = &kButtonEntityIdKey;
@@ -72,7 +73,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
 
     // Heading label (above contentView, for grid headings like "Lights")
     self.headingLabel = [[UILabel alloc] init];
-    self.headingLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
+    self.headingLabel.font = [UIFont ha_systemFontOfSize:17 weight:UIFontWeightSemibold];
     self.headingLabel.textColor = [HATheme sectionHeaderColor];
     self.headingLabel.numberOfLines = 1;
     self.headingLabel.hidden = YES;
@@ -80,7 +81,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
 
     // Title label (optional, inside the card)
     self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+    self.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:UIFontWeightMedium];
     self.titleLabel.textColor = [HATheme secondaryTextColor];
     self.titleLabel.numberOfLines = 1;
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -260,7 +261,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
                              NSForegroundColorAttributeName: [HATheme secondaryTextColor]}];
             [heading appendAttributedString:[[NSAttributedString alloc] initWithString:
                 [NSString stringWithFormat:@"  %@", configItem.displayName]
-                attributes:@{NSFontAttributeName: [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold],
+                attributes:@{NSFontAttributeName: [UIFont ha_systemFontOfSize:17 weight:UIFontWeightSemibold],
                              NSForegroundColorAttributeName: [HATheme sectionHeaderColor]}]];
             self.headingLabel.attributedText = heading;
         } else {
@@ -424,7 +425,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
             if ([rowType isEqualToString:@"section"]) {
                 UILabel *sectionLabel = [[UILabel alloc] init];
                 sectionLabel.text = rowInfo[@"label"] ?: @"";
-                sectionLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightSemibold];
+                sectionLabel.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightSemibold];
                 sectionLabel.textColor = [HATheme sectionHeaderColor];
                 sectionLabel.tag = 999;
                 sectionLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -534,7 +535,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
                         }
                         UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
                         [btn setTitle:btnName forState:UIControlStateNormal];
-                        btn.titleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+                        btn.titleLabel.font = [UIFont ha_systemFontOfSize:12 weight:UIFontWeightMedium];
                         btn.backgroundColor = [HATheme buttonBackgroundColor];
                         btn.layer.cornerRadius = 6;
                         if (entityId) {
@@ -655,7 +656,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
             // Use pre-computed display name (area prefix already stripped), fall back to friendlyName
             NSString *name = chipNames[sceneId] ?: [scene friendlyName];
             [chip setTitle:name forState:UIControlStateNormal];
-            chip.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+            chip.titleLabel.font = [UIFont ha_systemFontOfSize:13 weight:UIFontWeightMedium];
             [chip setTitleColor:[HATheme primaryTextColor] forState:UIControlStateNormal];
             chip.backgroundColor = [HATheme buttonBackgroundColor];
             chip.layer.cornerRadius = kSceneChipHeight / 2.0;
