@@ -1,8 +1,8 @@
 #import "HAAutoLayout.h"
 #import "NSString+HACompat.h"
 #import "HADashboardViewController.h"
-#import "NSString+HACompat.h"
 #import "HALog.h"
+#import <dlfcn.h>
 #import "HAAuthManager.h"
 #import "HAConnectionManager.h"
 #import "HADashboardConfig.h"
@@ -89,6 +89,7 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
 @property (nonatomic, strong) NSArray<NSDictionary *> *availableDashboards;
 @property (nonatomic, strong) NSDictionary<NSString *, NSArray<NSIndexPath *> *> *entityToIndexPaths;
 @property (nonatomic, assign) BOOL screenshotScheduled;
+@property (nonatomic, strong) NSTimer *screenshotTimer;
 @end
 
 @implementation HADashboardViewController
@@ -1119,17 +1120,11 @@ static const CGFloat kRowUnitHeight = 56.0;
     [[HAPerfMonitor sharedMonitor] markRebuildEnd];
 
     // Screenshot trigger: when /tmp/take_screenshot exists, capture after layout settles
-    if (!self.screenshotScheduled) {
-        NSString *triggerFile = @"/tmp/take_screenshot";
-        NSString *outputFile = @"/tmp/screenshot.png";
-        if ([[NSFileManager defaultManager] fileExistsAtPath:triggerFile]) {
-            self.screenshotScheduled = YES;
-            [[NSFileManager defaultManager] removeItemAtPath:triggerFile error:nil];
-            HALogI(@"dash", @"Screenshot trigger found, will capture in 3s");
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [self captureScreenshotToPath:outputFile];
-            });
-        }
+    [self checkScreenshotTrigger];
+    // Start polling timer so screenshots can be taken at any time (not just on reloadData)
+    if (!self.screenshotTimer) {
+        self.screenshotTimer = [NSTimer scheduledTimerWithTimeInterval:2.0
+            target:self selector:@selector(checkScreenshotTrigger) userInfo:nil repeats:YES];
     }
 }
 
@@ -2427,6 +2422,21 @@ heightForHeaderInSection:(NSInteger)section {
 
 #pragma mark - Screenshot Capture
 
+- (void)checkScreenshotTrigger {
+    if (self.screenshotScheduled) return;
+    NSString *triggerFile = @"/tmp/take_screenshot";
+    NSString *outputFile = @"/tmp/screenshot.png";
+    if ([[NSFileManager defaultManager] fileExistsAtPath:triggerFile]) {
+        self.screenshotScheduled = YES;
+        [[NSFileManager defaultManager] removeItemAtPath:triggerFile error:nil];
+        HALogI(@"dash", @"Screenshot trigger found, will capture in 1s");
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self captureScreenshotToPath:outputFile];
+            self.screenshotScheduled = NO;
+        });
+    }
+}
+
 - (void)captureScreenshotToPath:(NSString *)path {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     if (!window) {
@@ -2434,15 +2444,31 @@ heightForHeaderInSection:(NSInteger)section {
         return;
     }
 
-    UIGraphicsBeginImageContextWithOptions(window.bounds.size, YES, window.screen.scale);
-    if ([window respondsToSelector:@selector(drawViewHierarchyInRect:afterScreenUpdates:)]) {
-        [window drawViewHierarchyInRect:window.bounds afterScreenUpdates:YES];
-    } else {
-        // iOS 5-6 fallback: render layer into context
-        [window.layer renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage *image = nil;
+
+    // iOS 5-6: use private UIGetScreenImage() which captures the actual framebuffer
+    // (renderInContext: misses CA animations, transparency, and some layer content).
+    // This is a private API but fine for jailbroken debug builds.
+    typedef CGImageRef (*UIGetScreenImageFunc)(void);
+    UIGetScreenImageFunc getScreenImage = (UIGetScreenImageFunc)dlsym(RTLD_DEFAULT, "UIGetScreenImage");
+    if (getScreenImage && HASystemMajorVersion() < 7) {
+        CGImageRef cgImage = getScreenImage();
+        if (cgImage) {
+            image = [UIImage imageWithCGImage:cgImage];
+            CGImageRelease(cgImage);
+        }
     }
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
+
+    if (!image) {
+        UIGraphicsBeginImageContextWithOptions(window.bounds.size, YES, window.screen.scale);
+        if ([window respondsToSelector:@selector(drawViewHierarchyInRect:afterScreenUpdates:)]) {
+            [window drawViewHierarchyInRect:window.bounds afterScreenUpdates:YES];
+        } else {
+            [window.layer renderInContext:UIGraphicsGetCurrentContext()];
+        }
+        image = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+    }
 
     if (!image) {
         HALogE(@"dash", @"Screenshot capture failed");
