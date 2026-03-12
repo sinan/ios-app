@@ -1,14 +1,15 @@
 #import <UIKit/UIKit.h>
 
-/// iOS 5-safe UICollectionElementKindSectionHeader.
-/// The extern NSString *const is nil on iOS 5 (UIKit doesn't define it).
-/// PSTCollectionView uses the same string value internally.
+/// iOS 5-safe UICollectionElementKindSectionHeader/Footer.
+/// The extern NSString *const doesn't exist in iOS 5's UIKit — referencing it
+/// causes a dyld lazy binding crash. Use the raw string instead (matches
+/// PSTCollectionView's internal value and UIKit's actual string on iOS 6+).
 static inline NSString *HACollectionElementKindSectionHeader(void) {
-    return UICollectionElementKindSectionHeader ?: @"UICollectionElementKindSectionHeader";
+    return @"UICollectionElementKindSectionHeader";
 }
 
 static inline NSString *HACollectionElementKindSectionFooter(void) {
-    return UICollectionElementKindSectionFooter ?: @"UICollectionElementKindSectionFooter";
+    return @"UICollectionElementKindSectionFooter";
 }
 
 /// iOS 5-safe system major version check.
