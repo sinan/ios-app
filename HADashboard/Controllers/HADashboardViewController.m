@@ -797,7 +797,11 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
         if (!self.skeletonView) {
             self.skeletonView = [[HASkeletonView alloc] init];
             self.skeletonView.translatesAutoresizingMaskIntoConstraints = NO;
-            [self.view insertSubview:self.skeletonView belowSubview:self.connectionBar ?: self.view];
+            if (self.connectionBar && self.connectionBar.superview == self.view) {
+                [self.view insertSubview:self.skeletonView belowSubview:self.connectionBar];
+            } else {
+                [self.view addSubview:self.skeletonView];
+            }
             if (HAAutoLayoutAvailable()) {
                 [NSLayoutConstraint activateConstraints:@[
                     [self.skeletonView.leadingAnchor constraintEqualToAnchor:self.collectionView.leadingAnchor],
@@ -1365,7 +1369,9 @@ static const CGFloat kRowUnitHeight = 56.0;
     [UIApplication sharedApplication].idleTimerDisabled = kiosk;
 #endif
     [self.navigationController setNavigationBarHidden:kiosk animated:YES];
-    [self setNeedsStatusBarAppearanceUpdate];
+    if ([self respondsToSelector:@selector(setNeedsStatusBarAppearanceUpdate)]) {
+        [self setNeedsStatusBarAppearanceUpdate];
+    }
     // Also use UIApplication method for iOS 9 compatibility where
     // childViewControllerForStatusBarHidden may not be respected.
 #pragma clang diagnostic push
