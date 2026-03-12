@@ -121,12 +121,22 @@ static void HAInstallConstraintStubs(void) {
     // UINavigationBar barTintColor (iOS 7+) — already guarded with respondsToSelector:
     // UIBarButtonItem tintColor follows UIView tintColor stub above
 
-    // UILabel attributedText (iOS 6+) — fall back to plain text on iOS 5
+    // UILabel attributedText (iOS 6+) — fall back to plain text on iOS 5.
+    // Also extract font and color from the attributed string so the label
+    // properties match — this is critical for the drawTextInRect: swizzle
+    // to detect MDI font and render via CoreText.
     Class uilabel = [UILabel class];
     if (!class_getInstanceMethod(uilabel, @selector(setAttributedText:))) {
         class_addMethod(uilabel, @selector(setAttributedText:),
                         imp_implementationWithBlock(^(UILabel *s, NSAttributedString *attr) {
                             s.text = [attr string];
+                            if (attr.length > 0) {
+                                NSDictionary *attrs = [attr attributesAtIndex:0 effectiveRange:NULL];
+                                UIFont *font = attrs[@"NSFont"];
+                                if (font) s.font = font;
+                                UIColor *color = attrs[@"NSColor"];
+                                if (color) s.textColor = color;
+                            }
                         }), "v@:@");
     }
     if (!class_getInstanceMethod(uilabel, @selector(attributedText))) {
