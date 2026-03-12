@@ -145,9 +145,10 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
     // Register cell classes
     [HAEntityCellFactory registerCellClassesWithCollectionView:self.collectionView];
 
-    // Register section header
+    // Register section header (UICollectionElementKindSectionHeader is nil on iOS 5;
+    // PSTCollectionView uses the same string value internally)
     [self.collectionView registerClass:[HASectionHeaderView class]
-            forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
+            forSupplementaryViewOfKind:HACollectionElementKindSectionHeader()
                    withReuseIdentifier:kSectionHeaderReuseId];
 
     // Kiosk exit gesture: triple-tap anywhere to temporarily show nav bar
@@ -402,9 +403,11 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
         UINavigationBar *navBar = self.navigationController.navigationBar;
         BOOL dark = [HATheme isDarkMode];
         navBar.barStyle = dark ? UIBarStyleBlack : UIBarStyleDefault;
-        navBar.barTintColor = dark
-            ? [UIColor colorWithRed:0.11 green:0.11 blue:0.13 alpha:1.0]
-            : nil;
+        if ([navBar respondsToSelector:@selector(setBarTintColor:)]) {
+            navBar.barTintColor = dark
+                ? [UIColor colorWithRed:0.11 green:0.11 blue:0.13 alpha:1.0]
+                : nil;
+        }
         navBar.tintColor = [HATheme primaryTextColor];
     }
 }
@@ -505,12 +508,10 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
             self.viewPickerTopConstraint = [self.viewPicker.topAnchor constraintEqualToAnchor:self.topLayoutGuide.bottomAnchor constant:16];
         }
     }
-    [self.view addConstraint:self.viewPickerTopConstraint];
     if (HAAutoLayoutAvailable()) {
+        [self.view addConstraint:self.viewPickerTopConstraint];
         [self.view addConstraint:[NSLayoutConstraint constraintWithItem:self.viewPicker attribute:NSLayoutAttributeLeading
             relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeLeading multiplier:1 constant:12]];
-    }
-    if (HAAutoLayoutAvailable()) {
         [self.view addConstraint:[NSLayoutConstraint constraintWithItem:self.viewPicker attribute:NSLayoutAttributeTrailing
             relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTrailing multiplier:1 constant:-12]];
     }
@@ -1418,14 +1419,27 @@ static const CGFloat kRowUnitHeight = 56.0;
     NSString *glyph = [HAIconMapper glyphForIconName:name];
     if (!glyph) return nil;
     UIFont *font = [HAIconMapper mdiFontOfSize:size];
-    NSDictionary *attrs = @{NSFontAttributeName: font,
-                            NSForegroundColorAttributeName: [UIColor blackColor]};
-    CGSize textSize = [glyph sizeWithAttributes:attrs];
-    UIGraphicsBeginImageContextWithOptions(textSize, NO, 0);
-    [glyph drawAtPoint:CGPointZero withAttributes:attrs];
+    CGSize textSize;
+    if ([glyph respondsToSelector:@selector(sizeWithAttributes:)]) {
+        NSDictionary *attrs = @{NSFontAttributeName: font,
+                                NSForegroundColorAttributeName: [UIColor blackColor]};
+        textSize = [glyph sizeWithAttributes:attrs];
+        UIGraphicsBeginImageContextWithOptions(textSize, NO, 0);
+        [glyph drawAtPoint:CGPointZero withAttributes:attrs];
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        textSize = [glyph sizeWithFont:font];
+        UIGraphicsBeginImageContextWithOptions(textSize, NO, 0);
+        [glyph drawAtPoint:CGPointZero withFont:font];
+#pragma clang diagnostic pop
+    }
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    if ([image respondsToSelector:@selector(imageWithRenderingMode:)]) {
+        return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    }
+    return image;
 }
 
 #pragma mark - Actions
@@ -1600,7 +1614,7 @@ static const CGFloat kRowUnitHeight = 56.0;
            viewForSupplementaryElementOfKind:(NSString *)kind
                                  atIndexPath:(NSIndexPath *)indexPath {
 
-    if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
+    if ([kind isEqualToString:HACollectionElementKindSectionHeader()]) {
         HASectionHeaderView *header = (HASectionHeaderView *)[collectionView
             dequeueReusableSupplementaryViewOfKind:kind
                               withReuseIdentifier:kSectionHeaderReuseId

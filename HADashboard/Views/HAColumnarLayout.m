@@ -1,4 +1,5 @@
 #import "HAColumnarLayout.h"
+#import "HAAutoLayout.h"
 
 @interface HAColumnarLayout ()
 @property (nonatomic, strong) NSMutableArray<UICollectionViewLayoutAttributes *> *itemAttributes;
@@ -90,7 +91,7 @@
             if (headerHeight > 0) {
                 NSIndexPath *headerIndexPath = [NSIndexPath indexPathForItem:0 inSection:section];
                 UICollectionViewLayoutAttributes *headerAttr =
-                    [UICollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader
+                    [UICollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKind:HACollectionElementKindSectionHeader()
                                                                                   withIndexPath:headerIndexPath];
                 headerAttr.frame = CGRectMake(columnX, columnY[col], columnWidth, headerHeight);
                 [self.headerAttributes addObject:headerAttr];

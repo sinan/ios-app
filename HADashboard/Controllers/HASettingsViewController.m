@@ -153,7 +153,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
     self.sunEntitySwitch = sunSw;
     // Only visible when Auto mode is selected and device supports system appearance
     BOOL showSunToggle = ([HATheme currentMode] == HAThemeModeAuto
-                          && [NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 13);
+                          && HASystemMajorVersion() >= 13);
     self.sunEntityToggleRow.hidden = !showSunToggle;
     [self.themeStack addArrangedSubview:self.sunEntityToggleRow];
 
@@ -987,7 +987,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
 
     // Show sun entity toggle only in Auto mode on iOS 13+
     BOOL showSun = (mode == HAThemeModeAuto
-                    && [NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 13);
+                    && HASystemMajorVersion() >= 13);
     [UIView animateWithDuration:0.25 animations:^{
         self.sunEntityToggleRow.hidden = !showSun;
     }];
@@ -1012,9 +1012,11 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
         UINavigationBar *navBar = self.navigationController.navigationBar;
         BOOL dark = [HATheme isDarkMode];
         navBar.barStyle = dark ? UIBarStyleBlack : UIBarStyleDefault;
-        navBar.barTintColor = dark
-            ? [UIColor colorWithRed:0.11 green:0.11 blue:0.13 alpha:1.0]
-            : nil;
+        if ([navBar respondsToSelector:@selector(setBarTintColor:)]) {
+            navBar.barTintColor = dark
+                ? [UIColor colorWithRed:0.11 green:0.11 blue:0.13 alpha:1.0]
+                : nil;
+        }
         navBar.tintColor = [HATheme primaryTextColor];
     }
 
