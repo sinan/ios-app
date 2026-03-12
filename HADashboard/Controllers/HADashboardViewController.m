@@ -93,6 +93,28 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
 
 @implementation HADashboardViewController
 
+#pragma mark - Rotation (iOS 5)
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
+    HALogI(@"rotate", @"shouldAutorotate: orientation=%ld → YES", (long)toInterfaceOrientation);
+    return YES;
+}
+
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
+    [super willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
+    HALogI(@"rotate", @"willRotateTo: %ld", (long)toInterfaceOrientation);
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
+    [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
+    HALogI(@"rotate", @"didRotateFrom: %ld, view bounds=%@",
+           (long)fromInterfaceOrientation, NSStringFromCGRect(self.view.bounds));
+    [self.collectionView.collectionViewLayout invalidateLayout];
+    [self.collectionView reloadData];
+}
+
+#pragma mark - Lifecycle
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [HATheme backgroundColor];

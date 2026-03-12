@@ -150,6 +150,30 @@ static void HAInstallConstraintStubs(void) {
                         }), "v@:@I");
     }
 
+    // UIViewController shouldAutorotateToInterfaceOrientation: (iOS 5 rotation API)
+    // On iOS 5, the default returns YES only for portrait. Override on both
+    // UIViewController AND UINavigationController (which has its own override
+    // that queries topViewController — but if called before topVC exists, it
+    // falls back to its own default which is portrait-only).
+    if (!class_getInstanceMethod([UIViewController class], @selector(supportedInterfaceOrientations))) {
+        IMP allOrientations = imp_implementationWithBlock(^BOOL(id self, NSInteger orientation) {
+            return YES;
+        });
+        SEL rotSel = @selector(shouldAutorotateToInterfaceOrientation:);
+
+        // Replace on UIViewController base class
+        Method vcMethod = class_getInstanceMethod([UIViewController class], rotSel);
+        if (vcMethod) method_setImplementation(vcMethod, allOrientations);
+
+        // Replace on UINavigationController (has its own override)
+        Method navMethod = class_getInstanceMethod([UINavigationController class], rotSel);
+        if (navMethod) method_setImplementation(navMethod, allOrientations);
+
+        // Replace on UITabBarController if used
+        Method tabMethod = class_getInstanceMethod([UITabBarController class], rotSel);
+        if (tabMethod) method_setImplementation(tabMethod, allOrientations);
+    }
+
     // UIColor system colors (iOS 7+) — provide sensible defaults on iOS 5-6
     Class uicolor = objc_getMetaClass("UIColor");
     struct { SEL sel; CGFloat r, g, b, a; } colorStubs[] = {
