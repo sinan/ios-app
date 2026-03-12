@@ -153,6 +153,24 @@ static void HAInstallConstraintStubs(void) {
                         }), "v@:@");
     }
 
+    // UIButtonTypeSystem (iOS 7+) maps to UIButtonTypeRoundedRect on iOS 5-6,
+    // which draws a visible default border. Map it to UIButtonTypeCustom instead.
+    if ([[UIDevice currentDevice].systemVersion integerValue] < 7) {
+        Class uibtnMeta = object_getClass([UIButton class]);
+        SEL btnSel = @selector(buttonWithType:);
+        Method origBtn = class_getClassMethod([UIButton class], btnSel);
+        if (origBtn) {
+            typedef UIButton* (*BtnIMP)(id, SEL, NSUInteger);
+            __block BtnIMP origBtnFn = (BtnIMP)method_getImplementation(origBtn);
+            IMP newBtnIMP = imp_implementationWithBlock(^id(id cls, NSUInteger type) {
+                // UIButtonTypeSystem = UIButtonTypeRoundedRect = 1
+                if (type == 1) type = 0; // UIButtonTypeCustom
+                return origBtnFn(cls, btnSel, type);
+            });
+            method_setImplementation(origBtn, newBtnIMP);
+        }
+    }
+
     // UIButton setAttributedTitle:forState: (iOS 6+) — fall back to plain title on iOS 5
     Class uibutton = [UIButton class];
     if (!class_getInstanceMethod(uibutton, @selector(setAttributedTitle:forState:))) {
@@ -296,6 +314,25 @@ static void HAInstallConstraintStubs(void) {
             });
 
             method_setImplementation(origMethod, newIMP);
+        }
+
+        // UILabel defaults to opaque white background on iOS 5 (clear on iOS 7+).
+        // Swizzle initWithFrame: to set clearColor by default so labels are transparent
+        // throughout the app without per-call-site changes.
+        SEL initSel = @selector(initWithFrame:);
+        Method origInit = class_getInstanceMethod(labelClass, initSel);
+        if (origInit) {
+            typedef id (*InitIMP)(id, SEL, CGRect);
+            __block InitIMP origInitFn = (InitIMP)method_getImplementation(origInit);
+            IMP newInit = imp_implementationWithBlock(^id(UILabel *self, CGRect frame) {
+                self = origInitFn(self, initSel, frame);
+                if (self) {
+                    self.backgroundColor = [UIColor clearColor];
+                    self.opaque = NO;
+                }
+                return self;
+            });
+            method_setImplementation(origInit, newInit);
         }
     }
 }
