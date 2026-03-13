@@ -193,6 +193,11 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
             HACon([NSLayoutConstraint constraintWithItem:tapArea attribute:NSLayoutAttributeHeight
                 relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:120]),
         ]);
+        // Frame fallback for iOS 5 where constraints are no-ops
+        if (!HAAutoLayoutAvailable()) {
+            tapArea.frame = CGRectMake(0, 0, self.view.bounds.size.width, 120);
+            tapArea.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        }
         [tapArea addGestureRecognizer:self.kioskExitTap];
     }
 
