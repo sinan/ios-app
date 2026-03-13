@@ -193,12 +193,15 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
             HACon([NSLayoutConstraint constraintWithItem:tapArea attribute:NSLayoutAttributeHeight
                 relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:120]),
         ]);
-        // Frame fallback for iOS 5 where constraints are no-ops
         if (!HAAutoLayoutAvailable()) {
-            tapArea.frame = CGRectMake(0, 0, self.view.bounds.size.width, 120);
-            tapArea.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+            // On iOS 5, the tap area sits behind the collection view (added later)
+            // and can't receive touches. Skip the tap area entirely and add the
+            // gesture to self.view — it will fire anywhere on screen.
+            [self.view addGestureRecognizer:self.kioskExitTap];
+        } else {
+            // Frame fallback not needed on iOS 6+ (constraints work)
+            [tapArea addGestureRecognizer:self.kioskExitTap];
         }
-        [tapArea addGestureRecognizer:self.kioskExitTap];
     }
 
     // Bottom sheet delegate for entity detail modals (iOS 9-14)
