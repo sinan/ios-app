@@ -444,7 +444,7 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
     layout.minimumInteritemSpacing = 6;
     layout.minimumLineSpacing = 6;
-    layout.sectionInset = UIEdgeInsetsMake(4, 16, 16, 16);
+    layout.sectionInset = UIEdgeInsetsMake(4, 8, 8, 8);
 
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout];
     self.collectionView.backgroundColor = [UIColor clearColor];
@@ -533,13 +533,13 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
         columnar.delegate = self;
         columnar.interColumnSpacing = 6.0;
         columnar.interItemSpacing = 6.0;
-        columnar.contentInsets = UIEdgeInsetsMake(4, 16, 16, 16);
+        columnar.contentInsets = UIEdgeInsetsMake(4, 8, 8, 8);
         [self.collectionView setCollectionViewLayout:columnar animated:NO];
     } else {
         HATopAlignedFlowLayout *flow = [[HATopAlignedFlowLayout alloc] init];
         flow.minimumInteritemSpacing = 6;
         flow.minimumLineSpacing = 6;
-        flow.sectionInset = UIEdgeInsetsMake(4, 16, 16, 16);
+        flow.sectionInset = UIEdgeInsetsMake(4, 8, 8, 8);
         [self.collectionView setCollectionViewLayout:flow animated:NO];
     }
 }
