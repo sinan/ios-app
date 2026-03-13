@@ -57,7 +57,15 @@ static void HAInstallConstraintStubs(void) {
             class_addMethod(dummy, @selector(constraintGreaterThanOrEqualToAnchor:constant:), nilRet, "@@:@d");
             class_addMethod(dummy, @selector(constraintLessThanOrEqualToAnchor:), nilRet, "@@:@");
             class_addMethod(dummy, @selector(constraintLessThanOrEqualToAnchor:constant:), nilRet, "@@:@d");
+            class_addMethod(dummy, @selector(constraintLessThanOrEqualToAnchor:multiplier:), nilRet, "@@:@d");
+            class_addMethod(dummy, @selector(constraintLessThanOrEqualToAnchor:multiplier:constant:), nilRet, "@@:@dd");
+            class_addMethod(dummy, @selector(constraintEqualToAnchor:multiplier:), nilRet, "@@:@d");
+            class_addMethod(dummy, @selector(constraintEqualToAnchor:multiplier:constant:), nilRet, "@@:@dd");
+            class_addMethod(dummy, @selector(constraintGreaterThanOrEqualToAnchor:multiplier:), nilRet, "@@:@d");
+            class_addMethod(dummy, @selector(constraintGreaterThanOrEqualToAnchor:multiplier:constant:), nilRet, "@@:@dd");
             class_addMethod(dummy, @selector(constraintEqualToConstant:), nilRet, "@@:d");
+            class_addMethod(dummy, @selector(constraintGreaterThanOrEqualToConstant:), nilRet, "@@:d");
+            class_addMethod(dummy, @selector(constraintLessThanOrEqualToConstant:), nilRet, "@@:d");
             objc_registerClassPair(dummy);
 
             __block id shared = [[dummy alloc] init];
