@@ -38,6 +38,7 @@ static const CGFloat kArcNameLabelHeight = 16.0;
     self = [super initWithFrame:frame];
     if (self) {
         self.contentView.backgroundColor = [UIColor clearColor];
+        self.contentView.clipsToBounds = YES;
         self.backgroundColor = [UIColor clearColor];
         self.badgeViews = [NSMutableArray array];
         self.badgeEntities = [NSMutableArray array];
@@ -55,9 +56,8 @@ static const CGFloat kArcNameLabelHeight = 16.0;
     // All badge/chip styles now use the same HA web badge layout
     CGFloat padding = 4.0;
     CGFloat spacing = 8.0;
-    // Typical badge: icon(18) + gap(6) + state(~30) + name(~50) + padding(16) ≈ 120pt
-    // Previous 90pt estimate was too narrow, causing more rows than allocated height.
-    CGFloat estWidth = chipStyle ? 70.0 : 120.0;
+    // Typical badge: icon(18) + gap(6) + state(~50) + gap(4) + name(~45) + padding(16) ≈ 140pt
+    CGFloat estWidth = chipStyle ? 70.0 : 140.0;
     CGFloat usableWidth = width - padding * 2;
     NSInteger perRow = MAX(1, (NSInteger)floor((usableWidth + spacing) / (estWidth + spacing)));
     NSInteger rows = (count + perRow - 1) / perRow;

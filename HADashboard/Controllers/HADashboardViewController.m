@@ -292,6 +292,7 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
             self.lovelaceLoaded = YES;
             self.lovelaceFetchDone = YES;
             self.lovelaceDashboard = conn.lovelaceDashboard;
+            [[HASunBasedTheme sharedInstance] start];
             [self rebuildDashboard];
             [self showLoading:NO message:nil];
             // Show subtle "Connecting..." in connection bar while we establish live connection

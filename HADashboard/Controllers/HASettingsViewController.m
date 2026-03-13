@@ -85,6 +85,40 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
 
 @implementation HASettingsViewController
 
+/// Create a label + switch toggle row that works on both Auto Layout and frame-based layout.
+/// The switch is tagged 100 for retrieval. Returns a 44pt-high row view.
+- (UIView *)makeToggleRowWithLabel:(NSString *)text switchView:(HASwitch *)sw {
+    UIView *row = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 44)];
+
+    UILabel *label = [[UILabel alloc] init];
+    label.text = text;
+    label.font = [UIFont systemFontOfSize:16];
+    label.textColor = [HATheme primaryTextColor];
+    [row addSubview:label];
+
+    if (!sw) sw = [[HASwitch alloc] init];
+    sw.tag = 100;
+    [row addSubview:sw];
+
+    // Use autoresizingMask for iOS 5 frame-based layout
+    CGSize swSize = [sw sizeThatFits:CGSizeZero];
+    sw.frame = CGRectMake(row.bounds.size.width - swSize.width, (44 - swSize.height) / 2, swSize.width, swSize.height);
+    sw.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+    label.frame = CGRectMake(0, 0, sw.frame.origin.x - 8, 44);
+    label.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+
+    // Also set up Auto Layout constraints for modern iOS
+    HAActivateConstraints(@[
+        HACon([label.topAnchor constraintEqualToAnchor:row.topAnchor]),
+        HACon([label.leadingAnchor constraintEqualToAnchor:row.leadingAnchor]),
+        HACon([label.bottomAnchor constraintEqualToAnchor:row.bottomAnchor]),
+        HACon([sw.trailingAnchor constraintEqualToAnchor:row.trailingAnchor]),
+        HACon([sw.centerYAnchor constraintEqualToAnchor:label.centerYAnchor]),
+    ]);
+
+    return row;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"Settings";
@@ -151,30 +185,11 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
     [self.themeStack addArrangedSubview:self.sunEntityToggleRow];
 
     // Gradient background toggle row
-    self.gradientToggleRow = [[UIView alloc] init];
-    self.gradientToggleRow.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.themeStack addArrangedSubview:self.gradientToggleRow];
-
-    UILabel *gradientLabel = [[UILabel alloc] init];
-    gradientLabel.text = @"Gradient Background";
-    gradientLabel.font = [UIFont systemFontOfSize:16];
-    gradientLabel.textColor = [HATheme primaryTextColor];
-    gradientLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.gradientToggleRow addSubview:gradientLabel];
-
-    self.gradientSwitch = [[HASwitch alloc] init];
+    self.gradientToggleRow = [self makeToggleRowWithLabel:@"Gradient Background" switchView:nil];
+    self.gradientSwitch = (HASwitch *)[self.gradientToggleRow viewWithTag:100];
     self.gradientSwitch.on = [HATheme isGradientEnabled];
     [self.gradientSwitch addTarget:self action:@selector(gradientSwitchToggled:) forControlEvents:UIControlEventValueChanged];
-    self.gradientSwitch.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.gradientToggleRow addSubview:self.gradientSwitch];
-
-    HAActivateConstraints(@[
-        HACon([gradientLabel.topAnchor constraintEqualToAnchor:self.gradientToggleRow.topAnchor]),
-        HACon([gradientLabel.leadingAnchor constraintEqualToAnchor:self.gradientToggleRow.leadingAnchor]),
-        HACon([gradientLabel.bottomAnchor constraintEqualToAnchor:self.gradientToggleRow.bottomAnchor]),
-        HACon([self.gradientSwitch.trailingAnchor constraintEqualToAnchor:self.gradientToggleRow.trailingAnchor]),
-        HACon([self.gradientSwitch.centerYAnchor constraintEqualToAnchor:gradientLabel.centerYAnchor]),
-    ]);
+    [self.themeStack addArrangedSubview:self.gradientToggleRow];
 
     // Gradient options (preset picker, custom hex, preview)
     self.gradientOptionsContainer = [[UIView alloc] init];

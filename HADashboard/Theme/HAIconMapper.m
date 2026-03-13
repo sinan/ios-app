@@ -383,17 +383,15 @@ static NSDictionary<NSString *, NSString *> *_domainIconMap = nil;
 + (NSAttributedString *)attributedGlyph:(NSString *)glyphString fontSize:(CGFloat)fontSize color:(UIColor *)color {
     if (!glyphString) return [[NSAttributedString alloc] initWithString:@""];
 
-    if (HASystemMajorVersion() >= 6) {
-        return [[NSAttributedString alloc] initWithString:glyphString
-            attributes:@{
-                HAFontAttributeName: [self mdiFontOfSize:fontSize],
-                HAForegroundColorAttributeName: color ?: [UIColor blackColor]
-            }];
-    }
-
-    // iOS 5: SMP codepoints render as □ in UILabel. Omit the icon rather
-    // than showing broken squares — graceful degradation.
-    return [[NSAttributedString alloc] initWithString:@""];
+    // On iOS 6+, UILabel renders SMP codepoints natively via attributedText.
+    // On iOS 5, the setAttributedText: stub extracts font+color, sets them on
+    // the label, then drawTextInRect: swizzle renders via CoreText.
+    // Both paths use the same attributed string.
+    return [[NSAttributedString alloc] initWithString:glyphString
+        attributes:@{
+            HAFontAttributeName: [self mdiFontOfSize:fontSize],
+            HAForegroundColorAttributeName: color ?: [UIColor blackColor]
+        }];
 }
 
 @end
