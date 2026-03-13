@@ -15,7 +15,7 @@
     if (self) {
         _interColumnSpacing = 6.0;
         _interItemSpacing = 6.0;
-        _contentInsets = UIEdgeInsetsMake(8, 16, 16, 16);
+        _contentInsets = UIEdgeInsetsMake(8, 8, 8, 8);
         _itemAttributes = [NSMutableArray array];
         _headerAttributes = [NSMutableArray array];
         _itemAttributesByIndexPath = [NSMutableDictionary dictionary];
