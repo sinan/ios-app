@@ -172,10 +172,19 @@ static void HAInstallConstraintStubs(void) {
         if (origBtn) {
             typedef UIButton* (*BtnIMP)(id, SEL, NSUInteger);
             __block BtnIMP origBtnFn = (BtnIMP)method_getImplementation(origBtn);
-            IMP newBtnIMP = imp_implementationWithBlock(^id(id cls, NSUInteger type) {
+            IMP newBtnIMP = imp_implementationWithBlock(^UIButton*(id cls, NSUInteger type) {
                 // UIButtonTypeSystem = UIButtonTypeRoundedRect = 1
-                if (type == 1) type = 0; // UIButtonTypeCustom
-                return origBtnFn(cls, btnSel, type);
+                // Map to Custom to avoid RoundedRect's default border.
+                BOOL wasSystem = (type == 1);
+                if (wasSystem) type = 0; // UIButtonTypeCustom
+                UIButton *btn = origBtnFn(cls, btnSel, type);
+                // Custom buttons default to white title — set a visible default
+                // matching UIButtonTypeSystem's blue tint behavior.
+                if (wasSystem && btn) {
+                    [btn setTitleColor:[UIColor colorWithRed:0.0 green:0.48 blue:1.0 alpha:1.0]
+                              forState:UIControlStateNormal];
+                }
+                return btn;
             });
             method_setImplementation(origBtn, newBtnIMP);
         }
