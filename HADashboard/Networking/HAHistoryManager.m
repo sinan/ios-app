@@ -1,4 +1,5 @@
 #import "HAHistoryManager.h"
+#import "HADateUtils.h"
 #import "HALog.h"
 #import "HAAuthManager.h"
 #import "HADemoDataProvider.h"
@@ -225,36 +226,6 @@
     if (![states isKindOfClass:[NSArray class]]) return @[];
 
     NSMutableArray *points = [NSMutableArray arrayWithCapacity:states.count];
-    static NSDateFormatter *parseFmt6, *parseFmt3, *parseFmtNone;
-    static NSDateFormatter *parseFmt6Z, *parseFmt3Z, *parseFmtNoneZ; // iOS 5 fallbacks
-    static dispatch_once_t parseFmtOnce;
-    dispatch_once(&parseFmtOnce, ^{
-        // ZZZZZ matches ISO 8601 timezone offsets like "+00:00" (iOS 6+)
-        parseFmt6 = [[NSDateFormatter alloc] init];
-        parseFmt6.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ";
-        parseFmt6.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        parseFmt3 = [[NSDateFormatter alloc] init];
-        parseFmt3.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-        parseFmt3.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        parseFmtNone = [[NSDateFormatter alloc] init];
-        parseFmtNone.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-        parseFmtNone.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        // iOS 5 fallback: ZZZ matches "+00:00", Z matches "+0000"
-        parseFmt6Z = [[NSDateFormatter alloc] init];
-        parseFmt6Z.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZ";
-        parseFmt6Z.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        parseFmt3Z = [[NSDateFormatter alloc] init];
-        parseFmt3Z.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZ";
-        parseFmt3Z.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        parseFmtNoneZ = [[NSDateFormatter alloc] init];
-        parseFmtNoneZ.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZ";
-        parseFmtNoneZ.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-    });
 
     for (NSDictionary *entry in states) {
         if (![entry isKindOfClass:[NSDictionary class]]) continue;
@@ -269,24 +240,7 @@
         NSString *timeStr = [rawTime isKindOfClass:[NSString class]] ? rawTime : nil;
         if (!timeStr) continue;
 
-        NSDate *date = [parseFmt6 dateFromString:timeStr];
-        if (!date) date = [parseFmt3 dateFromString:timeStr];
-        if (!date) date = [parseFmtNone dateFromString:timeStr];
-        // iOS 5 fallback: ZZZZZ ("+00:00") not supported. Convert to "+0000"
-        // format and parse with ZZZ.
-        if (!date) {
-            // Strip colon from timezone: "+00:00" → "+0000"
-            NSString *compat = timeStr;
-            NSUInteger len = compat.length;
-            if (len >= 6 && [compat characterAtIndex:len - 3] == ':') {
-                compat = [NSString stringWithFormat:@"%@%@",
-                    [compat substringToIndex:len - 3],
-                    [compat substringFromIndex:len - 2]];
-            }
-            date = [parseFmt6Z dateFromString:compat];
-            if (!date) date = [parseFmt3Z dateFromString:compat];
-            if (!date) date = [parseFmtNoneZ dateFromString:compat];
-        }
+        NSDate *date = [HADateUtils dateFromISO8601String:timeStr];
         if (!date) continue;
 
         [points addObject:@{
@@ -328,22 +282,6 @@
     NSArray *states = result.firstObject;
     if (![states isKindOfClass:[NSArray class]] || states.count == 0) return @[];
 
-    static NSDateFormatter *tlFmt6, *tlFmt3, *tlFmtNone;
-    static dispatch_once_t tlFmtOnce;
-    dispatch_once(&tlFmtOnce, ^{
-        tlFmt6 = [[NSDateFormatter alloc] init];
-        tlFmt6.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ";
-        tlFmt6.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        tlFmt3 = [[NSDateFormatter alloc] init];
-        tlFmt3.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-        tlFmt3.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        tlFmtNone = [[NSDateFormatter alloc] init];
-        tlFmtNone.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-        tlFmtNone.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-    });
-
     NSMutableArray *segments = [NSMutableArray array];
     NSString *prevState = nil;
     NSTimeInterval prevTimestamp = 0;
@@ -358,9 +296,7 @@
         NSString *timeStr = [rawTime2 isKindOfClass:[NSString class]] ? rawTime2 : nil;
         if (!timeStr) continue;
 
-        NSDate *date = [tlFmt6 dateFromString:timeStr];
-        if (!date) date = [tlFmt3 dateFromString:timeStr];
-        if (!date) date = [tlFmtNone dateFromString:timeStr];
+        NSDate *date = [HADateUtils dateFromISO8601String:timeStr];
         if (!date) continue;
 
         NSTimeInterval timestamp = [date timeIntervalSince1970];

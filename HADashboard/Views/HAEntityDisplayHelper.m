@@ -1,4 +1,5 @@
 #import "HAEntityDisplayHelper.h"
+#import "HADateUtils.h"
 #import "HAEntity.h"
 #import "HADashboardConfig.h"
 #import "HAIconMapper.h"
@@ -247,21 +248,7 @@
 + (NSString *)relativeTimeFromISO8601:(NSString *)isoString {
     if (!isoString || isoString.length < 19) return nil;
 
-    static NSDateFormatter *isoFormatter = nil;
-    static NSDateFormatter *isoFormatterAlt = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        isoFormatter = [[NSDateFormatter alloc] init];
-        isoFormatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-        isoFormatter.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-
-        isoFormatterAlt = [[NSDateFormatter alloc] init];
-        isoFormatterAlt.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-        isoFormatterAlt.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-    });
-
-    NSDate *date = [isoFormatter dateFromString:isoString];
-    if (!date) date = [isoFormatterAlt dateFromString:isoString];
+    NSDate *date = [HADateUtils dateFromISO8601String:isoString];
     if (!date) return nil;
 
     NSTimeInterval elapsed = -[date timeIntervalSinceNow];
@@ -309,20 +296,7 @@
     }
 
     // Parse ISO date for other formats
-    static NSDateFormatter *isoParser = nil;
-    static NSDateFormatter *isoParserAlt = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        isoParser = [[NSDateFormatter alloc] init];
-        isoParser.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-        isoParser.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-        isoParserAlt = [[NSDateFormatter alloc] init];
-        isoParserAlt.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-        isoParserAlt.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-    });
-
-    NSDate *date = [isoParser dateFromString:value];
-    if (!date) date = [isoParserAlt dateFromString:value];
+    NSDate *date = [HADateUtils dateFromISO8601String:value];
     if (!date) return value;
 
     if ([format isEqualToString:@"date"]) {

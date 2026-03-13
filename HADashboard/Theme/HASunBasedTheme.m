@@ -1,4 +1,5 @@
 #import "HASunBasedTheme.h"
+#import "HADateUtils.h"
 #import "HALog.h"
 #import "HAAutoLayout.h"
 #import "HATheme.h"
@@ -140,33 +141,7 @@ static NSString *const kSunEntityId = @"sun.sun";
 #pragma mark - Date Parsing
 
 - (NSDate *)parseISO8601:(NSString *)string {
-    if (!string) return nil;
-
-    // NSDateFormatter with ISO 8601 format — available on all iOS versions
-    static NSDateFormatter *formatter;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        formatter = [[NSDateFormatter alloc] init];
-        formatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-        formatter.timeZone = [NSTimeZone timeZoneWithAbbreviation:@"UTC"];
-        // HA sends: "2026-02-28T07:12:34+00:00" or "2026-02-28T07:12:34.123456+00:00"
-        formatter.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-    });
-
-    NSDate *date = [formatter dateFromString:string];
-    if (!date) {
-        // Try with fractional seconds
-        static NSDateFormatter *fracFormatter;
-        static dispatch_once_t fracOnce;
-        dispatch_once(&fracOnce, ^{
-            fracFormatter = [[NSDateFormatter alloc] init];
-            fracFormatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-            fracFormatter.timeZone = [NSTimeZone timeZoneWithAbbreviation:@"UTC"];
-            fracFormatter.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ";
-        });
-        date = [fracFormatter dateFromString:string];
-    }
-    return date;
+    return [HADateUtils dateFromISO8601String:string];
 }
 
 @end

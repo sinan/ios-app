@@ -1,6 +1,7 @@
 #import "HAAutoLayout.h"
 #import "HAStackView.h"
 #import "HAEntityDetailSection.h"
+#import "HADateUtils.h"
 #import "HAEntity.h"
 #import "HATheme.h"
 #import "HASwitch.h"
@@ -2250,16 +2251,7 @@
     }
 
     // Parse ISO 8601 datetime
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    formatter.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-    formatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-    NSDate *finishDate = [formatter dateFromString:finishesAt];
-
-    if (!finishDate) {
-        // Try alternate format without timezone colon
-        formatter.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-        finishDate = [formatter dateFromString:finishesAt];
-    }
+    NSDate *finishDate = [HADateUtils dateFromISO8601String:finishesAt];
 
     if (!finishDate) {
         self.countdownLabel.text = @"--:--:--";
@@ -3737,8 +3729,7 @@
     if (date) return date;
 
     // Try ISO 8601 full datetime
-    fmt.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-    date = [fmt dateFromString:state];
+    date = [HADateUtils dateFromISO8601String:state];
     if (date) return date;
 
     // Try HH:mm:ss (time only)
