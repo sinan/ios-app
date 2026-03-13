@@ -1,4 +1,5 @@
 #import "HAHistoryManager.h"
+#import "HADateUtils.h"
 #import "HALog.h"
 #import "HAAuthManager.h"
 #import "HADemoDataProvider.h"
@@ -221,21 +222,6 @@
     if (![states isKindOfClass:[NSArray class]]) return @[];
 
     NSMutableArray *points = [NSMutableArray arrayWithCapacity:states.count];
-    static NSDateFormatter *parseFmt6, *parseFmt3, *parseFmtNone;
-    static dispatch_once_t parseFmtOnce;
-    dispatch_once(&parseFmtOnce, ^{
-        parseFmt6 = [[NSDateFormatter alloc] init];
-        parseFmt6.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ";
-        parseFmt6.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        parseFmt3 = [[NSDateFormatter alloc] init];
-        parseFmt3.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-        parseFmt3.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        parseFmtNone = [[NSDateFormatter alloc] init];
-        parseFmtNone.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-        parseFmtNone.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-    });
 
     for (NSDictionary *entry in states) {
         if (![entry isKindOfClass:[NSDictionary class]]) continue;
@@ -250,9 +236,7 @@
         NSString *timeStr = [rawTime isKindOfClass:[NSString class]] ? rawTime : nil;
         if (!timeStr) continue;
 
-        NSDate *date = [parseFmt6 dateFromString:timeStr];
-        if (!date) date = [parseFmt3 dateFromString:timeStr];
-        if (!date) date = [parseFmtNone dateFromString:timeStr];
+        NSDate *date = [HADateUtils dateFromISO8601String:timeStr];
         if (!date) continue;
 
         [points addObject:@{
@@ -294,22 +278,6 @@
     NSArray *states = result.firstObject;
     if (![states isKindOfClass:[NSArray class]] || states.count == 0) return @[];
 
-    static NSDateFormatter *tlFmt6, *tlFmt3, *tlFmtNone;
-    static dispatch_once_t tlFmtOnce;
-    dispatch_once(&tlFmtOnce, ^{
-        tlFmt6 = [[NSDateFormatter alloc] init];
-        tlFmt6.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ";
-        tlFmt6.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        tlFmt3 = [[NSDateFormatter alloc] init];
-        tlFmt3.dateFormat = @"yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-        tlFmt3.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
-        tlFmtNone = [[NSDateFormatter alloc] init];
-        tlFmtNone.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-        tlFmtNone.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-    });
-
     NSMutableArray *segments = [NSMutableArray array];
     NSString *prevState = nil;
     NSTimeInterval prevTimestamp = 0;
@@ -324,9 +292,7 @@
         NSString *timeStr = [rawTime2 isKindOfClass:[NSString class]] ? rawTime2 : nil;
         if (!timeStr) continue;
 
-        NSDate *date = [tlFmt6 dateFromString:timeStr];
-        if (!date) date = [tlFmt3 dateFromString:timeStr];
-        if (!date) date = [tlFmtNone dateFromString:timeStr];
+        NSDate *date = [HADateUtils dateFromISO8601String:timeStr];
         if (!date) continue;
 
         NSTimeInterval timestamp = [date timeIntervalSince1970];

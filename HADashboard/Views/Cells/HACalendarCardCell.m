@@ -1,6 +1,7 @@
 #import "HACalendarCardCell.h"
 #import "HADashboardConfig.h"
 #import "HAAuthManager.h"
+#import "HADateUtils.h"
 #import "HATheme.h"
 #import "HAIconMapper.h"
 
@@ -434,14 +435,9 @@ static UIColor *sDefaultEventColor;
 + (NSArray<HACalendarEvent *> *)parseEvents:(NSArray *)rawEvents {
     if (![rawEvents isKindOfClass:[NSArray class]]) return @[];
 
-    static NSDateFormatter *dtFmt;
     static NSDateFormatter *dateFmt;
     static dispatch_once_t parseOnce;
     dispatch_once(&parseOnce, ^{
-        dtFmt = [[NSDateFormatter alloc] init];
-        dtFmt.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssZZZZZ";
-        dtFmt.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
-
         dateFmt = [[NSDateFormatter alloc] init];
         dateFmt.dateFormat = @"yyyy-MM-dd";
         dateFmt.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
@@ -459,27 +455,27 @@ static UIColor *sDefaultEventColor;
         if ([startObj isKindOfClass:[NSDictionary class]]) {
             NSDictionary *startDict = startObj;
             if (startDict[@"dateTime"]) {
-                event.startDate = [dtFmt dateFromString:startDict[@"dateTime"]];
+                event.startDate = [HADateUtils dateFromISO8601String:startDict[@"dateTime"]];
                 event.allDay = NO;
             } else if (startDict[@"date"]) {
                 event.startDate = [dateFmt dateFromString:startDict[@"date"]];
                 event.allDay = YES;
             }
         } else if ([startObj isKindOfClass:[NSString class]]) {
-            event.startDate = [dtFmt dateFromString:startObj] ?: [dateFmt dateFromString:startObj];
-            event.allDay = ([dateFmt dateFromString:startObj] != nil && [dtFmt dateFromString:startObj] == nil);
+            event.startDate = [HADateUtils dateFromISO8601String:startObj] ?: [dateFmt dateFromString:startObj];
+            event.allDay = ([dateFmt dateFromString:startObj] != nil && [HADateUtils dateFromISO8601String:startObj] == nil);
         }
 
         id endObj = raw[@"end"];
         if ([endObj isKindOfClass:[NSDictionary class]]) {
             NSDictionary *endDict = endObj;
             if (endDict[@"dateTime"]) {
-                event.endDate = [dtFmt dateFromString:endDict[@"dateTime"]];
+                event.endDate = [HADateUtils dateFromISO8601String:endDict[@"dateTime"]];
             } else if (endDict[@"date"]) {
                 event.endDate = [dateFmt dateFromString:endDict[@"date"]];
             }
         } else if ([endObj isKindOfClass:[NSString class]]) {
-            event.endDate = [dtFmt dateFromString:endObj] ?: [dateFmt dateFromString:endObj];
+            event.endDate = [HADateUtils dateFromISO8601String:endObj] ?: [dateFmt dateFromString:endObj];
         }
 
         if (event.startDate) {

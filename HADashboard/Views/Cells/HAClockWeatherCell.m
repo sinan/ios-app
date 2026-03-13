@@ -1,4 +1,5 @@
 #import "HAClockWeatherCell.h"
+#import "HADateUtils.h"
 #import "HAEntity.h"
 #import "HADashboardConfig.h"
 #import "HATheme.h"
@@ -385,16 +386,10 @@ static const CGFloat kBottomPadding = 12.0;
     self.forecastHeightConstraint.constant = kForecastRowHeight * actualRows - 2.0;
 
     static NSDateFormatter *sDayFormatter = nil;
-    static NSDateFormatter *sIsoParserTZ = nil;
-    static NSDateFormatter *sIsoParserNoTZ = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         sDayFormatter = [[NSDateFormatter alloc] init];
         [sDayFormatter setDateFormat:@"EEE"];
-        sIsoParserTZ = [[NSDateFormatter alloc] init];
-        [sIsoParserTZ setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-        sIsoParserNoTZ = [[NSDateFormatter alloc] init];
-        [sIsoParserNoTZ setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss"];
     });
 
     // Apply locale if configured (formatter is shared, but re-set each render is cheap)
@@ -422,10 +417,7 @@ static const CGFloat kBottomPadding = 12.0;
         NSString *dayName = @"";
         NSString *dateStr = day[@"datetime"];
         if ([dateStr isKindOfClass:[NSString class]]) {
-            NSDate *date = [sIsoParserTZ dateFromString:dateStr];
-            if (!date) {
-                date = [sIsoParserNoTZ dateFromString:dateStr];
-            }
+            NSDate *date = [HADateUtils dateFromISO8601String:dateStr];
             if (date) dayName = [sDayFormatter stringFromDate:date];
         }
 

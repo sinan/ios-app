@@ -1,4 +1,5 @@
 #import "HAWeatherEntityCell.h"
+#import "HADateUtils.h"
 #import "HAEntity.h"
 #import "HADashboardConfig.h"
 #import "HATheme.h"
@@ -230,13 +231,7 @@ static const NSInteger kDefaultForecastRows = 5;
         NSString *dayName = @"";
         NSString *dateStr = day[@"datetime"];
         if ([dateStr isKindOfClass:[NSString class]]) {
-            NSDateFormatter *isoParser = [[NSDateFormatter alloc] init];
-            [isoParser setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-            NSDate *date = [isoParser dateFromString:dateStr];
-            if (!date) {
-                [isoParser setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss"];
-                date = [isoParser dateFromString:dateStr];
-            }
+            NSDate *date = [HADateUtils dateFromISO8601String:dateStr];
             if (date) dayName = [dayFormatter stringFromDate:date];
         }
 
