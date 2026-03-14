@@ -143,6 +143,17 @@ void HAAutoLayoutSwizzleInstall(void) {
     sSwizzlesInstalled = YES;
 }
 
+/// Install at launch if the developer toggle was left on from a previous session.
+/// This ensures the app boots into iOS 5 simulation mode without needing to
+/// visit Settings first. The swizzles can still be installed/uninstalled live
+/// via the Settings toggle calling HAAutoLayoutSwizzleInstall/Uninstall.
+__attribute__((constructor))
+static void HAAutoLayoutSwizzleBootCheck(void) {
+    if (HAForceDisableAutoLayout()) {
+        HAAutoLayoutSwizzleInstall();
+    }
+}
+
 void HAAutoLayoutSwizzleUninstall(void) {
     if (!sSwizzlesInstalled) return;
 
