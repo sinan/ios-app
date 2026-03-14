@@ -275,7 +275,28 @@ static void HAInstallConstraintStubs(void) {
                               [self.font.fontName isEqualToString:mdiFontName]);
 
                 if (!isMDI || text.length == 0) {
-                    origDraw(self, drawSel, rect);
+                    // iOS 5's UILabel drawTextInRect: expands word spacing to fill
+                    // the label width for bold fonts. Bypass with drawAtPoint:withFont:
+                    // which renders with normal word spacing.
+                    if (text.length > 0 && self.numberOfLines == 1) {
+                        CGContextRef c = UIGraphicsGetCurrentContext();
+                        if (c) CGContextSetFillColorWithColor(c, self.textColor.CGColor);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                        CGFloat y = (rect.size.height - self.font.lineHeight) / 2;
+                        CGPoint pt = CGPointMake(0, MAX(0, y));
+                        if (self.textAlignment == 1) { // center
+                            CGSize sz = [text sizeWithFont:self.font];
+                            pt.x = (rect.size.width - sz.width) / 2;
+                        } else if (self.textAlignment == 2) { // right
+                            CGSize sz = [text sizeWithFont:self.font];
+                            pt.x = rect.size.width - sz.width;
+                        }
+                        [text drawAtPoint:pt withFont:self.font];
+#pragma clang diagnostic pop
+                    } else {
+                        origDraw(self, drawSel, rect);
+                    }
                     return;
                 }
 
