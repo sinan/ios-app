@@ -139,10 +139,15 @@ static void HAInstallConstraintStubs(void) {
                         imp_implementationWithBlock(^(UILabel *s, NSAttributedString *attr) {
                             s.text = [attr string];
                             if (attr.length > 0) {
-                                // Extract font/color from the LAST run, not the first.
-                                // Attributed strings may start with an MDI icon glyph
-                                // (different font) followed by text — we want the text font.
-                                NSDictionary *attrs = [attr attributesAtIndex:attr.length - 1 effectiveRange:NULL];
+                                // For icon-only labels (single font run): use index 0 to get
+                                // the MDI font so drawTextInRect: swizzle can render via CoreText.
+                                // For mixed icon+text labels (multiple runs): use the last
+                                // character to get the text font, avoiding MDI font contamination.
+                                NSRange firstRange;
+                                [attr attributesAtIndex:0 effectiveRange:&firstRange];
+                                BOOL singleRun = (firstRange.length >= attr.length);
+                                NSUInteger idx = singleRun ? 0 : attr.length - 1;
+                                NSDictionary *attrs = [attr attributesAtIndex:idx effectiveRange:NULL];
                                 UIFont *font = attrs[@"NSFont"];
                                 if (font) s.font = font;
                                 UIColor *color = attrs[@"NSColor"];
