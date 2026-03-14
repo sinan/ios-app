@@ -46,6 +46,19 @@ static inline BOOL HAAutoLayoutAvailable(void) {
     return available;
 }
 
+/// iOS 5-6 safe system button. On iOS 7+ returns UIButtonTypeSystem.
+/// On iOS 5-6 returns UIButtonTypeCustom with blue tint (avoiding the
+/// UIButtonTypeRoundedRect border that UIButtonTypeSystem maps to).
+static inline UIButton *HASystemButton(void) {
+    if (HASystemMajorVersion() >= 7) {
+        return [UIButton buttonWithType:UIButtonTypeSystem];
+    }
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
+    [btn setTitleColor:[UIColor colorWithRed:0.0 green:0.48 blue:1.0 alpha:1.0]
+              forState:UIControlStateNormal];
+    return btn;
+}
+
 #pragma mark - Nil-safe constraint helpers
 
 /// Sentinel for nil constraints in @[] literals. On iOS 5, anchor methods

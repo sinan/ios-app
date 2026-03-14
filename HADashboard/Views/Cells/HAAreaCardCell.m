@@ -136,7 +136,7 @@
     NSInteger maxToggles = MIN((NSInteger)toggleIds.count, 4);
     for (NSInteger i = 0; i < maxToggles; i++) {
         HAEntity *entity = entities[toggleIds[i]];
-        UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *btn = HASystemButton();
         NSString *iconName = [entity icon];
         if (!iconName) {
             NSString *domain = [entity domain];

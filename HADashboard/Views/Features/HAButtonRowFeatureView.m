@@ -239,7 +239,7 @@
 #pragma mark - Button Factory
 
 - (UIButton *)makeButtonWithTitle:(NSString *)title tag:(NSInteger)tag {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:13 weight:HAFontWeightMedium];
     [btn setTitleColor:[HATheme primaryTextColor] forState:UIControlStateNormal];

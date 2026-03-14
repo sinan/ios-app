@@ -179,32 +179,8 @@ static void HAInstallConstraintStubs(void) {
                         }), "v@:@");
     }
 
-    // UIButtonTypeSystem (iOS 7+) maps to UIButtonTypeRoundedRect on iOS 5-6,
-    // which draws a visible default border. Map it to UIButtonTypeCustom instead.
-    if ([[UIDevice currentDevice].systemVersion integerValue] < 7) {
-        Class uibtnMeta = object_getClass([UIButton class]);
-        SEL btnSel = @selector(buttonWithType:);
-        Method origBtn = class_getClassMethod([UIButton class], btnSel);
-        if (origBtn) {
-            typedef UIButton* (*BtnIMP)(id, SEL, NSUInteger);
-            __block BtnIMP origBtnFn = (BtnIMP)method_getImplementation(origBtn);
-            IMP newBtnIMP = imp_implementationWithBlock(^UIButton*(id cls, NSUInteger type) {
-                // UIButtonTypeSystem = UIButtonTypeRoundedRect = 1
-                // Map to Custom to avoid RoundedRect's default border.
-                BOOL wasSystem = (type == 1);
-                if (wasSystem) type = 0; // UIButtonTypeCustom
-                UIButton *btn = origBtnFn(cls, btnSel, type);
-                // Custom buttons default to white title — set a visible default
-                // matching UIButtonTypeSystem's blue tint behavior.
-                if (wasSystem && btn) {
-                    [btn setTitleColor:[UIColor colorWithRed:0.0 green:0.48 blue:1.0 alpha:1.0]
-                              forState:UIControlStateNormal];
-                }
-                return btn;
-            });
-            method_setImplementation(origBtn, newBtnIMP);
-        }
-    }
+    // UIButtonTypeSystem handled by HASystemButton() in HAAutoLayout.h
+    // (no swizzle needed — call sites use the helper directly)
 
     // UIButton setAttributedTitle:forState: (iOS 6+) — fall back to plain title on iOS 5
     Class uibutton = [UIButton class];

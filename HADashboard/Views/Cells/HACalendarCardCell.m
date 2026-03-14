@@ -101,7 +101,7 @@ static UIColor *sDefaultEventColor;
     [self.contentView addSubview:navBar];
 
     // Today button
-    self.todayButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.todayButton = HASystemButton();
     [self.todayButton setTitle:@"Today" forState:UIControlStateNormal];
     self.todayButton.titleLabel.font = [UIFont ha_systemFontOfSize:12 weight:HAFontWeightMedium];
     self.todayButton.layer.cornerRadius = 4;
@@ -122,7 +122,7 @@ static UIColor *sDefaultEventColor;
                       withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:12 weight:UIImageSymbolWeightMedium]];
     }
 
-    self.prevButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.prevButton = HASystemButton();
     if (chevLeft) {
         [self.prevButton setImage:chevLeft forState:UIControlStateNormal];
     } else {
@@ -132,7 +132,7 @@ static UIColor *sDefaultEventColor;
     self.prevButton.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.prevButton];
 
-    self.nextButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.nextButton = HASystemButton();
     if (chevRight) {
         [self.nextButton setImage:chevRight forState:UIControlStateNormal];
     } else {
@@ -159,7 +159,7 @@ static UIColor *sDefaultEventColor;
                      withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightRegular]];
     }
 
-    self.monthViewBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.monthViewBtn = HASystemButton();
     if (calIcon) {
         [self.monthViewBtn setImage:calIcon forState:UIControlStateNormal];
     } else {
@@ -169,7 +169,7 @@ static UIColor *sDefaultEventColor;
     self.monthViewBtn.translatesAutoresizingMaskIntoConstraints = NO;
     [navBar addSubview:self.monthViewBtn];
 
-    self.listViewBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.listViewBtn = HASystemButton();
     if (listIcon) {
         [self.listViewBtn setImage:listIcon forState:UIControlStateNormal];
     } else {

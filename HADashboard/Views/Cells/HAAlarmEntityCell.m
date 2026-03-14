@@ -123,7 +123,7 @@ static const NSInteger kKeypadTagEnter = 11;
 }
 
 - (UIButton *)createActionButtonWithTitle:(NSString *)title color:(UIColor *)color action:(SEL)action {
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *button = HASystemButton();
     [button setTitle:title forState:UIControlStateNormal];
     button.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     // Pill-shaped with tinted background instead of solid color blocks
@@ -159,7 +159,7 @@ static const NSInteger kKeypadTagEnter = 11;
     for (NSInteger row = 0; row < 4; row++) {
         for (NSInteger col = 0; col < 3; col++) {
             NSString *label = rows[row][col];
-            UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+            UIButton *btn = HASystemButton();
             [btn setTitle:label forState:UIControlStateNormal];
             btn.titleLabel.font = [UIFont ha_monospacedDigitSystemFontOfSize:18 weight:HAFontWeightMedium];
             btn.translatesAutoresizingMaskIntoConstraints = NO;

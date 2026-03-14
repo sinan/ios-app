@@ -140,7 +140,7 @@
         NSString *mode = self.modes[i];
         BOOL isActive = [mode isEqualToString:self.currentMode];
 
-        UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *btn = HASystemButton();
         btn.tag = (NSInteger)i;
 
         // Try to get an icon for this mode, fall back to text
@@ -174,7 +174,7 @@
 #pragma mark - Dropdown Style
 
 - (void)setupDropdownForAvailable:(BOOL)available {
-    self.dropdownButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.dropdownButton = HASystemButton();
     self.dropdownButton.translatesAutoresizingMaskIntoConstraints = NO;
     NSString *displayName = self.currentMode ? [self displayNameForMode:self.currentMode] : @"Select";
     [self.dropdownButton setTitle:[NSString stringWithFormat:@"%@ \u25BE", displayName] forState:UIControlStateNormal]; // ▾

@@ -33,7 +33,7 @@
     CGFloat buttonSpacing = 4.0;
 
     // Start button
-    self.startButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.startButton = HASystemButton();
     [self.startButton setTitle:@"Start" forState:UIControlStateNormal];
     self.startButton.titleLabel.font = [UIFont boldSystemFontOfSize:12];
     self.startButton.backgroundColor = [HATheme successColor];
@@ -44,7 +44,7 @@
     [self.contentView addSubview:self.startButton];
 
     // Pause button
-    self.pauseButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.pauseButton = HASystemButton();
     [self.pauseButton setTitle:@"Pause" forState:UIControlStateNormal];
     self.pauseButton.titleLabel.font = [UIFont boldSystemFontOfSize:12];
     self.pauseButton.backgroundColor = [HATheme warningColor];
@@ -55,7 +55,7 @@
     [self.contentView addSubview:self.pauseButton];
 
     // Cancel button
-    self.cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.cancelButton = HASystemButton();
     [self.cancelButton setTitle:@"Cancel" forState:UIControlStateNormal];
     self.cancelButton.titleLabel.font = [UIFont boldSystemFontOfSize:12];
     self.cancelButton.backgroundColor = [HATheme destructiveColor];
@@ -102,7 +102,7 @@
     ]);
 
     // Finish button (force-complete the timer)
-    self.finishButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.finishButton = HASystemButton();
     [self.finishButton setTitle:@"Finish" forState:UIControlStateNormal];
     self.finishButton.titleLabel.font = [UIFont boldSystemFontOfSize:12];
     self.finishButton.backgroundColor = [HATheme accentColor];
@@ -113,7 +113,7 @@
     [self.contentView addSubview:self.finishButton];
 
     // Change button (set new duration)
-    self.changeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.changeButton = HASystemButton();
     [self.changeButton setTitle:@"Change" forState:UIControlStateNormal];
     self.changeButton.titleLabel.font = [UIFont boldSystemFontOfSize:12];
     [self.changeButton setTitleColor:[HATheme accentColor] forState:UIControlStateNormal];

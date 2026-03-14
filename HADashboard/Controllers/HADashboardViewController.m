@@ -2,7 +2,6 @@
 #import "NSString+HACompat.h"
 #import "HADashboardViewController.h"
 #import "HALog.h"
-#import <dlfcn.h>
 #import "HAAuthManager.h"
 #import "HAConnectionManager.h"
 #import "HADashboardConfig.h"
@@ -129,7 +128,7 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
     }
 
     // Tappable title button — shows current dashboard name with chevron
-    self.titleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.titleButton = HASystemButton();
     [self updateTitleButtonText:@"Dashboard"];
     self.titleButton.titleLabel.font = [UIFont boldSystemFontOfSize:17];
     self.titleButton.tintColor = [HATheme primaryTextColor];
@@ -2377,35 +2376,7 @@ heightForHeaderInSection:(NSInteger)section {
 
     UIImage *image = nil;
 
-    // iOS 5-6: use private UIGetScreenImage() which captures the actual framebuffer
-    // (renderInContext: misses CA animations, transparency, and some layer content).
-    // This is a private API but fine for jailbroken debug builds.
-    typedef CGImageRef (*UIGetScreenImageFunc)(void);
-    UIGetScreenImageFunc getScreenImage = (UIGetScreenImageFunc)dlsym(RTLD_DEFAULT, "UIGetScreenImage");
-    if (getScreenImage && HASystemMajorVersion() < 7) {
-        CGImageRef cgImage = getScreenImage();
-        if (cgImage) {
-            // UIGetScreenImage returns the raw framebuffer in portrait.
-            // Create a UIImage with the correct orientation, then draw it
-            // into a new context so UIImagePNGRepresentation outputs correctly.
-            UIImageOrientation imgOrient = UIImageOrientationUp;
-            switch ([[UIApplication sharedApplication] statusBarOrientation]) {
-                case UIInterfaceOrientationLandscapeLeft:  imgOrient = UIImageOrientationRight; break;
-                case UIInterfaceOrientationLandscapeRight: imgOrient = UIImageOrientationLeft;  break;
-                case UIInterfaceOrientationPortraitUpsideDown: imgOrient = UIImageOrientationDown; break;
-                default: break;
-            }
-            UIImage *oriented = [UIImage imageWithCGImage:cgImage scale:1.0 orientation:imgOrient];
-            CGImageRelease(cgImage);
-            // Draw into a fresh context to bake the orientation into pixels
-            UIGraphicsBeginImageContext(oriented.size);
-            [oriented drawInRect:CGRectMake(0, 0, oriented.size.width, oriented.size.height)];
-            image = UIGraphicsGetImageFromCurrentImageContext();
-            UIGraphicsEndImageContext();
-        }
-    }
-
-    if (!image) {
+    {
         UIGraphicsBeginImageContextWithOptions(window.bounds.size, YES, window.screen.scale);
         if ([window respondsToSelector:@selector(drawViewHierarchyInRect:afterScreenUpdates:)]) {
             [window drawViewHierarchyInRect:window.bounds afterScreenUpdates:YES];

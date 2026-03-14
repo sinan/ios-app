@@ -38,7 +38,7 @@
     self.speedLabel.textAlignment = NSTextAlignmentRight;
 
     // Preset mode button (below name, tappable for action sheet)
-    self.presetButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.presetButton = HASystemButton();
     self.presetButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     [self.presetButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
     self.presetButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -48,7 +48,7 @@
     [self.contentView addSubview:self.presetButton];
 
     // Oscillate button (small icon toggle)
-    self.oscillateButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.oscillateButton = HASystemButton();
     self.oscillateButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     self.oscillateButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.oscillateButton.hidden = YES;
@@ -56,7 +56,7 @@
     [self.contentView addSubview:self.oscillateButton];
 
     // Direction button
-    self.directionButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.directionButton = HASystemButton();
     self.directionButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     self.directionButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.directionButton.hidden = YES;
@@ -115,7 +115,7 @@
 
     // Speed +/- buttons (right side, above/below speed label)
     CGFloat btnSize = 24.0;
-    self.speedUpButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.speedUpButton = HASystemButton();
     [self.speedUpButton setTitle:@"+" forState:UIControlStateNormal];
     self.speedUpButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
     self.speedUpButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -123,7 +123,7 @@
     [self.speedUpButton addTarget:self action:@selector(speedUpTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.speedUpButton];
 
-    self.speedDownButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.speedDownButton = HASystemButton();
     [self.speedDownButton setTitle:@"\u2212" forState:UIControlStateNormal]; // minus sign
     self.speedDownButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
     self.speedDownButton.translatesAutoresizingMaskIntoConstraints = NO;

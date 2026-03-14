@@ -231,7 +231,7 @@ static const CGFloat kHeadingGap = 2.0;
 }
 
 - (UIButton *)actionButtonWithTitle:(NSString *)title target:(id)target action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont boldSystemFontOfSize:12];
     btn.backgroundColor = [HATheme accentColor];

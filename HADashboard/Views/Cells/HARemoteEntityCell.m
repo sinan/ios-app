@@ -26,7 +26,7 @@
     [self.toggleSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
     [self.contentView addSubview:self.toggleSwitch];
 
-    self.activityButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.activityButton = HASystemButton();
     self.activityButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     [self.activityButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
     self.activityButton.translatesAutoresizingMaskIntoConstraints = NO;

@@ -154,7 +154,7 @@ static const CGFloat kGraphHeight = 160.0;
     [self.view addSubview:self.stateLabel];
 
     // Close button
-    self.closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.closeButton = HASystemButton();
     [self.closeButton setTitle:@"\u2715" forState:UIControlStateNormal];
     self.closeButton.titleLabel.font = [UIFont ha_systemFontOfSize:20 weight:HAFontWeightMedium];
     [self.closeButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
@@ -669,7 +669,7 @@ static const CGFloat kGraphHeight = 160.0;
     toLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [container addSubview:toLabel];
 
-    UIButton *applyBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *applyBtn = HASystemButton();
     [applyBtn setTitle:@"Apply" forState:UIControlStateNormal];
     [applyBtn setTitleColor:[UIColor colorWithRed:0.30 green:0.60 blue:1.00 alpha:1.0] forState:UIControlStateNormal];
     applyBtn.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:HAFontWeightSemibold];
@@ -724,7 +724,7 @@ static const CGFloat kGraphHeight = 160.0;
         fmt.dateStyle = NSDateFormatterMediumStyle;
         fmt.timeStyle = NSDateFormatterShortStyle;
 
-        UIButton *startBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *startBtn = HASystemButton();
         [startBtn setTitle:[fmt stringFromDate:self.customStartDate] forState:UIControlStateNormal];
         startBtn.titleLabel.font = [UIFont systemFontOfSize:13];
         startBtn.translatesAutoresizingMaskIntoConstraints = NO;
@@ -732,7 +732,7 @@ static const CGFloat kGraphHeight = 160.0;
         [startBtn addTarget:self action:@selector(showStartDatePicker) forControlEvents:UIControlEventTouchUpInside];
         [container addSubview:startBtn];
 
-        UIButton *endBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *endBtn = HASystemButton();
         [endBtn setTitle:[fmt stringFromDate:self.customEndDate] forState:UIControlStateNormal];
         endBtn.titleLabel.font = [UIFont systemFontOfSize:13];
         endBtn.translatesAutoresizingMaskIntoConstraints = NO;

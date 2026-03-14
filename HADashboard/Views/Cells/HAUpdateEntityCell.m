@@ -25,7 +25,7 @@
     self.versionLabel = [self labelWithFont:[UIFont systemFontOfSize:12] color:[HATheme secondaryTextColor] lines:2];
 
     // Update button
-    self.updateButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.updateButton = HASystemButton();
     [self.updateButton setTitle:@"Update" forState:UIControlStateNormal];
     self.updateButton.titleLabel.font = [UIFont boldSystemFontOfSize:13];
     self.updateButton.backgroundColor = [HATheme accentColor];
@@ -74,7 +74,7 @@
     ]);
 
     // Skip button (below update button)
-    self.skipButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.skipButton = HASystemButton();
     [self.skipButton setTitle:@"Skip" forState:UIControlStateNormal];
     self.skipButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     self.skipButton.translatesAutoresizingMaskIntoConstraints = NO;

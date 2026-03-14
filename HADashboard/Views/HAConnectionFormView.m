@@ -278,7 +278,7 @@ static NSString *const kModeToken   = @"token";
     ]);
 
     // ── Connect button ─────────────────────────────────────────────────
-    self.connectButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.connectButton = HASystemButton();
     [self.connectButton setTitle:@"Connect" forState:UIControlStateNormal];
     self.connectButton.titleLabel.font = [UIFont boldSystemFontOfSize:18];
     self.connectButton.backgroundColor = [HATheme accentColor];

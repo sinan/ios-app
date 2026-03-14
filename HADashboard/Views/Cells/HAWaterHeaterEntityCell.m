@@ -40,7 +40,7 @@
     self.plusButton = [self actionButtonWithTitle:@"+" target:self action:@selector(plusTapped)];
 
     // Mode button
-    self.modeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.modeButton = HASystemButton();
     self.modeButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     [self.modeButton setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];
     self.modeButton.translatesAutoresizingMaskIntoConstraints = NO;

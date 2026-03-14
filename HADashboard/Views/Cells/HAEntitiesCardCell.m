@@ -451,7 +451,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
                 continue;
             }
             if ([rowType isEqualToString:@"weblink"]) {
-                UIButton *linkRow = [UIButton buttonWithType:UIButtonTypeSystem];
+                UIButton *linkRow = HASystemButton();
                 NSString *iconName = rowInfo[@"icon"];
                 NSString *name = rowInfo[@"name"] ?: rowInfo[@"url"] ?: @"Link";
                 if (iconName) {
@@ -479,7 +479,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
                 continue;
             }
             if ([rowType isEqualToString:@"button"]) {
-                UIButton *btnRow = [UIButton buttonWithType:UIButtonTypeSystem];
+                UIButton *btnRow = HASystemButton();
                 NSString *name = rowInfo[@"action_name"] ?: rowInfo[@"name"] ?: @"Run";
                 NSString *iconName = rowInfo[@"icon"];
                 if (iconName) {
@@ -530,7 +530,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
                                 btnName = [e friendlyName] ?: entityId ?: @"Button";
                             }
                         }
-                        UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+                        UIButton *btn = HASystemButton();
                         [btn setTitle:btnName forState:UIControlStateNormal];
                         btn.titleLabel.font = [UIFont ha_systemFontOfSize:12 weight:HAFontWeightMedium];
                         btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -647,7 +647,7 @@ static const CGFloat kSceneChipRowHeight = 44.0; // chip height + padding
             if (!scene) scene = [[HAConnectionManager sharedManager] entityForId:sceneId];
             if (!scene) continue;
 
-            UIButton *chip = [UIButton buttonWithType:UIButtonTypeSystem];
+            UIButton *chip = HASystemButton();
             // Use pre-computed display name (area prefix already stripped), fall back to friendlyName
             NSString *name = chipNames[sceneId] ?: [scene friendlyName];
             [chip setTitle:name forState:UIControlStateNormal];

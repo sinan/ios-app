@@ -20,7 +20,7 @@
 
     CGFloat padding = 10.0;
 
-    self.optionButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.optionButton = HASystemButton();
     self.optionButton.titleLabel.font = [UIFont systemFontOfSize:15];
     self.optionButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     self.optionButton.backgroundColor = [HATheme controlBackgroundColor];

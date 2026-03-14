@@ -27,7 +27,7 @@
     self.lockStateLabel.textAlignment = NSTextAlignmentCenter;
 
     // Lock/unlock button
-    self.lockButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.lockButton = HASystemButton();
     self.lockButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     self.lockButton.layer.cornerRadius = 6.0;
     self.lockButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -35,7 +35,7 @@
     [self.contentView addSubview:self.lockButton];
 
     // Open button (unlatch/release — only shown when entity supports it)
-    self.openButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.openButton = HASystemButton();
     [self.openButton setTitle:@"Open" forState:UIControlStateNormal];
     self.openButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     self.openButton.layer.cornerRadius = 6.0;

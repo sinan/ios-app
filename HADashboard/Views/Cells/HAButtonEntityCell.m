@@ -23,7 +23,7 @@ static const NSTimeInterval kPressFeedbackDuration = 1.5;
     CGFloat padding = 10.0;
 
     // Press button
-    self.pressButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.pressButton = HASystemButton();
     [self.pressButton setTitle:@"Press" forState:UIControlStateNormal];
     self.pressButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     self.pressButton.backgroundColor = [HATheme accentColor];

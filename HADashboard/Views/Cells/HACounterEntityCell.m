@@ -31,7 +31,7 @@
     CGFloat buttonSpacing = 6.0;
 
     // Decrement button
-    self.decrementButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.decrementButton = HASystemButton();
     [self.decrementButton setTitle:@"\u2212" forState:UIControlStateNormal]; // minus sign
     self.decrementButton.titleLabel.font = [UIFont boldSystemFontOfSize:18];
     self.decrementButton.backgroundColor = [HATheme destructiveColor];
@@ -42,7 +42,7 @@
     [self.contentView addSubview:self.decrementButton];
 
     // Increment button
-    self.incrementButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.incrementButton = HASystemButton();
     [self.incrementButton setTitle:@"+" forState:UIControlStateNormal];
     self.incrementButton.titleLabel.font = [UIFont boldSystemFontOfSize:18];
     self.incrementButton.backgroundColor = [HATheme successColor];
@@ -53,7 +53,7 @@
     [self.contentView addSubview:self.incrementButton];
 
     // Reset button
-    self.resetButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.resetButton = HASystemButton();
     [self.resetButton setTitle:@"Reset" forState:UIControlStateNormal];
     self.resetButton.titleLabel.font = [UIFont systemFontOfSize:11];
     self.resetButton.translatesAutoresizingMaskIntoConstraints = NO;

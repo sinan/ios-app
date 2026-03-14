@@ -394,7 +394,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
             switchOut:&verboseSw];
 
         // Export logs button
-        UIButton *exportBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *exportBtn = HASystemButton();
         [exportBtn setTitle:@"Export Logs" forState:UIControlStateNormal];
         exportBtn.titleLabel.font = [UIFont systemFontOfSize:16];
         exportBtn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
@@ -419,7 +419,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
     }
 
     // ── Log Out & Reset ───────────────────────────────────────────────
-    self.logoutButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.logoutButton = HASystemButton();
     [self.logoutButton setTitle:@"Log Out & Reset" forState:UIControlStateNormal];
     self.logoutButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightMedium];
     [self.logoutButton setTitleColor:[HATheme destructiveColor] forState:UIControlStateNormal];
@@ -744,7 +744,7 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
 }
 
 - (UIButton *)aboutLinkButton:(NSString *)title url:(NSString *)urlString {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont systemFontOfSize:14];
     btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
@@ -905,6 +905,14 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
 - (void)forceDisableAutoLayoutToggled:(UISwitch *)sender {
     [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"HAForceDisableAutoLayout"];
     [[NSUserDefaults standardUserDefaults] synchronize];
+    // Install or uninstall Auto Layout swizzles live (no restart needed)
+    extern void HAAutoLayoutSwizzleInstall(void);
+    extern void HAAutoLayoutSwizzleUninstall(void);
+    if (sender.isOn) {
+        HAAutoLayoutSwizzleInstall();
+    } else {
+        HAAutoLayoutSwizzleUninstall();
+    }
 }
 
 - (void)exportLogsTapped {

@@ -198,7 +198,7 @@ static const CGFloat kPadding        = 12.0;
     ]);
 
     // ── Source + shuffle + repeat row (below progress) ──
-    self.sourceButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.sourceButton = HASystemButton();
     self.sourceButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     self.sourceButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     self.sourceButton.translatesAutoresizingMaskIntoConstraints = NO;

@@ -46,7 +46,7 @@
     self.currentHumidityLabel = [self labelWithFont:[UIFont systemFontOfSize:11] color:[HATheme secondaryTextColor] lines:1];
 
     // Mode button
-    self.modeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.modeButton = HASystemButton();
     self.modeButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     [self.modeButton setTitleColor:[HATheme accentColor] forState:UIControlStateNormal];
     self.modeButton.translatesAutoresizingMaskIntoConstraints = NO;

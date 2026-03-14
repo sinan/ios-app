@@ -72,7 +72,7 @@
     UIView *prevAnchor = nil;
 
     // Toggle button
-    self.toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.toggleButton = HASystemButton();
     self.toggleButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
     self.toggleButton.layer.cornerRadius = 8;
     self.toggleButton.clipsToBounds = YES;
@@ -250,7 +250,7 @@
 
     // Effects picker button (when effect_list is non-empty)
     if (self.hasEffects) {
-        self.effectButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.effectButton = HASystemButton();
         self.effectButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
         self.effectButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
         self.effectButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -276,7 +276,7 @@
     }
 
     // Flash button (quick identify blink)
-    self.flashButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.flashButton = HASystemButton();
     [self.flashButton setTitle:@"\u26A1 Flash" forState:UIControlStateNormal];
     self.flashButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
     self.flashButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -563,7 +563,7 @@
 
     for (NSUInteger i = 0; i < self.areaScenes.count; i++) {
         HAEntity *scene = self.areaScenes[i];
-        UIButton *chip = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *chip = HASystemButton();
 
         NSString *name = [scene friendlyName] ?: scene.entityId;
         [chip setTitle:name forState:UIControlStateNormal];
@@ -1002,7 +1002,7 @@
 }
 
 - (UIButton *)makeButton:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -1337,7 +1337,7 @@
     [container addSubview:volumeRow];
 
     if (features & 8) { // VOLUME_MUTE
-        self.muteButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.muteButton = HASystemButton();
         self.muteButton.titleLabel.font = [UIFont systemFontOfSize:18];
         [self.muteButton addTarget:self action:@selector(muteTapped) forControlEvents:UIControlEventTouchUpInside];
         [self.muteButton setContentHuggingPriority:UILayoutPriorityRequired forAxis:0];
@@ -1373,7 +1373,7 @@
 
     NSArray *soundModes = [entity mediaSoundModes];
     if (soundModes.count > 0 && (features & 65536)) {
-        self.sourceButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.sourceButton = HASystemButton();
         self.sourceButton.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:HAFontWeightMedium];
         self.sourceButton.backgroundColor = [HATheme buttonBackgroundColor];
         self.sourceButton.layer.cornerRadius = 8;
@@ -1383,7 +1383,7 @@
     }
 
     if ((features & 128) || (features & 256)) { // TURN_ON or TURN_OFF
-        self.powerButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.powerButton = HASystemButton();
         [self.powerButton setTitle:@"\u23FB" forState:UIControlStateNormal]; // power symbol
         self.powerButton.titleLabel.font = [UIFont systemFontOfSize:20];
         self.powerButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -1410,7 +1410,7 @@
 }
 
 - (UIButton *)makeTransportButton:(NSString *)symbol size:(CGFloat)size action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:symbol forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont systemFontOfSize:size];
     [btn addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
@@ -1585,7 +1585,7 @@
     UIView *prevAnchor = nil;
 
     // Toggle button
-    self.toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.toggleButton = HASystemButton();
     self.toggleButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
     self.toggleButton.layer.cornerRadius = 8;
     self.toggleButton.clipsToBounds = YES;
@@ -1661,7 +1661,7 @@
 
     // Preset mode dropdown
     if (self.hasPresetModes) {
-        self.presetModeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.presetModeButton = HASystemButton();
         self.presetModeButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
         self.presetModeButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
         self.presetModeButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -1733,7 +1733,7 @@
 }
 
 - (UIButton *)makeDirButton:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -1866,7 +1866,7 @@
     NSInteger features = [entity supportedFeatures];
     self.supportsOpen = (features & 1) != 0;
 
-    self.lockButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.lockButton = HASystemButton();
     self.lockButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightSemibold];
     self.lockButton.layer.cornerRadius = 8;
     self.lockButton.clipsToBounds = YES;
@@ -1875,7 +1875,7 @@
     [container addSubview:self.lockButton];
 
     if (self.supportsOpen) {
-        self.openButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.openButton = HASystemButton();
         [self.openButton setTitle:@"Open" forState:UIControlStateNormal];
         self.openButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightSemibold];
         self.openButton.layer.cornerRadius = 8;
@@ -2117,7 +2117,7 @@
 
     // Fan speed dropdown
     if (self.hasFanSpeed) {
-        self.fanSpeedButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.fanSpeedButton = HASystemButton();
         self.fanSpeedButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
         self.fanSpeedButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
         self.fanSpeedButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -2149,7 +2149,7 @@
 }
 
 - (UIButton *)makeButton:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -2316,7 +2316,7 @@
 }
 
 - (UIButton *)makeButton:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -2433,7 +2433,7 @@
     self.entity = entity;
     UIView *container = [[UIView alloc] init];
 
-    self.activateButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.activateButton = HASystemButton();
     [self.activateButton setTitle:@"Activate" forState:UIControlStateNormal];
     self.activateButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightSemibold];
     [self.activateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -2508,7 +2508,7 @@
     if (features & 16) [self addModeButton:@"Arm Custom"   service:@"alarm_arm_custom_bypass"];
 
     // Disarm button
-    self.disarmButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.disarmButton = HASystemButton();
     [self.disarmButton setTitle:@"Disarm" forState:UIControlStateNormal];
     self.disarmButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightSemibold];
     [self.disarmButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -2564,7 +2564,7 @@
 }
 
 - (void)addModeButton:(NSString *)title service:(NSString *)service {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -2638,7 +2638,7 @@
     self.entity = entity;
     UIView *container = [[UIView alloc] init];
 
-    self.pressButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.pressButton = HASystemButton();
     [self.pressButton setTitle:@"Press" forState:UIControlStateNormal];
     self.pressButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightSemibold];
     [self.pressButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -2727,7 +2727,7 @@
 }
 
 - (UIButton *)makeButton:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -2876,7 +2876,7 @@
     UIView *container = [[UIView alloc] init];
     self.containerRef = container;
 
-    self.selectorButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.selectorButton = HASystemButton();
     self.selectorButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
     self.selectorButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     self.selectorButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -3026,7 +3026,7 @@
 }
 
 - (UIButton *)makeButton:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:14 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];
@@ -3090,7 +3090,7 @@
     self.entity = entity;
     UIView *container = [[UIView alloc] init];
 
-    self.toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.toggleButton = HASystemButton();
     self.toggleButton.titleLabel.font = [UIFont ha_systemFontOfSize:16 weight:HAFontWeightSemibold];
     self.toggleButton.layer.cornerRadius = 8;
     self.toggleButton.clipsToBounds = YES;
@@ -3161,7 +3161,7 @@
     UIView *prevAnchor = nil;
 
     // Power toggle button
-    self.toggleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.toggleButton = HASystemButton();
     self.toggleButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
     self.toggleButton.layer.cornerRadius = 8;
     self.toggleButton.clipsToBounds = YES;
@@ -3217,7 +3217,7 @@
 
     // Mode dropdown button (when available_modes is non-empty)
     if (self.hasModes) {
-        self.modeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.modeButton = HASystemButton();
         self.modeButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
         self.modeButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
         self.modeButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -3506,7 +3506,7 @@
         buttonRow.translatesAutoresizingMaskIntoConstraints = NO;
         [container addSubview:buttonRow];
 
-        self.installButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.installButton = HASystemButton();
         [self.installButton setTitle:@"Install" forState:UIControlStateNormal];
         self.installButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightSemibold];
         [self.installButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -3516,7 +3516,7 @@
         [self.installButton addTarget:self action:@selector(installTapped) forControlEvents:UIControlEventTouchUpInside];
         [buttonRow addArrangedSubview:self.installButton];
 
-        self.skipButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.skipButton = HASystemButton();
         [self.skipButton setTitle:@"Skip" forState:UIControlStateNormal];
         self.skipButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
         self.skipButton.backgroundColor = [HATheme buttonBackgroundColor];
@@ -3665,7 +3665,7 @@
 
     // Operation mode dropdown
     if (self.hasModes) {
-        self.modeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.modeButton = HASystemButton();
         self.modeButton.titleLabel.font = [UIFont ha_systemFontOfSize:15 weight:HAFontWeightMedium];
         self.modeButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
         self.modeButton.backgroundColor = [HATheme buttonBackgroundColor];

@@ -118,7 +118,7 @@
 }
 
 - (UIButton *)makeButtonWithTitle:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     btn.backgroundColor = [HATheme buttonBackgroundColor];

@@ -24,7 +24,7 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
     CGFloat padding = 10.0;
 
     // Activate button
-    self.activateButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.activateButton = HASystemButton();
     [self.activateButton setTitle:@"Activate" forState:UIControlStateNormal];
     self.activateButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     self.activateButton.backgroundColor = [HATheme accentColor];
@@ -41,7 +41,7 @@ static const NSTimeInterval kActivationFeedbackDuration = 1.5;
     self.feedbackLabel.alpha = 0.0;
 
     // Stop button (for running scripts)
-    self.stopButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.stopButton = HASystemButton();
     [self.stopButton setTitle:@"Stop" forState:UIControlStateNormal];
     self.stopButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     self.stopButton.backgroundColor = [HATheme destructiveColor];

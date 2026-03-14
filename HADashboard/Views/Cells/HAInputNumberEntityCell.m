@@ -55,7 +55,7 @@
     [self.contentView addSubview:self.boxTextField];
 
     // Submit button for box mode
-    self.boxSubmitButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.boxSubmitButton = HASystemButton();
     [self.boxSubmitButton setTitle:@"Set" forState:UIControlStateNormal];
     self.boxSubmitButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     self.boxSubmitButton.backgroundColor = [HATheme accentColor];

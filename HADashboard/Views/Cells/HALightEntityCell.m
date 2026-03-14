@@ -58,7 +58,7 @@
     self.colorModeLabel.hidden = YES;
 
     // Effect button (shown when entity has effect_list)
-    self.effectButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.effectButton = HASystemButton();
     self.effectButton.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     [self.effectButton setTitleColor:[HATheme accentColor] forState:UIControlStateNormal];
     self.effectButton.translatesAutoresizingMaskIntoConstraints = NO;

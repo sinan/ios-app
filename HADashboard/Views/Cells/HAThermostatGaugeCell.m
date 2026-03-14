@@ -427,7 +427,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 }
 
 - (UIButton *)makeOutlinedButtonWithTitle:(NSString *)title action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:24 weight:HAFontWeightLight];
     btn.backgroundColor = [UIColor clearColor];
@@ -1138,7 +1138,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     for (NSString *mode in modes) {
         if (![mode isKindOfClass:[NSString class]]) continue;
 
-        UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *btn = HASystemButton();
         NSString *iconName = _modeIconNames[mode];
         if (iconName) {
             [HAIconMapper setIconName:iconName onButton:btn size:modeIconSize color:[HATheme primaryTextColor]];
@@ -1224,7 +1224,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 }
 
 - (UIButton *)makeExtraModeButton:(NSString *)title tag:(NSInteger)tag {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont ha_systemFontOfSize:11 weight:HAFontWeightMedium];
     [btn setTitleColor:[HATheme secondaryTextColor] forState:UIControlStateNormal];

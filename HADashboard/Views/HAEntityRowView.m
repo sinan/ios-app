@@ -93,7 +93,7 @@
     [self addSubview:self.toggleSwitch];
 
     // Compact "Press" button for button / input_button entities
-    self.pressButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.pressButton = HASystemButton();
     [self.pressButton setTitle:@"Press" forState:UIControlStateNormal];
     self.pressButton.titleLabel.font = [UIFont ha_systemFontOfSize:13 weight:HAFontWeightMedium];
     self.pressButton.layer.cornerRadius = 14;
@@ -503,7 +503,7 @@
 #pragma mark - Cover Buttons
 
 - (UIButton *)makeCoverButtonWithFallbackTitle:(NSString *)fallbackTitle sfSymbolName:(NSString *)sfSymbolName action:(SEL)action {
-    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *btn = HASystemButton();
     btn.translatesAutoresizingMaskIntoConstraints = NO;
     btn.tintColor = [HATheme primaryTextColor];
 
