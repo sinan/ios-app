@@ -20,4 +20,10 @@
 /// Convenience: returns a glyph string for a domain's default icon.
 + (NSString *)glyphForDomain:(NSString *)domain;
 
+/// Set an MDI icon on a UIButton using attributed title.
++ (void)setIconName:(NSString *)iconName onButton:(UIButton *)button size:(CGFloat)size color:(UIColor *)color;
+
+/// Build an NSAttributedString containing an MDI glyph with the given font size and color.
++ (NSAttributedString *)attributedGlyph:(NSString *)glyphString fontSize:(CGFloat)fontSize color:(UIColor *)color;
+
 @end

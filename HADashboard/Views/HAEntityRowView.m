@@ -553,6 +553,8 @@
 - (void)setShowsSeparator:(BOOL)showsSeparator {
     _showsSeparator = showsSeparator;
     self.separatorLine.hidden = !showsSeparator;
+    // Refresh separator color for theme changes (on pre-iOS 13, colors don't auto-resolve)
+    self.separatorLine.backgroundColor = [HATheme cellBorderColor];
 }
 
 #pragma mark - Inline Slider (input_number / number)

@@ -317,13 +317,7 @@ static const CGFloat kButtonSpacing  = 12.0;
 }
 
 - (void)setButton:(UIButton *)button iconName:(NSString *)iconName {
-    NSString *glyph = [HAIconMapper glyphForIconName:iconName] ?: @"?";
-    NSAttributedString *attr = [[NSAttributedString alloc] initWithString:glyph
-        attributes:@{
-            NSFontAttributeName: [HAIconMapper mdiFontOfSize:kButtonIconSize],
-            NSForegroundColorAttributeName: [HATheme primaryTextColor]
-        }];
-    [button setAttributedTitle:attr forState:UIControlStateNormal];
+    [HAIconMapper setIconName:iconName onButton:button size:kButtonIconSize color:[HATheme primaryTextColor]];
 }
 
 #pragma mark - Actions

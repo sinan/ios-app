@@ -158,4 +158,26 @@ static NSDictionary<NSString *, NSString *> *_domainIconMap = nil;
     return name ? [self glyphForIconName:name] : nil;
 }
 
++ (void)setIconName:(NSString *)iconName onButton:(UIButton *)button size:(CGFloat)size color:(UIColor *)color {
+    if (!iconName || !button) return;
+    NSString *glyph = [self glyphForIconName:iconName];
+    if (glyph) {
+        NSDictionary *attrs = @{
+            NSFontAttributeName: [self mdiFontOfSize:size],
+            NSForegroundColorAttributeName: color ?: [UIColor blackColor]
+        };
+        [button setAttributedTitle:[[NSAttributedString alloc] initWithString:glyph attributes:attrs]
+                          forState:UIControlStateNormal];
+    }
+}
+
++ (NSAttributedString *)attributedGlyph:(NSString *)glyphString fontSize:(CGFloat)fontSize color:(UIColor *)color {
+    if (!glyphString) return [[NSAttributedString alloc] initWithString:@""];
+    return [[NSAttributedString alloc] initWithString:glyphString
+        attributes:@{
+            NSFontAttributeName: [self mdiFontOfSize:fontSize],
+            NSForegroundColorAttributeName: color ?: [UIColor blackColor]
+        }];
+}
+
 @end
