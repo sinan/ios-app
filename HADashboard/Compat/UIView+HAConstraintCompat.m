@@ -139,7 +139,10 @@ static void HAInstallConstraintStubs(void) {
                         imp_implementationWithBlock(^(UILabel *s, NSAttributedString *attr) {
                             s.text = [attr string];
                             if (attr.length > 0) {
-                                NSDictionary *attrs = [attr attributesAtIndex:0 effectiveRange:NULL];
+                                // Extract font/color from the LAST run, not the first.
+                                // Attributed strings may start with an MDI icon glyph
+                                // (different font) followed by text — we want the text font.
+                                NSDictionary *attrs = [attr attributesAtIndex:attr.length - 1 effectiveRange:NULL];
                                 UIFont *font = attrs[@"NSFont"];
                                 if (font) s.font = font;
                                 UIColor *color = attrs[@"NSColor"];
