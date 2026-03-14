@@ -600,6 +600,8 @@ static NSString *const kModeToken   = @"token";
     self.trustedContainer.hidden = ![mode isEqualToString:kModeTrusted];
     self.loginContainer.hidden   = ![mode isEqualToString:kModeLogin];
     self.tokenContainer.hidden   = ![mode isEqualToString:kModeToken];
+    // In frame-based mode the stack doesn't auto-relayout on hidden changes
+    [self setNeedsLayout];
 }
 
 #pragma mark - Discovery
