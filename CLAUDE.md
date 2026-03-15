@@ -61,6 +61,7 @@ Key variables:
 | Device | Arch | iOS | Deploy Method |
 |--------|------|-----|---------------|
 | iPad 2 | armv7 | 9.3.5 | WiFi SSH (jailbroken) or Unraid USB |
+| iPad 3 | armv7 | 9.3.5 | WiFi SSH (jailbroken) |
 | iPad Mini 4 | arm64 | 15.x | WiFi via ios-deploy + pymobiledevice3 |
 | iPad Mini 5 | arm64 | 26.x | WiFi via devicectl |
 | iPhone 16 Pro Max | arm64 | 18.x | WiFi via devicectl |
@@ -68,20 +69,76 @@ Key variables:
 | iPhone Simulator | arm64 | 16.4+ | `xcrun simctl install/launch` |
 | Legacy Simulator | x86_64 | 9.3–14.x | `rosettasim-ctl install/launch` (via RosettaSim) |
 
-## Versioning
+## Versioning & Release
 
 Version is derived from **git tags** — no files to edit for a version bump.
 
-```bash
-git tag v1.0.2
-git push --tags
-```
-
-- `scripts/build.sh` reads the latest `v*` tag and passes `MARKETING_VERSION` + `CURRENT_PROJECT_VERSION` to xcodebuild
-- CI workflow does the same (tag → version, commit count → build number)
+- `scripts/build.sh` reads the latest `v*` tag → `MARKETING_VERSION`, commit count → `CURRENT_PROJECT_VERSION`
 - `Info.plist` uses `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)` build setting variables
 - `project.yml` has `0.0.0` / `0` fallback defaults (only used if building directly from Xcode without the build script)
 - **Never hardcode version numbers** in Info.plist, project.yml, or pbxproj
+
+### Release Workflow
+
+To cut a release:
+
+```bash
+# 1. Tag HEAD (annotated tag)
+git tag -a v1.2.1 -m "v1.2.1: summary of changes"
+git push origin main --tags
+
+# 2. Create GitHub release with notes
+gh release create v1.2.1 --title "v1.2.1" --latest --notes "..."
+```
+
+To **retag** (move an existing tag to current HEAD):
+
+```bash
+git tag -d v1.2.1                    # Delete local tag
+git push origin :refs/tags/v1.2.1    # Delete remote tag
+git tag -a v1.2.1 -m "..."           # Recreate at HEAD
+git push origin v1.2.1               # Push new tag
+# Then delete old GitHub release and create a new one
+gh release delete v1.2.1 --yes
+gh release create v1.2.1 --title "v1.2.1" --latest --notes "..."
+```
+
+### CI Pipeline (`.github/workflows/build.yml`)
+
+Triggered on pushes to `main` and `v*` tags:
+
+| Job | Trigger | What it does |
+|-----|---------|-------------|
+| `build-and-test` | All pushes | Builds simulator target, verifies compilation |
+| `seed-sdk-cache` | Main push only | Extracts Xcode 13 armv7 SDK stubs from cached .xip (one-time) |
+| `archive-release` | Tag push only | Full release: armv7 clang compile → arm64 archive → lipo merge → sign → **export App Store IPA (uploads to TestFlight)** → export Ad Hoc IPA → upload to GitHub Release |
+
+The `archive-release` job handles **everything** for App Store submission:
+- Builds universal armv7+arm64 binary
+- Signs with dev certificate + provisioning profile (from GitHub secrets)
+- Exports App Store IPA via `xcodebuild -exportArchive` with ASC API key auth
+- **Automatically uploads to TestFlight** (the App Store export triggers upload)
+- Exports Ad Hoc IPA and attaches to GitHub Release
+
+**After CI completes**, go to [App Store Connect](https://appstoreconnect.apple.com) → TestFlight to:
+1. Add release notes for the TestFlight build
+2. Submit for external testing or App Review
+
+### Signing & App Store Connect Credentials
+
+All credentials are in `.env` (local) and GitHub secrets (CI):
+
+| Credential | `.env` key | GitHub Secret | Purpose |
+|-----------|-----------|---------------|---------|
+| Team ID | `APPLE_TEAM_ID` | `vars.TEAM_ID` | Apple Developer team |
+| ASC API Key ID | `ASC_KEY_ID` | `secrets.ASC_KEY_ID` | App Store Connect API auth |
+| ASC Issuer ID | `ASC_ISSUER_ID` | `secrets.ASC_ISSUER_ID` | App Store Connect API auth |
+| ASC API Key (.p8) | `ASC_KEY_PATH` (file path) | `secrets.ASC_KEY_BASE64` (base64) | API key for signing + TestFlight upload |
+| Dev Certificate | — | `secrets.DEV_CERT_BASE64` | Code signing certificate (.p12) |
+| Certificate Password | — | `secrets.DEV_CERT_PASSWORD` | Password for .p12 |
+| Provisioning Profile | — | `secrets.PROVISIONING_PROFILE_BASE64` | App provisioning |
+
+Local builds use `ASC_KEY_PATH` to point to the `.p8` file on disk. CI decodes `ASC_KEY_BASE64` at runtime.
 
 ## Build & Deploy
 
@@ -92,6 +149,7 @@ scripts/deploy.sh iphone           # Physical iPhone via devicectl
 scripts/deploy.sh mini5            # iPad Mini 5 via devicectl (WiFi)
 scripts/deploy.sh mini4            # iPad Mini 4 via ios-deploy (WiFi)
 scripts/deploy.sh ipad2            # iPad 2 via WiFi SSH (jailbroken)
+scripts/deploy.sh ipad3            # iPad 3 via WiFi SSH (jailbroken)
 scripts/deploy.sh all              # Deploy to all targets
 scripts/deploy.sh all --kiosk      # Deploy to all targets in kiosk mode
 ```
