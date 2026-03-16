@@ -53,6 +53,8 @@ IPAD2_IP="${IPAD2_IP:-}"
 IPAD2_SSH_PASS="${IPAD2_SSH_PASS:-alpine}"
 IPAD3_IP="${IPAD3_IP:-}"
 IPAD3_SSH_PASS="${IPAD3_SSH_PASS:-alpine}"
+IPAD4_IP="${IPAD4_IP:-}"
+IPAD4_SSH_PASS="${IPAD4_SSH_PASS:-alpine}"
 UNRAID_HOST="${UNRAID_HOST:-}"
 UNRAID_USER="${UNRAID_USER:-root}"
 
@@ -77,7 +79,7 @@ TOKEN_OVERRIDE=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        sim|sim-ios93|sim-ios103|iphone|mini5|mini4|ipad2|ipad2-usb|ipad3|mac|all)
+        sim|sim-ios93|sim-ios103|iphone|mini5|mini4|ipad2|ipad2-usb|ipad3|ipad4|ipad4-usb|mac|all)
             if [[ -z "$TARGET" ]]; then
                 TARGET="$1"
             else
@@ -114,6 +116,8 @@ if [[ -z "$TARGET" ]]; then
     echo "  ipad2          iPad 2 — iOS 9 (WiFi SSH, jailbroken)"
     echo "  ipad2-usb      iPad 2 — iOS 9 (Unraid USB fallback)"
     echo "  ipad3          iPad 3 — (WiFi SSH, jailbroken)"
+    echo "  ipad4          iPad 4 — iOS 10 (WiFi SSH, jailbroken)"
+    echo "  ipad4-usb      iPad 4 — iOS 10 (Unraid USB, signed)"
     echo "  mac            Mac Catalyst (local Mac, fullscreen)"
     echo ""
     echo "Options:"
@@ -203,6 +207,7 @@ if [[ "$TARGET" == "all" ]]; then
     deploy_bg "mini4"       mini4       --no-build ${OPTS[@]+"${OPTS[@]}"}
     deploy_bg "ipad2"       ipad2       --no-build ${OPTS[@]+"${OPTS[@]}"}
     deploy_bg "ipad3"       ipad3       --no-build ${OPTS[@]+"${OPTS[@]}"}
+    deploy_bg "ipad4"       ipad4       --no-build ${OPTS[@]+"${OPTS[@]}"}
     deploy_bg "mac"         mac         --no-build ${OPTS[@]+"${OPTS[@]}"}
 
     # Wait for all deploys and collect results
@@ -252,7 +257,7 @@ case "$TARGET" in
             APP="$PROJECT_DIR/build/rosettasim/Build/Products/Debug-iphonesimulator/HA Dashboard.app"
         fi
         ;;
-    iphone|mini5|mini4|ipad2|ipad2-usb|ipad3)
+    iphone|mini5|mini4|ipad2|ipad2-usb|ipad3|ipad4|ipad4-usb)
         if [[ "$NO_BUILD" == false ]]; then
             APP="$("$PROJECT_DIR/scripts/build.sh" device)"
         else
@@ -287,6 +292,7 @@ if [[ "$HA_DASHBOARD" == "living-room" ]]; then
         mini4)    HA_DASHBOARD="living-room" ;;
         ipad2|ipad2-usb)  HA_DASHBOARD="dashboard-office"; KIOSK_MODE="${KIOSK_MODE:-YES}" ;;
         ipad3)            HA_DASHBOARD="living-room"; KIOSK_MODE="${KIOSK_MODE:-YES}" ;;
+        ipad4|ipad4-usb)   HA_DASHBOARD="living-room"; KIOSK_MODE="${KIOSK_MODE:-YES}" ;;
         # sim, sim-iphone, iphone: keep living-room
     esac
 fi
@@ -482,13 +488,16 @@ case "$TARGET" in
         echo "✅ Running on iPad Mini 4"
         ;;
 
-    ipad2|ipad3)
+    ipad2|ipad3|ipad4)
         # ── Shared jailbroken iPad deploy (SSH over WiFi) ─────────────
         case "$TARGET" in
             ipad2) _IPAD_LABEL="iPad 2"; _IPAD_IP="$IPAD2_IP"; _IPAD_PASS="$IPAD2_SSH_PASS"
                    _SSH_OPTS="-o HostkeyAlgorithms=ssh-rsa"
                    _SCP_EXTRA="" ;;
             ipad3) _IPAD_LABEL="iPad 3"; _IPAD_IP="$IPAD3_IP"; _IPAD_PASS="$IPAD3_SSH_PASS"
+                   _SSH_OPTS="-o HostkeyAlgorithms=ssh-rsa"
+                   _SCP_EXTRA="" ;;
+            ipad4) _IPAD_LABEL="iPad 4"; _IPAD_IP="$IPAD4_IP"; _IPAD_PASS="$IPAD4_SSH_PASS"
                    _SSH_OPTS="-o HostkeyAlgorithms=ssh-rsa"
                    _SCP_EXTRA="" ;;
         esac
@@ -511,7 +520,21 @@ case "$TARGET" in
 
         APP_TAR="$PROJECT_DIR/build/HADashboard.app.tar.gz"
         echo "   Packaging .app..."
-        tar -czf "$APP_TAR" -C "$(dirname "$APP")" "$(basename "$APP")"
+        if [[ "$TARGET" == "ipad4" ]]; then
+            # iOS 10+: strip Apple codesign (conflicts with ldid on-device)
+            _STAGE="$PROJECT_DIR/build/stage-jb"
+            rm -rf "$_STAGE"
+            mkdir -p "$_STAGE"
+            cp -R "$APP" "$_STAGE/"
+            _STAGED_APP="$_STAGE/$(basename "$APP")"
+            codesign --remove-signature "$_STAGED_APP/HA Dashboard" 2>/dev/null || true
+            rm -f "$_STAGED_APP/embedded.mobileprovision"
+            tar -czf "$APP_TAR" -C "$_STAGE" "$(basename "$APP")"
+            rm -rf "$_STAGE"
+        else
+            # iOS 9: ldid -S works fine over Apple-signed binaries
+            tar -czf "$APP_TAR" -C "$(dirname "$APP")" "$(basename "$APP")"
+        fi
 
         # Merge deploy preferences into existing plist on device
         _PLIST="$PROJECT_DIR/build/${TARGET}-prefs.plist"
@@ -692,5 +715,100 @@ docker run --rm --privileged \
 '
 
         echo "✅ Deployed to iPad 2 (USB)"
+        ;;
+
+    ipad4-usb)
+        echo "📱 Deploying to iPad 4 via Unraid USB ($UNRAID_HOST)..."
+
+        if [[ -z "$UNRAID_HOST" ]]; then
+            echo "❌ UNRAID_HOST not set in .env"
+            exit 1
+        fi
+
+        # Package as IPA
+        IPA="$PROJECT_DIR/build/HADashboard.ipa"
+        rm -rf /tmp/ipa_payload
+        mkdir -p /tmp/ipa_payload/Payload
+        cp -R "$APP" "/tmp/ipa_payload/Payload/"
+        (cd /tmp/ipa_payload && zip -qr "$IPA" Payload/)
+        echo "   Packaged IPA: $(du -sh "$IPA" | cut -f1)"
+
+        # Transfer to Unraid
+        echo "   Transferring to $UNRAID_HOST..."
+        sshpass -p "${UNRAID_PASS:-}" scp -o StrictHostKeyChecking=no \
+            -o PreferredAuthentications=password \
+            "$IPA" "$UNRAID_USER@$UNRAID_HOST:/tmp/HADashboard.ipa"
+
+        # Transfer developer disk image for iOS 10.3 if needed
+        DDI_DIR="/Applications/Xcode-13.2.1.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/10.3"
+        sshpass -p "${UNRAID_PASS:-}" ssh -o StrictHostKeyChecking=no \
+            -o PreferredAuthentications=password \
+            "$UNRAID_USER@$UNRAID_HOST" 'test -f /tmp/ios-ddi-10/DeveloperDiskImage.dmg && echo EXISTS || echo MISSING' 2>/dev/null | grep -q EXISTS
+        if [[ $? -ne 0 ]] && [[ -d "$DDI_DIR" ]]; then
+            echo "   Uploading developer disk image (iOS 10.3)..."
+            sshpass -p "${UNRAID_PASS:-}" ssh -o StrictHostKeyChecking=no \
+                -o PreferredAuthentications=password \
+                "$UNRAID_USER@$UNRAID_HOST" 'mkdir -p /tmp/ios-ddi-10'
+            sshpass -p "${UNRAID_PASS:-}" scp -o StrictHostKeyChecking=no \
+                -o PreferredAuthentications=password \
+                "$DDI_DIR/DeveloperDiskImage.dmg" "$DDI_DIR/DeveloperDiskImage.dmg.signature" \
+                "$UNRAID_USER@$UNRAID_HOST:/tmp/ios-ddi-10/"
+        fi
+
+        # Install via Docker + libimobiledevice
+        echo "   Installing on iPad 4..."
+        sshpass -p "${UNRAID_PASS:-}" ssh -o StrictHostKeyChecking=no \
+            -o PreferredAuthentications=password \
+            "$UNRAID_USER@$UNRAID_HOST" '
+mkdir -p /tmp/ios-lockdown
+docker run --rm --privileged \
+  -v /dev/bus/usb:/dev/bus/usb \
+  -v /tmp/HADashboard.ipa:/tmp/HADashboard.ipa \
+  -v /tmp/ios-lockdown:/var/lib/lockdown \
+  -v /tmp/ios-ddi-10:/tmp/ddi \
+  ubuntu:22.04 bash -c "
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update > /dev/null 2>&1
+    apt-get install -y usbmuxd libimobiledevice-utils ideviceinstaller > /dev/null 2>&1
+    usbmuxd -f &
+    sleep 3
+    UDID=\$(idevice_id -l 2>/dev/null | head -1)
+    if [ -z \"\$UDID\" ]; then
+      echo \"❌ No iOS device found on USB\"
+      exit 1
+    fi
+    echo \"   Device: \$UDID\"
+
+    # Ensure device is paired
+    if ! idevicepair validate 2>/dev/null; then
+      echo \"   Pairing (tap Trust on iPad if prompted)...\"
+      idevicepair pair 2>&1 || true
+      sleep 5
+      idevicepair validate 2>/dev/null || echo \"⚠️  Not paired — tap Trust on iPad, then retry\"
+    fi
+
+    # Install app
+    ideviceinstaller -i /tmp/HADashboard.ipa 2>&1 | grep -E \"(Install:|ERROR|DONE|Copying)\"
+
+    # Mount developer disk image if available
+    if [ -f /tmp/ddi/DeveloperDiskImage.dmg ]; then
+      if ! ideviceimagemounter -l 2>&1 | grep -q \"ImagePresent: true\"; then
+        echo \"   Mounting developer disk image...\"
+        ideviceimagemounter /tmp/ddi/DeveloperDiskImage.dmg /tmp/ddi/DeveloperDiskImage.dmg.signature 2>&1
+      fi
+    else
+      echo \"   ⚠️  No developer disk image at /tmp/ddi/\"
+    fi
+
+    # Launch the app
+    echo \"   Launch args: '"${LAUNCH_ARGS[*]}"'\"
+    idevicedebug run '"$BUNDLE_ID"' '"${LAUNCH_ARGS[*]}"' 2>&1 &
+    DBGPID=\\\$!
+    sleep 5
+    kill \\\$DBGPID 2>/dev/null || true
+  "
+'
+
+        echo "✅ Deployed to iPad 4 (USB)"
         ;;
 esac
