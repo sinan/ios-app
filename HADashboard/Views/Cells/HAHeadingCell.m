@@ -26,12 +26,15 @@
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [self.contentView addSubview:self.titleLabel];
 
+        // Section headers (HASectionHeaderView) span full collection view width with 16pt
+        // internal padding = 16pt from screen edge. Heading cells are items inset by
+        // sectionInset.left (8pt), so use 8pt internal padding to match: 8 + 8 = 16pt.
         [NSLayoutConstraint activateConstraints:@[
-            [self.iconLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
+            [self.iconLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:8],
             [self.iconLabel.widthAnchor constraintEqualToConstant:24],
             [self.iconLabel.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
             [self.titleLabel.leadingAnchor constraintEqualToAnchor:self.iconLabel.trailingAnchor constant:4],
-            [self.titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+            [self.titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.contentView.trailingAnchor constant:-8],
             [self.titleLabel.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
         ]];
     }

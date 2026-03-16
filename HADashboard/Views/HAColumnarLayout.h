@@ -18,6 +18,13 @@ heightForHeaderInSection:(NSInteger)section;
                      layout:(UICollectionViewLayout *)layout
   gridColumnsForItemAtIndexPath:(NSIndexPath *)indexPath;
 
+@optional
+/// Return YES if this item is a heading cell that should be laid out like a section header
+/// (reduced height, no inter-item spacing below).
+- (BOOL)collectionView:(UICollectionView *)collectionView
+                 layout:(UICollectionViewLayout *)layout
+  isHeadingItemAtIndexPath:(NSIndexPath *)indexPath;
+
 @end
 
 /// A multi-column collection view layout where each section is a vertical column.

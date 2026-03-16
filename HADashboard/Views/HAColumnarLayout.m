@@ -106,6 +106,9 @@
             CGFloat rowStartY = columnY[col];
             CGFloat rowMaxHeight = 0;  // tallest item in current row
 
+            BOOL canQueryHeading = [self.delegate respondsToSelector:@selector(collectionView:layout:isHeadingItemAtIndexPath:)];
+            BOOL lastRowWasHeading = NO;
+
             for (NSInteger item = 0; item < itemCount; item++) {
                 NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:section];
 
@@ -116,10 +119,14 @@
                 }
                 gridCols = MAX(1, MIN(gridCols, kSubGridColumns));
 
+                BOOL isHeading = canQueryHeading &&
+                    [self.delegate collectionView:cv layout:self isHeadingItemAtIndexPath:indexPath];
+
                 // Check if this item fits in the current row
                 if (rowUsed > 0 && rowUsed + gridCols > kSubGridColumns) {
-                    // Start a new row
-                    columnY[col] = rowStartY + rowMaxHeight + self.interItemSpacing;
+                    // Start a new row — skip spacing after heading rows
+                    CGFloat rowGap = lastRowWasHeading ? 0 : self.interItemSpacing;
+                    columnY[col] = rowStartY + rowMaxHeight + rowGap;
                     rowStartY = columnY[col];
                     rowUsed = 0;
                     rowMaxHeight = 0;
@@ -151,6 +158,7 @@
 
                 rowUsed += gridCols;
                 if (itemHeight > rowMaxHeight) rowMaxHeight = itemHeight;
+                lastRowWasHeading = isHeading;
             }
 
             // Finalize the last row

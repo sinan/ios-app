@@ -755,7 +755,7 @@ static const CGFloat kRowUnitHeight = 56.0;
     CGFloat height;
 
     if ([item.cardType isEqualToString:@"heading"]) {
-        return 40.0; // match section header height
+        return 36.0; // match section header height (HASectionHeaderView = 36pt)
     } else if ([item.cardType isEqualToString:@"markdown"]) {
         return [HAMarkdownCardCell preferredHeightForConfigItem:item width:itemWidth];
     } else if ([item.cardType isEqualToString:@"badges"]) {
@@ -1608,6 +1608,13 @@ static const CGFloat kRowUnitHeight = 56.0;
 heightForHeaderInSection:(NSInteger)section {
     HADashboardConfigSection *configSection = [self sectionAtIndex:section];
     return (configSection.title.length > 0) ? 36.0 : 0.0;
+}
+
+- (BOOL)collectionView:(UICollectionView *)collectionView
+                 layout:(UICollectionViewLayout *)layout
+  isHeadingItemAtIndexPath:(NSIndexPath *)indexPath {
+    HADashboardConfigItem *item = [self itemAtIndexPath:indexPath];
+    return [item.cardType isEqualToString:@"heading"];
 }
 
 #pragma mark - HAMasonryLayoutDelegate
