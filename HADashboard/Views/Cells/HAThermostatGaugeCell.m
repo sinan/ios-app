@@ -515,12 +515,10 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     }
     self.tempLabel.font = [UIFont monospacedDigitSystemFontOfSize:primaryFontSize weight:UIFontWeightRegular];
 
-    // Hide +/- buttons for md/sm/xs size classes (HA web: .container.md .buttons { display: none })
+    // Show +/- buttons only if entity wants them AND size class allows (lg)
     BOOL sizeAllowsButtons = isLg;
-    if (!sizeAllowsButtons) {
-        self.plusButton.hidden = YES;
-        self.minusButton.hidden = YES;
-    }
+    self.plusButton.hidden = !(self.buttonsVisible && sizeAllowsButtons);
+    self.minusButton.hidden = !(self.buttonsVisible && sizeAllowsButtons);
 
     // Hide mode label in xs
     self.modeLabel.hidden = (slider < 130.0);
@@ -579,7 +577,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     // -- Position +/- buttons: overlaid at bottom of SVG square, bottom: 10px --
     // Button bottom edge is 10px from SVG bottom.
     // Button center Y = sliderTop + slider - 10 - kButtonSize/2
-    if (!self.plusButton.hidden) {
+    if (self.buttonsVisible && sizeAllowsButtons) {
         CGFloat btnBottomEdge = sliderTop + slider - 10.0;
         CGFloat btnY = btnBottomEdge - kButtonSize;
         CGFloat totalBtnW = kButtonSize * 2.0 + kButtonGap;
@@ -1034,14 +1032,12 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     if (targetTemp && ![mode isEqualToString:@"off"]) {
         showButtons = YES;
     }
-    self.plusButton.hidden = !showButtons;
-    self.minusButton.hidden = !showButtons;
-
-    // Track button visibility for layout
+    // Don't set button hidden here — layoutSubviews/updateGaugeArcs is the
+    // single authority on visibility (it checks both this flag AND size class).
     if (showButtons != self.buttonsVisible) {
         self.buttonsVisible = showButtons;
-        [self setNeedsLayout];
     }
+    [self setNeedsLayout];
 
     // Update button border color for theme
     self.plusButton.layer.borderColor = [HATheme tertiaryTextColor].CGColor;
@@ -1308,6 +1304,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 
 - (void)prepareForReuse {
     [super prepareForReuse];
+    self.buttonsVisible = NO;
     self.plusButton.hidden = YES;
     self.minusButton.hidden = YES;
     self.nameLabel.attributedText = nil;

@@ -61,13 +61,85 @@ static const CGFloat kArcNameLabelHeight = 16.0;
     return padding * 2 + rows * kBadgeHeight + MAX(0, rows - 1) * spacing;
 }
 
++ (CGFloat)preferredHeightForSection:(HADashboardConfigSection *)section
+                            entities:(NSDictionary *)entityDict
+                               width:(CGFloat)width {
+    if (!section.entityIds || section.entityIds.count == 0) {
+        return kBadgeHeight + 8.0;
+    }
+
+    CGFloat padding = 4.0;
+    CGFloat spacing = 8.0;
+    CGFloat maxWidth = width - padding * 2;
+    if (maxWidth <= 0) maxWidth = 300;
+
+    BOOL hideNames = [section.customProperties[@"chipStyle"] boolValue];
+
+    // Measure actual badge widths using the same formula as configurePillStyleWithSection
+    NSMutableArray<NSNumber *> *widths = [NSMutableArray array];
+    for (NSString *entityId in section.entityIds) {
+        HAEntity *entity = entityDict[entityId];
+        if (!entity) continue;
+
+        NSString *name = nil;
+        if (!hideNames) {
+            name = [HAEntityDisplayHelper displayNameForEntity:entity entityId:entityId section:section];
+            NSString *nameOverride = section.nameOverrides[entityId];
+            if (nameOverride.length > 0) name = nameOverride;
+        }
+        NSString *valueText = [HAEntityDisplayHelper stateWithUnitForEntity:entity decimals:1];
+        NSString *icon = [HAEntityDisplayHelper iconGlyphForEntity:entity];
+
+        CGFloat nameWidth = 0;
+        if (name.length > 0) {
+            nameWidth = ceil([name sizeWithAttributes:@{NSFontAttributeName: [UIFont systemFontOfSize:10 weight:UIFontWeightMedium]}].width);
+        }
+        CGFloat valWidth = ceil([valueText sizeWithAttributes:@{NSFontAttributeName: [UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium]}].width);
+        CGFloat iconW = icon.length > 0 ? kBadgeIconSize : 0;
+        CGFloat infoWidth = MAX(nameWidth, valWidth) + 4.0;
+        CGFloat badgeWidth = (kBadgeHPad - 4) + iconW + kBadgeGap + infoWidth + kBadgeHPad;
+        badgeWidth = MAX(badgeWidth, kBadgeHeight);
+        badgeWidth = MIN(badgeWidth, maxWidth);
+        [widths addObject:@(badgeWidth)];
+    }
+
+    if (widths.count == 0) {
+        return kBadgeHeight + 8.0;
+    }
+
+    // Simulate row packing (same algorithm as configurePillStyleWithSection)
+    NSInteger idx = 0;
+    NSInteger total = widths.count;
+    NSInteger rows = 0;
+    while (idx < total) {
+        CGFloat rowWidth = 0;
+        NSInteger rowStart = idx;
+        while (idx < total) {
+            CGFloat w = [widths[idx] floatValue];
+            CGFloat needed = (idx == rowStart) ? w : rowWidth + spacing + w;
+            if (needed > maxWidth && idx > rowStart) break;
+            rowWidth = needed;
+            idx++;
+        }
+        rows++;
+    }
+    if (rows == 0) rows = 1;
+    return padding * 2 + rows * kBadgeHeight + MAX(0, rows - 1) * spacing;
+}
+
 #pragma mark - Configuration
 
 - (void)configureWithSection:(HADashboardConfigSection *)section entities:(NSDictionary *)entityDict {
-    // Skip full rebuild if same section + same entity count — just update text/icons
+    // Skip full rebuild if same section + same entity count + same width — just update text/icons.
+    // Width check is critical: after reloadData, UIKit dequeues cells with stale frames.
+    // configurePillStyleWithSection: runs at the wrong width, then layoutSubviews detects the
+    // width change and calls us again. Without the width check, the second call would take
+    // the updateInPlace path (same section pointer) and skip re-layout.
+    CGFloat currentWidth = self.contentView.bounds.size.width;
     BOOL canUpdateInPlace = (self.lastSection == section &&
                              self.badgeViews.count == section.entityIds.count &&
-                             self.badgeViews.count > 0);
+                             self.badgeViews.count > 0 &&
+                             fabs(currentWidth - self.lastLayoutWidth) <= 1.0);
     self.lastSection = section;
     self.lastEntities = entityDict;
 

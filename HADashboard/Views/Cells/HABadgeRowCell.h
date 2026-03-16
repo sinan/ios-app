@@ -13,6 +13,11 @@
 + (CGFloat)preferredHeightForEntityCount:(NSInteger)count width:(CGFloat)width;
 + (CGFloat)preferredHeightForEntityCount:(NSInteger)count width:(CGFloat)width chipStyle:(BOOL)chipStyle;
 
+/// Calculate preferred height by measuring actual badge widths from entity data
++ (CGFloat)preferredHeightForSection:(HADashboardConfigSection *)section
+                            entities:(NSDictionary *)entityDict
+                               width:(CGFloat)width;
+
 /// Called when a badge is tapped. Used to open entity detail.
 @property (nonatomic, copy) void(^entityTapBlock)(HAEntity *entity);
 

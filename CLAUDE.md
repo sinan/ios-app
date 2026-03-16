@@ -295,6 +295,28 @@ npm run compare             # Generate comparison report
 Screenshots are saved to `screenshots/` (git-ignored) and can be regenerated with the above commands.
 Demo server infra lives in the private repo `ha-dashboard/demo-server`.
 
+### Physical iPad Screenshots (Jailbroken Devices)
+
+The app has a built-in file-trigger screenshot mechanism for jailbroken iPads (iPad 2, 3, 4):
+
+```bash
+# 1. Touch the trigger file via SSH (app watches for it after layout settles)
+source .env
+sshpass -p "$IPAD3_SSH_PASS" ssh -o StrictHostKeyChecking=no -o HostkeyAlgorithms=ssh-rsa \
+  root@$IPAD3_IP touch /tmp/take_screenshot
+
+# 2. Wait ~4 seconds for app to capture (3s internal delay + margin)
+sleep 4
+
+# 3. Pull the screenshot back
+sshpass -p "$IPAD3_SSH_PASS" scp -o StrictHostKeyChecking=no -o HostkeyAlgorithms=ssh-rsa \
+  root@$IPAD3_IP:/tmp/screenshot.png ./screenshots/ipad3-screenshot.png
+```
+
+Replace `IPAD3` with `IPAD2` or `IPAD4` for other devices. Credentials are in `.env` (see `.env.example`).
+
+**How it works:** `HADashboardViewController` checks for `/tmp/take_screenshot` after dashboard rebuild. If found, it deletes the trigger, waits 3s for layout to settle, then renders the key window to `/tmp/screenshot.png`. The `screenshotScheduled` flag prevents duplicate captures per app lifecycle — relaunch the app to take another screenshot.
+
 ### Launch Arguments (for testing)
 - `-HAServerURL http://...` — HA server URL
 - `-HAAccessToken eyJ...` — Bearer token

@@ -425,11 +425,12 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
     [self.viewPicker addTarget:self action:@selector(viewPickerChanged:) forControlEvents:UIControlEventValueChanged];
     [self.view addSubview:self.viewPicker];
 
-    // Pin below safe area with 16pt padding (matches side padding in kiosk mode)
+    // Pin below safe area with padding (reduced on iPad to save vertical space)
+    CGFloat pickerTopPadding = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) ? 8 : 16;
     if (@available(iOS 11.0, *)) {
-        self.viewPickerTopConstraint = [self.viewPicker.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:16];
+        self.viewPickerTopConstraint = [self.viewPicker.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:pickerTopPadding];
     } else {
-        self.viewPickerTopConstraint = [self.viewPicker.topAnchor constraintEqualToAnchor:self.topLayoutGuide.bottomAnchor constant:16];
+        self.viewPickerTopConstraint = [self.viewPicker.topAnchor constraintEqualToAnchor:self.topLayoutGuide.bottomAnchor constant:pickerTopPadding];
     }
     [self.view addConstraint:self.viewPickerTopConstraint];
     [self.view addConstraint:[NSLayoutConstraint constraintWithItem:self.viewPicker attribute:NSLayoutAttributeLeading
@@ -467,8 +468,9 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
         relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeTrailing multiplier:1 constant:0]];
 
     // Two competing top constraints: one below picker (normal), one at safe area top (kiosk)
+    CGFloat pickerToCollectionGap = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) ? 6 : 12;
     self.collectionViewTopToPickerConstraint = [NSLayoutConstraint constraintWithItem:self.collectionView attribute:NSLayoutAttributeTop
-        relatedBy:NSLayoutRelationEqual toItem:self.viewPicker attribute:NSLayoutAttributeBottom multiplier:1 constant:12];
+        relatedBy:NSLayoutRelationEqual toItem:self.viewPicker attribute:NSLayoutAttributeBottom multiplier:1 constant:pickerToCollectionGap];
     // Kiosk: pin to safe area top. Section inset adds 4pt internally,
     // so use 12pt here for a total of 16pt (matching side padding).
     if (@available(iOS 11.0, *)) {
@@ -758,8 +760,8 @@ static const CGFloat kRowUnitHeight = 56.0;
         return [HAMarkdownCardCell preferredHeightForConfigItem:item width:itemWidth];
     } else if ([item.cardType isEqualToString:@"badges"]) {
         HADashboardConfigSection *entSection = item.entitiesSection ?: section;
-        BOOL chipStyle = [entSection.customProperties[@"chipStyle"] boolValue];
-        return [HABadgeRowCell preferredHeightForEntityCount:(NSInteger)entSection.entityIds.count width:itemWidth chipStyle:chipStyle];
+        NSDictionary *allEntities = [[HAConnectionManager sharedManager] allEntities];
+        return [HABadgeRowCell preferredHeightForSection:entSection entities:allEntities width:itemWidth];
     } else if ([item.cardType isEqualToString:@"glance"]) {
         HADashboardConfigSection *entSection = item.entitiesSection ?: section;
         return [HAGlanceCardCell preferredHeightForSection:entSection width:itemWidth configItem:item] + headingExtra;
