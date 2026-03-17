@@ -19,6 +19,7 @@ NSString *const HAConnectionManagerDidReceiveAllStatesNotification  = @"HAConnec
 NSString *const HAConnectionManagerDidReceiveLovelaceNotification   = @"HAConnectionManagerDidReceiveLovelace";
 NSString *const HAConnectionManagerDidReceiveDashboardListNotification = @"HAConnectionManagerDidReceiveDashboardList";
 NSString *const HAConnectionManagerDidReceiveRegistriesNotification    = @"HAConnectionManagerDidReceiveRegistries";
+NSString *const HAConnectionManagerHADidStartNotification             = @"HAConnectionManagerHADidStart";
 
 static const NSTimeInterval kReconnectBaseInterval = 2.0;
 static const NSTimeInterval kReconnectMaxInterval  = 60.0;
@@ -355,6 +356,7 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
         self.showingCachedData = NO;
         [[HAEntityStateCache sharedCache] entitiesDidUpdate:snapshot];
 
+        HALogI(@"conn", @"REST /api/states complete — %lu entities", (unsigned long)snapshot.count);
         [self.delegate connectionManager:self didReceiveAllStates:snapshot];
         [[NSNotificationCenter defaultCenter]
             postNotificationName:HAConnectionManagerDidReceiveAllStatesNotification
@@ -934,6 +936,16 @@ static const NSTimeInterval kReconnectMaxInterval  = 60.0;
 
     // Subscribe to dashboard config changes (for auto-reload)
     [client subscribeToLovelaceUpdates];
+
+    // Subscribe to HA lifecycle — homeassistant_started fires after all
+    // integrations are loaded, signalling that camera entities are ready.
+    __weak typeof(self) weakSelf = self;
+    [self subscribeToEventType:@"homeassistant_started" handler:^(NSDictionary *eventData) {
+        HALogI(@"conn", @"Home Assistant started — all integrations loaded");
+        [[NSNotificationCenter defaultCenter]
+            postNotificationName:HAConnectionManagerHADidStartNotification
+                          object:weakSelf];
+    }];
 
     // Fetch available dashboards list
     [self fetchDashboardList];

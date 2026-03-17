@@ -12,6 +12,7 @@ extern NSString *const HAConnectionManagerDidReceiveAllStatesNotification;    //
 extern NSString *const HAConnectionManagerDidReceiveLovelaceNotification;     // userInfo: @{@"dashboard": HALovelaceDashboard}
 extern NSString *const HAConnectionManagerDidReceiveDashboardListNotification; // userInfo: @{@"dashboards": NSArray}
 extern NSString *const HAConnectionManagerDidReceiveRegistriesNotification;    // userInfo: nil (registries ready)
+extern NSString *const HAConnectionManagerHADidStartNotification;              // userInfo: nil (HA fully started, all integrations loaded)
 
 @protocol HAConnectionManagerDelegate <NSObject>
 @optional

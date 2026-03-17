@@ -24,6 +24,10 @@ static const CGFloat kOverlayIconFontSize   = 14.0;
 /// Tag base for overlay buttons so we can identify them
 static const NSInteger kOverlayButtonTagBase = 9000;
 
+/// Backoff intervals for snapshot→stream promotion retries (seconds)
+static const NSTimeInterval kSnapshotPromotionIntervals[] = {30, 60, 120, 300};
+static const NSInteger kSnapshotPromotionMaxIndex = 3;
+
 @interface HACameraEntityCell ()
 @property (nonatomic, strong) UIImageView *snapshotView;
 @property (nonatomic, strong) UIActivityIndicatorView *loadingSpinner;
@@ -79,6 +83,11 @@ static const NSInteger kOverlayButtonTagBase = 9000;
 @property (nonatomic, strong) NSTimer *healthCheckTimer;  // periodic stream health check
 @property (nonatomic, assign) NSInteger reconnectAttempts; // exponential backoff counter
 
+// Snapshot → stream promotion — never give up on streaming
+@property (nonatomic, strong) NSTimer *promotionTimer;            // fires to retry streaming from snapshot polling
+@property (nonatomic, assign) NSInteger snapshotPromotionAttempts; // backoff counter for promotion retries
+@property (nonatomic, strong) NSDate *lastResetTime;              // debounce for state_changed-driven resets
+
 // Button layout constraints
 @property (nonatomic, strong) NSLayoutConstraint *snapAfterPowerConstraint;
 @property (nonatomic, strong) NSLayoutConstraint *snapAtEdgeConstraint;
@@ -107,10 +116,22 @@ static HACameraStreamMode currentStreamMode(void) {
     self.stateLabel.hidden = YES;
     self.useStreaming = YES;
 
-    // Retry HLS after WebSocket connects (cells often load before WS is authenticated)
+    // Clear failure flags when WebSocket reconnects
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(wsDidConnect:)
                                                  name:HAConnectionManagerDidConnectNotification
+                                               object:nil];
+
+    // Full stream reset when HA reports all integrations loaded
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(haDidStart:)
+                                                 name:HAConnectionManagerHADidStartNotification
+                                               object:nil];
+
+    // Watch for camera entity state changes (unavailable → available)
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(cameraEntityDidUpdate:)
+                                                 name:HAConnectionManagerEntityDidUpdateNotification
                                                object:nil];
 
     // Snapshot image view — fills the cell below the name label
@@ -1483,6 +1504,33 @@ static HACameraStreamMode currentStreamMode(void) {
     [self fetchSnapshot];
 }
 
+#pragma mark - Snapshot → Stream Promotion
+
+- (void)schedulePromotionTimer {
+    [self.promotionTimer invalidate];
+    NSInteger idx = MIN(self.snapshotPromotionAttempts, kSnapshotPromotionMaxIndex);
+    NSTimeInterval delay = kSnapshotPromotionIntervals[idx];
+    self.snapshotPromotionAttempts++;
+    HALogD(@"cam", @"Scheduling stream promotion for %@ in %.0fs (attempt %ld)",
+           self.currentEntityId, delay, (long)self.snapshotPromotionAttempts);
+    self.promotionTimer = [NSTimer scheduledTimerWithTimeInterval:delay
+                                                          target:self
+                                                        selector:@selector(promotionTimerFired)
+                                                        userInfo:nil
+                                                         repeats:NO];
+}
+
+- (void)promotionTimerFired {
+    if (!self.currentEntityId || !self.window) {
+        self.promotionTimer = nil;
+        return;
+    }
+    HALogI(@"cam", @"Stream promotion attempt for %@ (attempt %ld)",
+           self.currentEntityId, (long)self.snapshotPromotionAttempts);
+    self.promotionTimer = nil;
+    [self resetAndReloadStream];
+}
+
 - (void)beginLoading {
     if (!self.currentEntityId) return;
 
@@ -1525,6 +1573,10 @@ static HACameraStreamMode currentStreamMode(void) {
     if (!self.refreshTimer) {
         [self startRefreshTimer];
     }
+    // Schedule periodic promotion back to streaming (never give up)
+    if (mode != HACameraStreamModeSnapshot && !self.promotionTimer) {
+        [self schedulePromotionTimer];
+    }
 }
 
 - (void)cancelLoading {
@@ -1534,6 +1586,8 @@ static HACameraStreamMode currentStreamMode(void) {
 - (void)stopRefresh {
     [self.refreshTimer invalidate];
     self.refreshTimer = nil;
+    [self.promotionTimer invalidate];
+    self.promotionTimer = nil;
     [self.healthCheckTimer invalidate];
     self.healthCheckTimer = nil;
     [self.currentTask cancel];
@@ -1552,30 +1606,77 @@ static HACameraStreamMode currentStreamMode(void) {
 
 - (void)wsDidConnect:(NSNotification *)note {
     if (!self.currentEntityId || !self.window) return;
-    // Already on HLS — nothing to do
-    if (self.hlsPlayer) return;
 
-    // WS reconnect clears HLS failure flag — allows fresh attempt.
-    // But NOT on iOS 9 where HLS is permanently disabled.
+    // WS reconnect clears ALL failure flags so recovery layers can work.
+    // Don't restart streams yet — wait for homeassistant_started (camera
+    // integrations may not be loaded). The promotion timer and entity
+    // state change handler will also trigger recovery if needed.
+    if ([[[UIDevice currentDevice] systemVersion] compare:@"10.0" options:NSNumericSearch] != NSOrderedAscending) {
+        self.hlsFailed = NO;
+    }
+    self.streamFailed = NO;
+    self.reconnectAttempts = 0;
+    self.snapshotPromotionAttempts = 0;
+
+    HALogD(@"cam", @"WS connected — cleared failure flags for %@", self.currentEntityId);
+}
+
+- (void)haDidStart:(NSNotification *)note {
+    if (!self.currentEntityId || !self.window) return;
+    HALogI(@"cam", @"HA started — full stream reset for %@", self.currentEntityId);
+    [self resetAndReloadStream];
+}
+
+- (void)cameraEntityDidUpdate:(NSNotification *)note {
+    HAEntity *entity = note.userInfo[@"entity"];
+    if (!entity || ![entity.entityId isEqualToString:self.currentEntityId]) return;
+    if (!self.window) return;
+
+    // If we're not actively receiving video and the server is telling us about
+    // this camera (state_changed), it's a signal the camera proxy may be ready.
+    // This catches zombie MJPEG streams (connected but no frames), snapshot
+    // polling fallback, and any other non-live state.
+    BOOL hasLiveVideo = self.receivingFrames || self.hlsLive;
+    BOOL entityAvailable = ![entity.state isEqualToString:@"unavailable"] &&
+                           ![entity.state isEqualToString:@"unknown"];
+    if (!hasLiveVideo && entityAvailable) {
+        // Debounce: don't reset if we reset very recently (avoid thrashing
+        // during rapid state_changed bursts after HA restart)
+        NSTimeInterval sinceLastReset = self.lastResetTime
+            ? -[self.lastResetTime timeIntervalSinceNow] : HUGE_VAL;
+        if (sinceLastReset < 15.0) return;
+
+        HALogI(@"cam", @"Camera %@ state_changed (state=%@) while not live — resetting stream",
+              entity.entityId, entity.state);
+        [self resetAndReloadStream];
+    }
+}
+
+- (void)resetAndReloadStream {
+    self.lastResetTime = [NSDate date];
+
+    [self stopRefresh];
+    [self.streamParser stop];
+    self.streamParser = nil;
+    [self stopHLSPlayer];
+
+    // Clear ALL failure state
+    self.streamFailed = NO;
     if ([[[UIDevice currentDevice] systemVersion] compare:@"10.0" options:NSNumericSearch] != NSOrderedAscending) {
         self.hlsFailed = NO;
     }
     self.reconnectAttempts = 0;
+    self.consecutiveFailures = 0;
+    self.receivingFrames = NO;
+    self.hlsLive = NO;
+    self.lastFrameTime = nil;
+    self.hlsRequestInFlight = NO;
+    self.recentFrameCount = 0;
+    self.frameWindowStart = nil;
+    self.snapshotPromotionAttempts = 0;
 
-    HACameraStreamMode mode = currentStreamMode();
-    BOOL entitySupportsStream = ([self.entity supportedFeatures] & 2) != 0;
-
-    // In Auto mode: upgrade MJPEG → HLS if entity supports it
-    // In forced HLS mode: always try
-    BOOL shouldTryHLS = (mode == HACameraStreamModeHLS) ||
-                        (mode == HACameraStreamModeAuto && entitySupportsStream);
-    if (!shouldTryHLS) return;
-
-    HALogI(@"cam", @"WS connected — attempting HLS upgrade for %@ (MJPEG streaming=%d)",
-          self.currentEntityId, self.streamParser.isStreaming);
-    // Don't stop MJPEG yet — let HLS start in parallel. Once HLS confirms
-    // readyForDisplay, we'll stop MJPEG. If HLS fails, MJPEG continues uninterrupted.
-    [self startHLSStream];
+    self.needsSnapshotLoad = YES;
+    [self beginLoading];
 }
 
 - (void)didMoveToWindow {
