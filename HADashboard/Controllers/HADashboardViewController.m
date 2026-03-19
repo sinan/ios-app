@@ -43,6 +43,7 @@
 #import "HATopAlignedFlowLayout.h"
 #import "HAHistoryManager.h"
 #import "HASunBasedTheme.h"
+#import "HAToastView.h"
 #import <QuartzCore/QuartzCore.h>
 
 static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
@@ -85,6 +86,7 @@ static NSString * const kSectionHeaderReuseId = @"HASectionHeader";
 @property (nonatomic, strong) NSArray<NSDictionary *> *availableDashboards;
 @property (nonatomic, strong) NSDictionary<NSString *, NSArray<NSIndexPath *> *> *entityToIndexPaths;
 @property (nonatomic, assign) BOOL screenshotScheduled;
+@property (nonatomic, strong) HAToastView *kioskToast;
 @end
 
 @implementation HADashboardViewController
@@ -1288,6 +1290,36 @@ static const CGFloat kRowUnitHeight = 56.0;
     self.viewPicker.hidden = !showPicker;
     [self updateCollectionViewTopConstraintForPicker:showPicker];
     [self.view layoutIfNeeded];
+
+    if (kiosk) {
+        // Delay slightly so the view hierarchy is fully laid out before
+        // computing safe-area insets and animating. Fixes the toast not
+        // appearing on iOS 9 devices where viewWillAppear fires before
+        // the view has a final frame.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self showKioskToast];
+        });
+    } else {
+        [self dismissKioskToast];
+    }
+}
+
+- (void)showKioskToast {
+    if (self.kioskToast && self.kioskToast.superview) return;
+    __weak typeof(self) weakSelf = self;
+    self.kioskToast = [HAToastView showInView:self.view
+        message:@"Kiosk mode is on. Triple-tap the top of the screen to exit."
+        subtitle:@"Tap to open Settings"
+        duration:5.0
+        tapAction:^{
+            [weakSelf.navigationController setNavigationBarHidden:NO animated:NO];
+            [weakSelf settingsTapped];
+        }];
+}
+
+- (void)dismissKioskToast {
+    [self.kioskToast dismiss];
+    self.kioskToast = nil;
 }
 
 - (void)kioskExitTapped {

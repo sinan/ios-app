@@ -3,6 +3,7 @@
 #import "HAPerfMonitor.h"
 #import "HAConnectionManager.h"
 #import "HAConnectionSettingsViewController.h"
+#import "HAToastView.h"
 #import "HADashboardViewController.h"
 #import "HADeviceRegistration.h"
 #import "HADeviceIntegrationManager.h"
@@ -1109,13 +1110,11 @@ static NSString *const kDeviceNameOverride    = @"ha_device_name_override";
 
         // Toast feedback
         NSString *message = newState ? @"Developer Mode Enabled" : @"Developer Mode Disabled";
-        UIAlertController *toast = [UIAlertController alertControllerWithTitle:nil
-                                                                      message:message
-                                                               preferredStyle:UIAlertControllerStyleAlert];
-        [self presentViewController:toast animated:YES completion:nil];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [toast dismissViewControllerAnimated:YES completion:nil];
-        });
+        [HAToastView showInView:self.navigationController.view ?: self.view
+                        message:message
+                       subtitle:nil
+                       duration:1.5
+                      tapAction:nil];
     }
 }
 
