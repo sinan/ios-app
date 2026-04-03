@@ -26,6 +26,7 @@ static const CGFloat kThumbHitRadius = 40.0;
 
 // Temperature snap step
 static const CGFloat kTempStep = 0.5;
+static const CGFloat kDualSetpointMinGap = 1.0;
 
 // +/- button size (matches HA web 48x48 outlined-icon-button)
 static const CGFloat kButtonSize = 48.0;
@@ -1025,7 +1026,6 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     if (!self.entity.isAvailable) return;
 
     CGPoint location = [gesture locationInView:self.contentView];
-    static const double kMinSetpointGap = 1.0;
 
     switch (gesture.state) {
         case UIGestureRecognizerStateBegan: {
@@ -1086,12 +1086,12 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 
             if (self.isDualSetpointMode) {
                 if (self.thumbHighDragging) {
-                    temp = MAX(temp, self.dragTargetTempLow + kMinSetpointGap);
+                    temp = MAX(temp, self.dragTargetTempLow + kDualSetpointMinGap);
                     temp = MIN(temp, self.entityMaxTemp);
                     self.dragTargetTempHigh = temp;
                     [self positionHighThumbAtTemperature:temp];
                 } else {
-                    temp = MIN(temp, self.dragTargetTempHigh - kMinSetpointGap);
+                    temp = MIN(temp, self.dragTargetTempHigh - kDualSetpointMinGap);
                     temp = MAX(temp, self.entityMinTemp);
                     self.dragTargetTempLow = temp;
                     [self positionThumbAtTemperature:temp];
@@ -1646,7 +1646,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
             self.pendingTargetTempLow  = curLow;
             self.pendingTargetTempHigh = MIN(curHigh + step, self.entityMaxTemp);
         } else {
-            self.pendingTargetTempLow  = MIN(curLow + step, curHigh - step);
+            self.pendingTargetTempLow  = MIN(curLow + step, curHigh - kDualSetpointMinGap);
             self.pendingTargetTempHigh = curHigh;
         }
         [self applyOptimisticDualLow:self.pendingTargetTempLow high:self.pendingTargetTempHigh];
@@ -1670,7 +1670,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
         double curHigh = self.buttonDebounceTimer ? self.pendingTargetTempHigh : ([self.entity.attributes[@"target_temp_high"] doubleValue] ?: 24.0);
         if (self.selectedSetpointIsHigh) {
             self.pendingTargetTempLow  = curLow;
-            self.pendingTargetTempHigh = MAX(curHigh - step, curLow + step);
+            self.pendingTargetTempHigh = MAX(curHigh - step, curLow + kDualSetpointMinGap);
         } else {
             self.pendingTargetTempLow  = MAX(curLow - step, self.entityMinTemp);
             self.pendingTargetTempHigh = curHigh;
@@ -1701,9 +1701,12 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     self.currentMode = nil;
     self.currentAction = nil;
 
-    // Cancel any in-flight button debounce without sending (cell is being recycled)
-    [self.buttonDebounceTimer invalidate];
-    self.buttonDebounceTimer = nil;
+    // Preserve the user's last thermostat change even if the collection view
+    // recycles this cell before the debounce interval expires.
+    if (self.buttonDebounceTimer) {
+        [self.buttonDebounceTimer invalidate];
+        [self flushPendingButtonChange];
+    }
 
     // Thumb/drag state
     self.thumbDragging = NO;

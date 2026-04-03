@@ -77,11 +77,11 @@ static const NSTimeInterval kWakeDuration = 0.35;
 
 - (void)dim {
     if (self.sleeping) return;
-    self.sleeping = YES;
 
     UIWindow *window = self.window;
     if (!window) return;
 
+    self.sleeping = YES;
     self.savedBrightness = [UIScreen mainScreen].brightness;
 
     UIView *overlay = [[UIView alloc] initWithFrame:window.bounds];
@@ -136,9 +136,11 @@ static const NSTimeInterval kWakeDuration = 0.35;
 
 - (void)appWillResignActive {
     // Pause idle timer when app is not active (control center, incoming call, etc.)
-    // Don't dim — the OS will dim/lock on its own.
+    // Restore immediately if we dimmed the device so the app doesn't leave the
+    // system brightness at 0 while the user is outside the app.
     [self.idleTimer invalidate];
     self.idleTimer = nil;
+    [self wakeImmediately];
 }
 
 - (void)appDidBecomeActive {
