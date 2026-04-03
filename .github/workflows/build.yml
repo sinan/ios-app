@@ -67,8 +67,9 @@ jobs:
 
   # ── Seed Xcode 13 SDK stubs cache on main pushes ─────────────────────
   # The armv7 link step needs TBD stubs from Xcode 13's iOS SDK (21MB).
-  # We extract these from the Xcode 13.2.1 .xip already cached by the old
-  # build-legacy workflow (key: xcode-13.2.1-xip). No Apple auth needed.
+  # Prefer the cached Xcode 13.2.1 .xip from the old legacy workflow.
+  # If that cache is missing, re-download the .xip with xcodes + Fastlane auth
+  # and let actions/cache persist it for future runs.
   seed-sdk-cache:
     runs-on: macos-latest
     timeout-minutes: 60
@@ -84,10 +85,35 @@ jobs:
       - name: Restore Xcode 13 .xip from legacy cache
         if: steps.stubs-cache.outputs.cache-hit != 'true'
         id: xip-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         with:
           path: ~/.xcodes/Downloads
           key: xcode-13.2.1-xip
+
+      - name: Install xcodes
+        if: steps.stubs-cache.outputs.cache-hit != 'true' && steps.xip-cache.outputs.cache-hit != 'true'
+        run: |
+          if ! command -v xcodes >/dev/null 2>&1; then
+            brew install xcodesorg/made/xcodes
+          fi
+          xcodes version
+
+      - name: Download Xcode 13.2.1 .xip fallback
+        if: steps.stubs-cache.outputs.cache-hit != 'true' && steps.xip-cache.outputs.cache-hit != 'true'
+        env:
+          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+          XCODES_USERNAME: ${{ secrets.XCODES_USERNAME }}
+        run: |
+          if [ -z "$FASTLANE_SESSION" ] || [ -z "$XCODES_USERNAME" ]; then
+            echo "❌ Missing XCODES_USERNAME or FASTLANE_SESSION secret for Xcode 13.2.1 fallback download"
+            exit 1
+          fi
+
+          mkdir -p ~/.xcodes/Downloads
+          echo "Downloading Xcode 13.2.1 .xip via xcodes..."
+          xcodes download 13.2.1 --use-fastlane-auth --directory ~/.xcodes/Downloads
+          echo "Downloaded:"
+          ls -lh ~/.xcodes/Downloads/
 
       - name: Extract SDK stubs from cached .xip
         if: steps.stubs-cache.outputs.cache-hit != 'true'
