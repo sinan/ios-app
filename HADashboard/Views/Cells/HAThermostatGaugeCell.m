@@ -95,6 +95,22 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 @property (nonatomic, copy) NSString *lastBuiltCurrentMode;      // active mode when buttons were built
 // Extra mode selectors (preset, fan, swing) — tappable labels below mode bar
 @property (nonatomic, strong) UIStackView *extraModesStack;
+// Dual setpoint (heat_cool mode)
+@property (nonatomic, strong) CAShapeLayer *coloredArcHighLayer; // cool side arc
+@property (nonatomic, strong) UIView *thumbHighView;             // cool setpoint thumb
+@property (nonatomic, assign) BOOL thumbHighDragging;
+@property (nonatomic, assign) double dragTargetTempLow;
+@property (nonatomic, assign) double dragTargetTempHigh;
+@property (nonatomic, assign) BOOL isDualSetpointMode;
+// Dual setpoint UI: two tappable temp buttons replacing tempLabel
+@property (nonatomic, strong) UIButton *dualLowButton;
+@property (nonatomic, strong) UIButton *dualHighButton;
+@property (nonatomic, assign) BOOL selectedSetpointIsHigh; // YES = cool thumb selected
+// +/- button debounce: accumulate taps locally, send one service call after idle period
+@property (nonatomic, strong) NSTimer *buttonDebounceTimer;
+@property (nonatomic, assign) double pendingTargetTemp;
+@property (nonatomic, assign) double pendingTargetTempLow;
+@property (nonatomic, assign) double pendingTargetTempHigh;
 @end
 
 @implementation HAThermostatGaugeCell
@@ -182,6 +198,93 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     CGFloat angle = [self angleForFraction:fraction];
     CGPoint point = [self pointOnArcForAngle:angle];
     self.thumbView.center = point;
+}
+
+- (void)positionHighThumbAtTemperature:(double)temp {
+    CGFloat fraction = [self fractionForTemperature:temp];
+    CGFloat angle = [self angleForFraction:fraction];
+    CGPoint point = [self pointOnArcForAngle:angle];
+    self.thumbHighView.center = point;
+}
+
+- (void)dualLowTapped {
+    if (self.selectedSetpointIsHigh) {
+        self.selectedSetpointIsHigh = NO;
+        [self updateDualSetpointSelection];
+    }
+}
+
+- (void)dualHighTapped {
+    if (!self.selectedSetpointIsHigh) {
+        self.selectedSetpointIsHigh = YES;
+        [self updateDualSetpointSelection];
+    }
+}
+
+/// Applies colors to the dual temp buttons and +/- buttons based on the active setpoint.
+- (void)updateDualSetpointSelection {
+    UIColor *heatColor = [UIColor colorWithRed:1.0 green:0.55 blue:0.15 alpha:1.0];
+    UIColor *coolColor = [UIColor colorWithRed:0.3 green:0.6 blue:1.0 alpha:1.0];
+    UIColor *dimColor  = [HATheme secondaryTextColor];
+
+    if (self.selectedSetpointIsHigh) {
+        [self.dualLowButton  setTitleColor:dimColor  forState:UIControlStateNormal];
+        [self.dualHighButton setTitleColor:coolColor forState:UIControlStateNormal];
+        self.plusButton.tintColor           = coolColor;
+        self.minusButton.tintColor          = coolColor;
+        self.plusButton.layer.borderColor   = coolColor.CGColor;
+        self.minusButton.layer.borderColor  = coolColor.CGColor;
+    } else {
+        [self.dualLowButton  setTitleColor:heatColor forState:UIControlStateNormal];
+        [self.dualHighButton setTitleColor:dimColor  forState:UIControlStateNormal];
+        self.plusButton.tintColor           = heatColor;
+        self.minusButton.tintColor          = heatColor;
+        self.plusButton.layer.borderColor   = heatColor.CGColor;
+        self.minusButton.layer.borderColor  = heatColor.CGColor;
+    }
+}
+
+- (void)applyDualArcFillForLow:(double)lowTemp
+                           high:(double)highTemp
+                    currentTemp:(NSNumber *)currentTemp
+                         action:(NSString *)action {
+    if (!self.coloredArcHighLayer) return;
+    CGFloat lowFraction  = [self fractionForTemperature:lowTemp];
+    CGFloat highFraction = [self fractionForTemperature:highTemp];
+
+    // Heat arc: min → low (orange, 0.5 opacity via coloredArcLayer)
+    self.coloredArcLayer.strokeStart = 0.0;
+    self.coloredArcLayer.strokeEnd   = lowFraction;
+
+    // Cool arc: high → max (blue, 0.5 opacity via coloredArcHighLayer)
+    self.coloredArcHighLayer.strokeStart = highFraction;
+    self.coloredArcHighLayer.strokeEnd   = 1.0;
+
+    // Active arc: full opacity on the side currently running
+    if ([action isEqualToString:@"heating"] && currentTemp && currentTemp.doubleValue < lowTemp) {
+        CGFloat curFraction = [self fractionForTemperature:currentTemp.doubleValue];
+        self.fgArcLayer.strokeColor = [UIColor colorWithRed:1.0 green:0.55 blue:0.15 alpha:1.0].CGColor;
+        self.fgArcLayer.strokeStart = curFraction;
+        self.fgArcLayer.strokeEnd   = lowFraction;
+    } else if ([action isEqualToString:@"cooling"] && currentTemp && currentTemp.doubleValue > highTemp) {
+        CGFloat curFraction = [self fractionForTemperature:currentTemp.doubleValue];
+        self.fgArcLayer.strokeColor = [UIColor colorWithRed:0.3 green:0.6 blue:1.0 alpha:1.0].CGColor;
+        self.fgArcLayer.strokeStart = highFraction;
+        self.fgArcLayer.strokeEnd   = curFraction;
+    } else {
+        self.fgArcLayer.strokeStart = 0.0;
+        self.fgArcLayer.strokeEnd   = 0.0;
+    }
+}
+
+- (void)applyDualArcFillDragWithLowFraction:(CGFloat)lowFraction highFraction:(CGFloat)highFraction {
+    if (!self.coloredArcHighLayer) return;
+    self.coloredArcLayer.strokeStart     = 0.0;
+    self.coloredArcLayer.strokeEnd       = lowFraction;
+    self.coloredArcHighLayer.strokeStart = highFraction;
+    self.coloredArcHighLayer.strokeEnd   = 1.0;
+    self.fgArcLayer.strokeStart = 0.0;
+    self.fgArcLayer.strokeEnd   = 0.0;
 }
 
 - (void)getRGBAComponents:(UIColor *)color out:(CGFloat *)out {
@@ -361,6 +464,31 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     self.thumbView.userInteractionEnabled = NO;
     [self.contentView addSubview:self.thumbView];
 
+    // Dual setpoint temp buttons (replace tempLabel in heat_cool mode)
+    self.dualLowButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.dualLowButton.translatesAutoresizingMaskIntoConstraints = YES;
+    self.dualLowButton.hidden = YES;
+    [self.dualLowButton addTarget:self action:@selector(dualLowTapped)
+                 forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.dualLowButton];
+
+    self.dualHighButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.dualHighButton.translatesAutoresizingMaskIntoConstraints = YES;
+    self.dualHighButton.hidden = YES;
+    [self.dualHighButton addTarget:self action:@selector(dualHighTapped)
+                  forControlEvents:UIControlEventTouchUpInside];
+    [self.contentView addSubview:self.dualHighButton];
+
+    // Cool setpoint thumb (heat_cool dual mode)
+    self.thumbHighView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 24, 24)];
+    self.thumbHighView.layer.cornerRadius = 12;
+    self.thumbHighView.layer.borderColor = [UIColor whiteColor].CGColor;
+    self.thumbHighView.layer.borderWidth = 2.5;
+    self.thumbHighView.backgroundColor = [UIColor colorWithRed:0.3 green:0.6 blue:1.0 alpha:1.0];
+    self.thumbHighView.hidden = YES;
+    self.thumbHighView.userInteractionEnabled = NO;
+    [self.contentView addSubview:self.thumbHighView];
+
     self.thumbPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleThumbPan:)];
     self.thumbPanGesture.delegate = self;
     self.thumbPanGesture.delaysTouchesBegan = NO;
@@ -452,16 +580,31 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 
     // Fast path: if geometry unchanged and layers exist, just update arc fills + thumb
     if (fabs(slider - self.lastLayoutSlider) < 0.5 && self.bgArcLayer) {
-        if (self.entity && !self.thumbDragging) {
-            NSNumber *targetTemp = [self.entity targetTemperature];
-            NSNumber *currentTemp = [self.entity currentTemperature];
+        if (self.entity && !self.thumbDragging && !self.thumbHighDragging) {
             NSString *mode = [self.entity hvacMode];
-            if (targetTemp && ![mode isEqualToString:@"off"]) {
-                [self applyArcFillForTarget:targetTemp.doubleValue
-                                currentTemp:currentTemp
-                                  direction:self.fillDirection
-                                     action:self.currentAction];
-                [self positionThumbAtTemperature:targetTemp.doubleValue];
+            if (self.isDualSetpointMode && ![mode isEqualToString:@"off"]) {
+                NSNumber *low  = self.entity.attributes[@"target_temp_low"];
+                NSNumber *high = self.entity.attributes[@"target_temp_high"];
+                if (low && high) {
+                    [self applyDualArcFillForLow:low.doubleValue high:high.doubleValue
+                                     currentTemp:[self.entity currentTemperature]
+                                          action:self.currentAction];
+                    [self positionThumbAtTemperature:low.doubleValue];
+                    [self positionHighThumbAtTemperature:high.doubleValue];
+                }
+            } else {
+                // Clear cool arc when not in dual mode
+                self.coloredArcHighLayer.strokeStart = 0.0;
+                self.coloredArcHighLayer.strokeEnd   = 0.0;
+                NSNumber *targetTemp = [self.entity targetTemperature];
+                NSNumber *currentTemp = [self.entity currentTemperature];
+                if (targetTemp && ![mode isEqualToString:@"off"]) {
+                    [self applyArcFillForTarget:targetTemp.doubleValue
+                                    currentTemp:currentTemp
+                                      direction:self.fillDirection
+                                         action:self.currentAction];
+                    [self positionThumbAtTemperature:targetTemp.doubleValue];
+                }
             }
         }
         [self updateCurrentTempDot];
@@ -515,6 +658,11 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     }
     self.tempLabel.font = [UIFont monospacedDigitSystemFontOfSize:primaryFontSize weight:UIFontWeightRegular];
 
+    // Set dual button fonts before measurement so sizeThatFits: returns correct values
+    CGFloat dualFontSize = isLg ? 44.0 : isMd ? 36.0 : 28.0;
+    self.dualLowButton.titleLabel.font  = [UIFont monospacedDigitSystemFontOfSize:dualFontSize weight:UIFontWeightRegular];
+    self.dualHighButton.titleLabel.font = [UIFont monospacedDigitSystemFontOfSize:dualFontSize weight:UIFontWeightRegular];
+
     // Show +/- buttons only if entity wants them AND size class allows (lg)
     BOOL sizeAllowsButtons = isLg;
     self.plusButton.hidden = !(self.buttonsVisible && sizeAllowsButtons);
@@ -529,8 +677,21 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     // Measure label sizes for manual centering
     CGFloat labelAreaWidth = slider * 0.6; // HA web .label { width: 60% }
     CGSize modeLabelSize = [self.modeLabel sizeThatFits:CGSizeMake(labelAreaWidth, CGFLOAT_MAX)];
-    CGSize tempLabelSize = [self.tempLabel sizeThatFits:CGSizeMake(labelAreaWidth, CGFLOAT_MAX)];
-    CGSize targetLabelSize = [self.targetLabel sizeThatFits:CGSizeMake(labelAreaWidth, CGFLOAT_MAX)];
+    CGSize tempLabelSize;
+    if (self.isDualSetpointMode) {
+        // Use dual button sizes — font was set above so measurement is accurate
+        CGSize lowSz  = [self.dualLowButton  sizeThatFits:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)];
+        CGSize highSz = [self.dualHighButton sizeThatFits:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)];
+        CGFloat h = MAX(lowSz.height, highSz.height);
+        if (h < 1.0) h = ceil(self.tempLabel.font.lineHeight); // fallback before text is set
+        tempLabelSize = CGSizeMake(lowSz.width + 8.0 + highSz.width, h);
+    } else {
+        tempLabelSize = [self.tempLabel sizeThatFits:CGSizeMake(labelAreaWidth, CGFLOAT_MAX)];
+    }
+    // Measure unconstrained so the icon glyph + text never gets artificially truncated,
+    // then clamp to the slider width as a hard ceiling.
+    CGSize targetLabelSize = [self.targetLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)];
+    targetLabelSize.width = MIN(targetLabelSize.width, slider);
 
     // Total height of the info block: modeLabel + gap(8) + tempLabel + gap(8) + targetLabel
     // If targetLabel is hidden, omit it.
@@ -558,11 +719,31 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
         currentY += modeLabelSize.height + infoGap;
     }
 
-    // Position temp label (replaces old modeLabel frame code below)
+    // Position temp label (or dual setpoint buttons in heat_cool mode)
     self.tempLabel.frame = CGRectMake(
         sliderLeft + (slider - tempLabelSize.width) / 2.0,
         currentY,
         tempLabelSize.width, tempLabelSize.height);
+
+    if (self.isDualSetpointMode) {
+        // Replace tempLabel with two tappable buttons (fonts set above, sizes in tempLabelSize)
+        self.tempLabel.hidden = YES;
+        self.dualLowButton.hidden = NO;
+        self.dualHighButton.hidden = NO;
+        CGSize lowSz  = [self.dualLowButton  sizeThatFits:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)];
+        CGSize highSz = [self.dualHighButton sizeThatFits:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)];
+        CGFloat btnH  = MAX(lowSz.height, highSz.height);
+        CGFloat totalW = lowSz.width + 8.0 + highSz.width;
+        CGFloat btnX  = sliderLeft + (slider - totalW) / 2.0;
+        self.dualLowButton.frame  = CGRectMake(btnX, currentY, lowSz.width,  btnH);
+        self.dualHighButton.frame = CGRectMake(btnX + lowSz.width + 8.0, currentY, highSz.width, btnH);
+    } else {
+        self.tempLabel.hidden = NO;
+        self.dualLowButton.hidden  = YES;
+        self.dualHighButton.hidden = YES;
+        self.coloredArcHighLayer.strokeStart = 0.0;
+        self.coloredArcHighLayer.strokeEnd   = 0.0;
+    }
     currentY += tempLabelSize.height + infoGap;
 
     if (showTarget) {
@@ -655,6 +836,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     // -- Remove old arc layers and recreate --
     [self.bgArcLayer removeFromSuperlayer];
     [self.coloredArcLayer removeFromSuperlayer];
+    [self.coloredArcHighLayer removeFromSuperlayer];
     [self.fgArcLayer removeFromSuperlayer];
     [self.currentTempDotLayer removeFromSuperlayer];
 
@@ -675,6 +857,10 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 
     // Layer 2 (middle): Colored arc -- partial directional range at 0.5 opacity
     UIColor *modeColor = self.currentModeColor ?: [UIColor colorWithRed:1.0 green:0.6 blue:0.2 alpha:1.0];
+    // In dual mode the heat (low) arc is always orange regardless of modeColor
+    UIColor *heatArcColor = self.isDualSetpointMode
+        ? [UIColor colorWithRed:1.0 green:0.55 blue:0.15 alpha:1.0]
+        : modeColor;
     self.coloredArcLayer = [CAShapeLayer layer];
     self.coloredArcLayer.path = arcPath.CGPath;
     self.coloredArcLayer.fillColor   = [UIColor clearColor].CGColor;
@@ -682,9 +868,21 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     self.coloredArcLayer.lineCap     = kCALineCapRound;
     self.coloredArcLayer.strokeStart = 0.0;
     self.coloredArcLayer.strokeEnd   = 0.0;
-    self.coloredArcLayer.strokeColor = modeColor.CGColor;
+    self.coloredArcLayer.strokeColor = heatArcColor.CGColor;
     self.coloredArcLayer.opacity     = 0.5;
     [self.contentView.layer insertSublayer:self.coloredArcLayer above:self.bgArcLayer];
+
+    // Cool arc layer for heat_cool dual setpoint (blue, high→max, 0.5 opacity)
+    self.coloredArcHighLayer = [CAShapeLayer layer];
+    self.coloredArcHighLayer.path        = arcPath.CGPath;
+    self.coloredArcHighLayer.fillColor   = [UIColor clearColor].CGColor;
+    self.coloredArcHighLayer.lineWidth   = lineWidth;
+    self.coloredArcHighLayer.lineCap     = kCALineCapRound;
+    self.coloredArcHighLayer.strokeStart = 0.0;
+    self.coloredArcHighLayer.strokeEnd   = 0.0;
+    self.coloredArcHighLayer.strokeColor = [UIColor colorWithRed:0.3 green:0.6 blue:1.0 alpha:1.0].CGColor;
+    self.coloredArcHighLayer.opacity     = 0.5;
+    [self.contentView.layer insertSublayer:self.coloredArcHighLayer above:self.coloredArcLayer];
 
     // Current temp indicator -- 8 SVG unit stroke, rgb(20,20,20) at 0.5 opacity
     CGFloat currentIndicatorStroke = 8.0 * scale;
@@ -705,16 +903,23 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     self.fgArcLayer.lineCap     = kCALineCapRound;
     self.fgArcLayer.strokeStart = 0.0;
     self.fgArcLayer.strokeEnd   = 0.0;
-    self.fgArcLayer.strokeColor = modeColor.CGColor;
+    self.fgArcLayer.strokeColor = heatArcColor.CGColor; // matches coloredArcLayer side
     self.fgArcLayer.opacity     = 1.0;
     [self.contentView.layer insertSublayer:self.fgArcLayer above:self.currentTempDotLayer];
 
     // Re-apply arc fill (layers were recreated, so strokeStart/End were reset)
-    if (self.entity && !self.thumbDragging) {
+    if (self.entity && !self.thumbDragging && !self.thumbHighDragging) {
         NSNumber *targetTemp = [self.entity targetTemperature];
         NSNumber *currentTemp = [self.entity currentTemperature];
         NSString *mode = [self.entity hvacMode];
-        if (targetTemp && ![mode isEqualToString:@"off"]) {
+        if (self.isDualSetpointMode && ![mode isEqualToString:@"off"]) {
+            NSNumber *low  = self.entity.attributes[@"target_temp_low"];
+            NSNumber *high = self.entity.attributes[@"target_temp_high"];
+            if (low && high) {
+                [self applyDualArcFillForLow:low.doubleValue high:high.doubleValue
+                                 currentTemp:currentTemp action:self.currentAction];
+            }
+        } else if (targetTemp && ![mode isEqualToString:@"off"]) {
             [self applyArcFillForTarget:targetTemp.doubleValue
                             currentTemp:currentTemp
                               direction:self.fillDirection
@@ -723,31 +928,46 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     } else if (self.thumbDragging) {
         CGFloat fraction = [self fractionForTemperature:self.dragTargetTemp];
         [self applyArcFillDragWithFraction:fraction direction:self.fillDirection];
+    } else if (self.thumbHighDragging) {
+        [self applyDualArcFillDragWithLowFraction:[self fractionForTemperature:self.dragTargetTempLow]
+                                     highFraction:[self fractionForTemperature:self.dragTargetTempHigh]];
     }
 
-    // Scale thumb to match HA web proportions:
+    // Scale thumbs to match HA web proportions:
     // Thumb outer = arc stroke width (24 SVG), inner stroke = 18 SVG
     CGFloat thumbDiameter = lineWidth;
     thumbDiameter = MAX(thumbDiameter, 16.0);
     CGFloat thumbBorder = 18.0 * scale;
     thumbBorder = MAX(thumbBorder, 2.0);
-    self.thumbView.bounds = CGRectMake(0, 0, thumbDiameter, thumbDiameter);
-    self.thumbView.layer.cornerRadius = thumbDiameter / 2.0;
-    self.thumbView.layer.borderWidth = MIN(thumbBorder, thumbDiameter * 0.3);
+    for (UIView *thumb in @[self.thumbView, self.thumbHighView]) {
+        thumb.bounds = CGRectMake(0, 0, thumbDiameter, thumbDiameter);
+        thumb.layer.cornerRadius = thumbDiameter / 2.0;
+        thumb.layer.borderWidth = MIN(thumbBorder, thumbDiameter * 0.3);
+    }
 
-    // Reposition thumb if visible
-    if (!self.thumbView.hidden && self.arcRadius > 0) {
-        double temp = self.thumbDragging ? self.dragTargetTemp
-            : (self.entity.targetTemperature ? self.entity.targetTemperature.doubleValue : 20.0);
-        [self positionThumbAtTemperature:temp];
+    // Reposition thumbs if visible
+    if (self.arcRadius > 0) {
+        if (!self.thumbView.hidden) {
+            double temp = self.thumbDragging ? self.dragTargetTemp
+                : (self.isDualSetpointMode
+                    ? ([self.entity.attributes[@"target_temp_low"] doubleValue] ?: 18.0)
+                    : (self.entity.targetTemperature ? self.entity.targetTemperature.doubleValue : 20.0));
+            [self positionThumbAtTemperature:temp];
+        }
+        if (!self.thumbHighView.hidden) {
+            double highTemp = self.thumbHighDragging ? self.dragTargetTempHigh
+                : ([self.entity.attributes[@"target_temp_high"] doubleValue] ?: 24.0);
+            [self positionHighThumbAtTemperature:highTemp];
+        }
     }
 
     // Reposition current temp indicator
     [self updateCurrentTempDot];
 
-    // Ensure thumb and buttons are above arc layers
+    // Ensure thumbs and buttons are above arc layers
     [self.contentView bringSubviewToFront:self.minusButton];
     [self.contentView bringSubviewToFront:self.plusButton];
+    [self.contentView bringSubviewToFront:self.thumbHighView];
     [self.contentView bringSubviewToFront:self.thumbView];
 
 }
@@ -782,7 +1002,7 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
     if (gestureRecognizer != self.thumbPanGesture) return YES;
-    if (self.thumbView.hidden) return NO;
+    if (self.thumbView.hidden && self.thumbHighView.hidden) return NO;
 
     CGPoint location = [gestureRecognizer locationInView:self.contentView];
 
@@ -791,45 +1011,103 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     if (!self.minusButton.hidden && CGRectContainsPoint(self.minusButton.frame, location)) return NO;
     if (CGRectContainsPoint(self.modeBar.frame, location)) return NO;
 
-    CGPoint thumbCenter = self.thumbView.center;
-    CGFloat distance = hypot(location.x - thumbCenter.x, location.y - thumbCenter.y);
-    return distance < kThumbHitRadius;
+    CGFloat distLow  = self.thumbView.hidden ? CGFLOAT_MAX
+        : hypot(location.x - self.thumbView.center.x, location.y - self.thumbView.center.y);
+    CGFloat distHigh = self.thumbHighView.hidden ? CGFLOAT_MAX
+        : hypot(location.x - self.thumbHighView.center.x, location.y - self.thumbHighView.center.y);
+    return (distLow < kThumbHitRadius || distHigh < kThumbHitRadius);
 }
 
 #pragma mark - Thumb Pan
 
 - (void)handleThumbPan:(UIPanGestureRecognizer *)gesture {
-    if (self.thumbView.hidden) return;
+    if (self.thumbView.hidden && self.thumbHighView.hidden) return;
     if (!self.entity.isAvailable) return;
 
     CGPoint location = [gesture locationInView:self.contentView];
+    static const double kMinSetpointGap = 1.0;
 
     switch (gesture.state) {
         case UIGestureRecognizerStateBegan: {
-            self.thumbDragging = YES;
+            // If the user starts dragging while a button debounce is pending, flush it immediately
+            // so drag starts from the confirmed pending value, not the stale entity value
+            if (self.buttonDebounceTimer) {
+                [self.buttonDebounceTimer invalidate];
+                self.buttonDebounceTimer = nil;
+                [self flushPendingButtonChange];
+            }
+            // Determine which thumb to drag by proximity
+            CGFloat distLow  = self.thumbView.hidden ? CGFLOAT_MAX
+                : hypot(location.x - self.thumbView.center.x, location.y - self.thumbView.center.y);
+            CGFloat distHigh = self.thumbHighView.hidden ? CGFLOAT_MAX
+                : hypot(location.x - self.thumbHighView.center.x, location.y - self.thumbHighView.center.y);
+            self.thumbHighDragging = (distHigh < distLow);
+
+            if (self.isDualSetpointMode) {
+                // Seed from displayed (optimistic) values so drag continues from where +/- left off
+                NSNumber *low  = self.entity.attributes[@"target_temp_low"];
+                NSNumber *high = self.entity.attributes[@"target_temp_high"];
+                self.dragTargetTempLow  = self.pendingTargetTempLow  ?: (low  ? low.doubleValue  : 18.0);
+                self.dragTargetTempHigh = self.pendingTargetTempHigh ?: (high ? high.doubleValue : 24.0);
+            } else {
+                NSNumber *target = [self.entity targetTemperature];
+                self.dragTargetTemp = self.pendingTargetTemp ?: (target ? target.doubleValue : 20.0);
+            }
+
+            if (self.thumbHighDragging) {
+                self.thumbDragging = NO;
+                if (self.isDualSetpointMode && !self.selectedSetpointIsHigh) {
+                    self.selectedSetpointIsHigh = YES;
+                    [self updateDualSetpointSelection];
+                }
+                [UIView animateWithDuration:0.15 animations:^{
+                    self.thumbHighView.transform = CGAffineTransformMakeScale(1.2, 1.2);
+                }];
+            } else {
+                self.thumbDragging = YES;
+                if (!self.isDualSetpointMode) {
+                    double entityTarget = self.entity.targetTemperature ? self.entity.targetTemperature.doubleValue : 20.0;
+                    self.dragTargetTemp = self.pendingTargetTemp > 0 ? self.pendingTargetTemp : entityTarget;
+                } else if (self.selectedSetpointIsHigh) {
+                    self.selectedSetpointIsHigh = NO;
+                    [self updateDualSetpointSelection];
+                }
+                [UIView animateWithDuration:0.15 animations:^{
+                    self.thumbView.transform = CGAffineTransformMakeScale(1.2, 1.2);
+                }];
+            }
             self.lastHapticTemp = -999;
-            [UIView animateWithDuration:0.15 animations:^{
-                self.thumbView.transform = CGAffineTransformMakeScale(1.2, 1.2);
-            }];
             [HAHaptics lightImpact];
             // Fall through to compute position
         }
         case UIGestureRecognizerStateChanged: {
             CGFloat angle = [self angleForPoint:location];
             double temp = [self temperatureForAngle:angle];
-            self.dragTargetTemp = temp;
 
-            // Update thumb position
-            [self positionThumbAtTemperature:temp];
+            if (self.isDualSetpointMode) {
+                if (self.thumbHighDragging) {
+                    temp = MAX(temp, self.dragTargetTempLow + kMinSetpointGap);
+                    temp = MIN(temp, self.entityMaxTemp);
+                    self.dragTargetTempHigh = temp;
+                    [self positionHighThumbAtTemperature:temp];
+                } else {
+                    temp = MIN(temp, self.dragTargetTempHigh - kMinSetpointGap);
+                    temp = MAX(temp, self.entityMinTemp);
+                    self.dragTargetTempLow = temp;
+                    [self positionThumbAtTemperature:temp];
+                }
+                [self applyDualArcFillDragWithLowFraction:[self fractionForTemperature:self.dragTargetTempLow]
+                                             highFraction:[self fractionForTemperature:self.dragTargetTempHigh]];
+                [self.dualLowButton  setTitle:[NSString stringWithFormat:@"%.0f%@", self.dragTargetTempLow,  self.tempUnitString] forState:UIControlStateNormal];
+                [self.dualHighButton setTitle:[NSString stringWithFormat:@"%.0f%@", self.dragTargetTempHigh, self.tempUnitString] forState:UIControlStateNormal];
+            } else {
+                self.dragTargetTemp = temp;
+                [self positionThumbAtTemperature:temp];
+                [self applyArcFillDragWithFraction:[self fractionForTemperature:temp]
+                                         direction:self.fillDirection];
+                self.tempLabel.text = [NSString stringWithFormat:@"%.1f%@", temp, self.tempUnitString];
+            }
 
-            // Update arc fill during drag (full fill, no active/idle distinction)
-            CGFloat fraction = [self fractionForTemperature:temp];
-            [self applyArcFillDragWithFraction:fraction direction:self.fillDirection];
-
-            // Update temp label live
-            self.tempLabel.text = [NSString stringWithFormat:@"%.1f%@", temp, self.tempUnitString];
-
-            // Haptic tick on step boundaries
             if (fabs(temp - self.lastHapticTemp) >= kTempStep) {
                 [HAHaptics selectionChanged];
                 self.lastHapticTemp = temp;
@@ -838,17 +1116,34 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
         }
         case UIGestureRecognizerStateEnded:
         case UIGestureRecognizerStateCancelled: {
+            BOOL wasActive = self.thumbDragging || self.thumbHighDragging;
             self.thumbDragging = NO;
+            self.thumbHighDragging = NO;
+            // Drag takes ownership — clear pending button values so they don't interfere
+            self.pendingTargetTemp = 0;
+            self.pendingTargetTempLow = 0;
+            self.pendingTargetTempHigh = 0;
             [UIView animateWithDuration:0.15 animations:^{
                 self.thumbView.transform = CGAffineTransformIdentity;
+                self.thumbHighView.transform = CGAffineTransformIdentity;
             }];
 
-            if (gesture.state == UIGestureRecognizerStateEnded && self.entity) {
+            if (gesture.state == UIGestureRecognizerStateEnded && self.entity && wasActive) {
                 [HAHaptics mediumImpact];
-                [[HAConnectionManager sharedManager] callService:@"set_temperature"
-                                                        inDomain:@"climate"
-                                                        withData:@{@"temperature": @(self.dragTargetTemp)}
-                                                        entityId:self.entity.entityId];
+                if (self.isDualSetpointMode) {
+                    [[HAConnectionManager sharedManager] callService:@"set_temperature"
+                                                            inDomain:@"climate"
+                                                            withData:@{
+                                                                @"target_temp_low":  @(self.dragTargetTempLow),
+                                                                @"target_temp_high": @(self.dragTargetTempHigh),
+                                                            }
+                                                            entityId:self.entity.entityId];
+                } else {
+                    [[HAConnectionManager sharedManager] callService:@"set_temperature"
+                                                            inDomain:@"climate"
+                                                            withData:@{@"temperature": @(self.dragTargetTemp)}
+                                                            entityId:self.entity.entityId];
+                }
             }
             break;
         }
@@ -883,6 +1178,20 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     NSNumber *targetTempLow = entity.attributes[@"target_temp_low"];
     BOOL isDualSetpoint = ([targetTempHigh isKindOfClass:[NSNumber class]] &&
                            [targetTempLow isKindOfClass:[NSNumber class]]);
+    BOOL wasDualSetpointMode = self.isDualSetpointMode;
+    self.isDualSetpointMode = isDualSetpoint;
+    if (wasDualSetpointMode != isDualSetpoint) {
+        self.lastLayoutSlider = 0; // force full rebuild when dual mode changes
+    }
+    BOOL showDualButtons = isDualSetpoint && ![[entity hvacMode] isEqualToString:@"off"];
+    self.dualLowButton.hidden  = !showDualButtons;
+    self.dualHighButton.hidden = !showDualButtons;
+    self.tempLabel.hidden = showDualButtons; // eagerly un-hide for single modes
+    // Clear cool arc immediately when not in dual mode (fast path may not reach it)
+    if (!isDualSetpoint) {
+        self.coloredArcHighLayer.strokeStart = 0.0;
+        self.coloredArcHighLayer.strokeEnd   = 0.0;
+    }
     NSString *mode = [entity hvacMode];
     NSString *action = [entity hvacAction];
     self.currentMode = mode;
@@ -933,8 +1242,12 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
         modeColor = [UIColor colorWithRed:0.0 green:0.75 blue:0.75 alpha:1.0];
     }
     self.currentModeColor = modeColor;
-    self.coloredArcLayer.strokeColor = modeColor.CGColor;
-    self.fgArcLayer.strokeColor = modeColor.CGColor;
+    // In dual mode the heat (low) arc is always orange — modeColor is used for glow only
+    UIColor *arcLayerColor = isDualSetpoint
+        ? [UIColor colorWithRed:1.0 green:0.55 blue:0.15 alpha:1.0]
+        : modeColor;
+    self.coloredArcLayer.strokeColor = arcLayerColor.CGColor;
+    self.fgArcLayer.strokeColor = arcLayerColor.CGColor;
 
     // Update the glow layer color to match the new mode immediately
     if (self.glowLayer) {
@@ -981,8 +1294,10 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
             }
         } else {
             if (isDualSetpoint && ![mode isEqualToString:@"off"]) {
-                self.tempLabel.text = [NSString stringWithFormat:@"%.0f–%.0f%@",
-                    targetTempLow.doubleValue, targetTempHigh.doubleValue, self.tempUnitString];
+                // Set dual button titles; updateGaugeArcs hides tempLabel and shows these
+                [self.dualLowButton  setTitle:[NSString stringWithFormat:@"%.0f%@", targetTempLow.doubleValue,  self.tempUnitString] forState:UIControlStateNormal];
+                [self.dualHighButton setTitle:[NSString stringWithFormat:@"%.0f%@", targetTempHigh.doubleValue, self.tempUnitString] forState:UIControlStateNormal];
+                self.tempLabel.text = nil; // hidden in dual mode; won't affect layout (height via dual buttons)
             } else if (targetTemp && ![mode isEqualToString:@"off"]) {
                 self.tempLabel.text = [NSString stringWithFormat:@"%.1f%@", targetTemp.doubleValue, self.tempUnitString];
             } else if (currentTemp) {
@@ -1005,43 +1320,63 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
             }
         }
 
-        // Arc fill: use proper HA web logic with current temp and action
-        if (targetTemp && ![mode isEqualToString:@"off"]) {
+        // Arc fill and thumb position/visibility
+        if (isDualSetpoint && targetTempLow && targetTempHigh && ![mode isEqualToString:@"off"]) {
+            [self applyDualArcFillForLow:targetTempLow.doubleValue
+                                    high:targetTempHigh.doubleValue
+                             currentTemp:currentTemp
+                                  action:action];
+            // Two thumbs: heat (orange) at low, cool (blue) at high
+            self.thumbView.hidden = NO;
+            self.thumbView.backgroundColor = [UIColor colorWithRed:1.0 green:0.55 blue:0.15 alpha:1.0];
+            self.thumbHighView.hidden = NO;
+            self.thumbHighView.backgroundColor = [UIColor colorWithRed:0.3 green:0.6 blue:1.0 alpha:1.0];
+            if (self.arcRadius > 0) {
+                [self positionThumbAtTemperature:targetTempLow.doubleValue];
+                [self positionHighThumbAtTemperature:targetTempHigh.doubleValue];
+            }
+        } else if (targetTemp && ![mode isEqualToString:@"off"]) {
             [self applyArcFillForTarget:targetTemp.doubleValue
                             currentTemp:currentTemp
                               direction:self.fillDirection
                                  action:action];
-        } else {
-            [self applyArcFillForTarget:0.0 currentTemp:nil direction:HAGaugeFillNone action:nil];
-        }
-
-        // Thumb position and visibility
-        if (targetTemp && ![mode isEqualToString:@"off"]) {
             self.thumbView.hidden = NO;
+            self.thumbHighView.hidden = YES;
             self.thumbView.backgroundColor = modeColor;
             if (self.arcRadius > 0) {
                 [self positionThumbAtTemperature:targetTemp.doubleValue];
             }
         } else {
+            [self applyArcFillForTarget:0.0 currentTemp:nil direction:HAGaugeFillNone action:nil];
+            if (self.coloredArcHighLayer) {
+                self.coloredArcHighLayer.strokeStart = 0.0;
+                self.coloredArcHighLayer.strokeEnd = 0.0;
+            }
             self.thumbView.hidden = YES;
+            self.thumbHighView.hidden = YES;
         }
     }
 
     // +/- buttons: show when there's a target temp and mode is not off
-    BOOL showButtons = NO;
-    if (targetTemp && ![mode isEqualToString:@"off"]) {
-        showButtons = YES;
-    }
+    BOOL showButtons = ![mode isEqualToString:@"off"] &&
+        (isDualSetpoint ? (targetTempLow != nil && targetTempHigh != nil) : (targetTemp != nil));
     // Don't set button hidden here — layoutSubviews/updateGaugeArcs is the
     // single authority on visibility (it checks both this flag AND size class).
     if (showButtons != self.buttonsVisible) {
         self.buttonsVisible = showButtons;
+        self.lastLayoutSlider = 0; // force full rebuild to update button visibility
     }
     [self setNeedsLayout];
 
-    // Update button border color for theme
-    self.plusButton.layer.borderColor = [HATheme tertiaryTextColor].CGColor;
+    // Update button border color for theme (dual mode overrides this below)
+    self.plusButton.tintColor  = nil; // restore system tint
+    self.minusButton.tintColor = nil;
+    self.plusButton.layer.borderColor  = [HATheme tertiaryTextColor].CGColor;
     self.minusButton.layer.borderColor = [HATheme tertiaryTextColor].CGColor;
+
+    if (isDualSetpoint && ![mode isEqualToString:@"off"]) {
+        [self updateDualSetpointSelection];
+    }
 
     // Current temp indicator (always update, even during drag)
     [self updateCurrentTempDot];
@@ -1082,7 +1417,8 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 
     self.contentView.backgroundColor = [HATheme cellBackgroundColor];
 
-    // Ensure thumb is on top
+    // Ensure thumbs are on top
+    [self.contentView bringSubviewToFront:self.thumbHighView];
     [self.contentView bringSubviewToFront:self.thumbView];
 
 }
@@ -1247,6 +1583,54 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
 
 #pragma mark - Actions
 
+- (void)applyOptimisticSingleTemp:(double)newTarget {
+    self.tempLabel.text = [NSString stringWithFormat:@"%.1f%@", newTarget, self.tempUnitString];
+    [self applyArcFillForTarget:newTarget
+                    currentTemp:[self.entity currentTemperature]
+                      direction:self.fillDirection
+                         action:self.currentAction];
+    if (self.arcRadius > 0) {
+        [self positionThumbAtTemperature:newTarget];
+    }
+}
+
+- (void)applyOptimisticDualLow:(double)newLow high:(double)newHigh {
+    [self.dualLowButton  setTitle:[NSString stringWithFormat:@"%.0f%@", newLow,  self.tempUnitString] forState:UIControlStateNormal];
+    [self.dualHighButton setTitle:[NSString stringWithFormat:@"%.0f%@", newHigh, self.tempUnitString] forState:UIControlStateNormal];
+    [self applyDualArcFillForLow:newLow high:newHigh
+                     currentTemp:[self.entity currentTemperature] action:self.currentAction];
+    if (self.arcRadius > 0) {
+        [self positionThumbAtTemperature:newLow];
+        [self positionHighThumbAtTemperature:newHigh];
+    }
+}
+
+- (void)scheduleButtonDebounce {
+    [self.buttonDebounceTimer invalidate];
+    self.buttonDebounceTimer = [NSTimer scheduledTimerWithTimeInterval:5.0
+                                                                target:self
+                                                              selector:@selector(flushPendingButtonChange)
+                                                              userInfo:nil
+                                                               repeats:NO];
+}
+
+- (void)flushPendingButtonChange {
+    self.buttonDebounceTimer = nil;
+    if (!self.entity) return;
+    if (self.isDualSetpointMode) {
+        [[HAConnectionManager sharedManager] callService:@"set_temperature"
+                                                inDomain:@"climate"
+                                                withData:@{@"target_temp_low":  @(self.pendingTargetTempLow),
+                                                           @"target_temp_high": @(self.pendingTargetTempHigh)}
+                                                entityId:self.entity.entityId];
+    } else {
+        [[HAConnectionManager sharedManager] callService:@"set_temperature"
+                                                inDomain:@"climate"
+                                                withData:@{@"temperature": @(self.pendingTargetTemp)}
+                                                entityId:self.entity.entityId];
+    }
+}
+
 - (void)plusTapped {
     if (!self.entity) return;
     [HAHaptics lightImpact];
@@ -1254,25 +1638,24 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     NSNumber *attrStep = self.entity.attributes[@"target_temp_step"];
     if (attrStep) step = [attrStep doubleValue];
 
-    // Fix #3: Dual setpoint — plus raises high only, minus lowers low only
-    BOOL isDual = [self.entity.state isEqualToString:@"heat_cool"];
-    if (isDual) {
-        NSNumber *high = self.entity.attributes[@"target_temp_high"];
-        double newHigh = high ? [high doubleValue] + step : 24.0;
-        newHigh = MIN(newHigh, self.entityMaxTemp);
-        [[HAConnectionManager sharedManager] callService:@"set_temperature"
-                                                inDomain:@"climate"
-                                                withData:@{@"target_temp_high": @(newHigh)}
-                                                entityId:self.entity.entityId];
+    if (self.isDualSetpointMode) {
+        // Read from pending if a debounce is in flight, else from entity
+        double curLow  = self.buttonDebounceTimer ? self.pendingTargetTempLow  : ([self.entity.attributes[@"target_temp_low"]  doubleValue] ?: 18.0);
+        double curHigh = self.buttonDebounceTimer ? self.pendingTargetTempHigh : ([self.entity.attributes[@"target_temp_high"] doubleValue] ?: 24.0);
+        if (self.selectedSetpointIsHigh) {
+            self.pendingTargetTempLow  = curLow;
+            self.pendingTargetTempHigh = MIN(curHigh + step, self.entityMaxTemp);
+        } else {
+            self.pendingTargetTempLow  = MIN(curLow + step, curHigh - step);
+            self.pendingTargetTempHigh = curHigh;
+        }
+        [self applyOptimisticDualLow:self.pendingTargetTempLow high:self.pendingTargetTempHigh];
     } else {
-        NSNumber *target = [self.entity targetTemperature];
-        double newTarget = target ? target.doubleValue + step : 20.0;
-        newTarget = MIN(newTarget, self.entityMaxTemp);
-        [[HAConnectionManager sharedManager] callService:@"set_temperature"
-                                                inDomain:@"climate"
-                                                withData:@{@"temperature": @(newTarget)}
-                                                entityId:self.entity.entityId];
+        double cur = self.buttonDebounceTimer ? self.pendingTargetTemp : ([[self.entity targetTemperature] doubleValue] ?: 20.0);
+        self.pendingTargetTemp = MIN(cur + step, self.entityMaxTemp);
+        [self applyOptimisticSingleTemp:self.pendingTargetTemp];
     }
+    [self scheduleButtonDebounce];
 }
 
 - (void)minusTapped {
@@ -1282,24 +1665,23 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     NSNumber *attrStep = self.entity.attributes[@"target_temp_step"];
     if (attrStep) step = [attrStep doubleValue];
 
-    BOOL isDual = [self.entity.state isEqualToString:@"heat_cool"];
-    if (isDual) {
-        NSNumber *low = self.entity.attributes[@"target_temp_low"];
-        double newLow = low ? [low doubleValue] - step : 20.0;
-        newLow = MAX(newLow, self.entityMinTemp);
-        [[HAConnectionManager sharedManager] callService:@"set_temperature"
-                                                inDomain:@"climate"
-                                                withData:@{@"target_temp_low": @(newLow)}
-                                                entityId:self.entity.entityId];
+    if (self.isDualSetpointMode) {
+        double curLow  = self.buttonDebounceTimer ? self.pendingTargetTempLow  : ([self.entity.attributes[@"target_temp_low"]  doubleValue] ?: 18.0);
+        double curHigh = self.buttonDebounceTimer ? self.pendingTargetTempHigh : ([self.entity.attributes[@"target_temp_high"] doubleValue] ?: 24.0);
+        if (self.selectedSetpointIsHigh) {
+            self.pendingTargetTempLow  = curLow;
+            self.pendingTargetTempHigh = MAX(curHigh - step, curLow + step);
+        } else {
+            self.pendingTargetTempLow  = MAX(curLow - step, self.entityMinTemp);
+            self.pendingTargetTempHigh = curHigh;
+        }
+        [self applyOptimisticDualLow:self.pendingTargetTempLow high:self.pendingTargetTempHigh];
     } else {
-        NSNumber *target = [self.entity targetTemperature];
-        double newTarget = target ? target.doubleValue - step : 20.0;
-        newTarget = MAX(newTarget, self.entityMinTemp);
-        [[HAConnectionManager sharedManager] callService:@"set_temperature"
-                                                inDomain:@"climate"
-                                                withData:@{@"temperature": @(newTarget)}
-                                                entityId:self.entity.entityId];
+        double cur = self.buttonDebounceTimer ? self.pendingTargetTemp : ([[self.entity targetTemperature] doubleValue] ?: 20.0);
+        self.pendingTargetTemp = MAX(cur - step, self.entityMinTemp);
+        [self applyOptimisticSingleTemp:self.pendingTargetTemp];
     }
+    [self scheduleButtonDebounce];
 }
 
 - (void)prepareForReuse {
@@ -1319,11 +1701,26 @@ typedef NS_ENUM(NSInteger, HAGaugeFillDirection) {
     self.currentMode = nil;
     self.currentAction = nil;
 
+    // Cancel any in-flight button debounce without sending (cell is being recycled)
+    [self.buttonDebounceTimer invalidate];
+    self.buttonDebounceTimer = nil;
+
     // Thumb/drag state
     self.thumbDragging = NO;
+    self.thumbHighDragging = NO;
     self.thumbView.hidden = YES;
+    self.thumbHighView.hidden = YES;
     self.thumbView.transform = CGAffineTransformIdentity;
+    self.thumbHighView.transform = CGAffineTransformIdentity;
     self.dragTargetTemp = 0;
+    self.dragTargetTempLow = 0;
+    self.dragTargetTempHigh = 0;
+    self.isDualSetpointMode = NO;
+    self.selectedSetpointIsHigh = NO;
+    self.dualLowButton.hidden = YES;
+    self.dualHighButton.hidden = YES;
+    self.coloredArcHighLayer.strokeStart = 0.0;
+    self.coloredArcHighLayer.strokeEnd = 0.0;
     self.currentModeColor = nil;
     self.lastHapticTemp = -999;
     self.fillDirection = HAGaugeFillNone;

@@ -2,7 +2,7 @@ name: HADashboard
 options:
   bundleIdPrefix: com.hadashboard.app
   deploymentTarget:
-    iOS: "15.0"
+    iOS: "9.0"
   xcodeVersion: "26.0"
   generateEmptyDirectories: true
   groupSortPosition: top
@@ -22,7 +22,7 @@ targets:
     type: application
     platform: iOS
     supportedDestinations: [iOS, macCatalyst]
-    deploymentTarget: "16.0"
+    deploymentTarget: "9.0"
     sources:
       - path: HADashboard
         type: group
@@ -73,7 +73,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.hadashboard.app
         PRODUCT_NAME: "HA Dashboard"
         TARGETED_DEVICE_FAMILY: "1,2"
-        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "9.0"
         CODE_SIGN_IDENTITY: "Apple Development"
         CODE_SIGN_STYLE: "Automatic"
         DEVELOPMENT_TEAM: ""
